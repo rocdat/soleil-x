@@ -476,6 +476,7 @@ void SoleilMapper::soleil_create_copy_instance(MapperContext ctx,
                      unsigned idx, std::vector<PhysicalInstance> &instances)
 //--------------------------------------------------------------------------
 {
+  long long ts_1 = Realm::Clock::current_time_in_microseconds();
   // This method is identical to the default version except that it
   // chooses an intelligent memory based on the destination of the
   // copy.
@@ -507,12 +508,14 @@ void SoleilMapper::soleil_create_copy_instance(MapperContext ctx,
                 point.point_data[1] * size_x +
                 point.point_data[2] * size_x * size_y;
   Memory target_memory = proc_sysmems[procs_list[color % procs_list.size()]];
+  long long ts_2 = Realm::Clock::current_time_in_microseconds();
   bool force_new_instances = false;
   LayoutConstraintSet creation_constraints;
   default_policy_select_constraints(ctx, creation_constraints, target_memory, req);
   creation_constraints.add_constraint(
       FieldConstraint(missing_fields,
                       false/*contig*/, false/*inorder*/));
+  long long ts_3 = Realm::Clock::current_time_in_microseconds();
   instances.resize(instances.size() + 1);
   if (!default_make_instance(ctx, target_memory,
         creation_constraints, instances.back(),
@@ -537,6 +540,9 @@ void SoleilMapper::soleil_create_copy_instance(MapperContext ctx,
 		                 copy.parent_task->current_proc.id);
     assert(false);
   }
+  long long ts_4 = Realm::Clock::current_time_in_microseconds();
+  printf("init: %.6fs, constraint: %.6fs, instance: %.6fs\n",
+      (ts_2 - ts_1) * 1e-6, (ts_3 - ts_2) * 1e-6, (ts_4 - ts_3) * 1e-6);
 }
 
 static void create_mappers(Machine machine,

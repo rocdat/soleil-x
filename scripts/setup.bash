@@ -1,4 +1,5 @@
 #!/bin/bash
+echo === Run setup.bash from outside of the soleil-x repo ===
 export LEGION_PATH=`pwd`/legion
 export LG_RT_PATH=$LEGION_PATH/runtime
 export LISZT_PATH=`pwd`/liszt-legion

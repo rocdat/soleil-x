@@ -201,6 +201,7 @@ local Particles = {};
 local TimeIntegrator = {};
 local Statistics = {};
 local IO = {};
+local Visualize = {};
 
 -----------------------------------------------------------------------------
 --[[                   INITIALIZE OPTIONS FROM CONFIG                    ]]--
@@ -806,6 +807,8 @@ elseif radiation_options.radiationType == RadiationType.MCRT then
 elseif radiation_options.radiationType == RadiationType.OFF then
   -- do nothing
 else assert(false) end
+
+local viz = (require 'viz')(grid.cells, particles)
 
 -----------------------------------------------------------------------------
 --[[                       LOAD DATA FOR RESTART                         ]]--
@@ -3313,6 +3316,19 @@ function IO.WriteOutput()
   end
 end
 
+------------
+-- Visualize
+------------
+
+function Visualize.Render()
+  -- Launch a visualization task
+  M.INLINE(viz.Render)
+end
+
+function Visualize.Reduce()
+  -- Launch an image reduction
+end
+
 -----------------------------------------------------------------------------
 --[[                            MAIN EXECUTION                           ]]--
 -----------------------------------------------------------------------------
@@ -3338,6 +3354,8 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
     M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
       Statistics.ComputeSpatialAverages()
       IO.WriteOutput()
+      Visualize.Render()
+      Visualize.Reduce()
     M.END()
   end
 M.END()

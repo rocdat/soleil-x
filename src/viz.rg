@@ -21,8 +21,7 @@ do
   end
   local cxx = os.getenv('CXX') or 'c++'
 
---  local cxx_flags = "-O2 -Wall -Werror"
-  local cxx_flags = "-O2 -Wall "
+  local cxx_flags = "-O2 -Wall -Werror"
   if os.execute('test "$(uname)" = Darwin') == 0 then
     cxx_flags =
       (cxx_flags ..
@@ -63,8 +62,8 @@ local tiles = A.primColors()
 
 local task Render(cells : cellsType, particles : particlesType)
 where
-  reads(particles.{__valid, cell}, cells.temperature),
-  reads writes(particles.particle_temperature)
+  reads(particles.{cell, position, particle_temperature}),
+  reads(cells.{velocity, temperature})
 do
   crender.cxx_render(__runtime(), __context(), __physical(cells), __fields(cells),
                         __physical(particles), __fields(particles))

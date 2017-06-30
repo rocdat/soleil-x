@@ -48,14 +48,13 @@ end
 -- Module parameters
 -------------------------------------------------------------------------------
 
-return function(cellsRel, particlesRel, xnum, ynum, znum, TimeIntegrator)
+return function(cellsRel, particlesRel, xnum, ynum, znum, origin, width)
 
 local p_cells   = cellsRel:primPartSymbol()
 local cellsType = cellsRel:regionType()
 local p_particles   = particlesRel:primPartSymbol()
 local particlesType = particlesRel:regionType()
 local tiles = A.primColors()
-local timeStep = TimeIntegrator.timeStep:get()
 
 -------------------------------------------------------------------------------
 -- Local tasks
@@ -73,16 +72,10 @@ end
 
 local task dbg(cells : cellsType)
 where
-  reads(cells.centerCoordinates)
+  reads(cells.centerCoordinates, cells.velocity, cells.temperature)
 do
   for c in cells do
-    regentlib.c.printf("new cell\n")
-    regentlib.c.printf("%lf %lf %lf\n",
-      c.centerCoordinates[0], c.centerCoordinates[1], c.centerCoordinates[2])
-    regentlib.c.printf("%lf %lf %lf\n",
-      c.centerCoordinates[3], c.centerCoordinates[4], c.centerCoordinates[5])
-    regentlib.c.printf("%lf %lf %lf\n",
-      c.centerCoordinates[6], c.centerCoordinates[7], c.centerCoordinates[8])
+    regentlib.c.printf("\n============ new cell in viz.rg ==============\n")
   end
 end
 
@@ -94,7 +87,8 @@ local exports = {}
 
 exports.Render = rquote
   for tile in tiles do
-    dbg(p_cells[tile])
+    regentlib.c.printf("tile %d %d %d\n", tile.x, tile.y, tile.z)
+    -- dbg(p_cells[tile])
     Render(p_cells[tile], p_particles[tile])
   end
 end

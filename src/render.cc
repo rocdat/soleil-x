@@ -16,19 +16,28 @@ typedef double FieldData;
 
 
 
-void create_cell_field_pointer( PhysicalRegion cell,
+void create_field_pointer( PhysicalRegion region,
                                FieldData *&field,
                                int fieldID,
                                ByteOffset stride[3],
                                Runtime *runtime,
                                Context context) {
   
-  Domain indexSpaceDomain = runtime->get_index_space_domain(context, cell.get_logical_region().get_index_space());
+  Domain indexSpaceDomain = runtime->get_index_space_domain(context, region.get_logical_region().get_index_space());
   Rect<3> bounds = indexSpaceDomain.get_rect<3>();
-  RegionAccessor<AccessorType::Generic, FieldData> acc = cell.get_field_accessor(fieldID).typeify<FieldData>();
+  RegionAccessor<AccessorType::Generic, FieldData> acc = region.get_field_accessor(fieldID).typeify<FieldData>();
+  
+  Point<3> pp = bounds.lo;
+  DomainPoint p = DomainPoint::from_point<3>(pp);
+  double foo = acc.read(p);
+  std::cout << "read " << foo << " at " << bounds.lo << std::endl;
+  
   Rect<3> tempBounds;
   field = acc.raw_rect_ptr<3>(bounds, tempBounds, stride);
   assert(bounds == tempBounds);
+  
+  double moo = *field;
+  std::cout << "read " << moo << " from raw rect pointer" << std::endl;
 }
 
 
@@ -43,20 +52,42 @@ void accessCellData(legion_physical_region_t *cells,
                     Rect<3> &bounds,
                     Runtime* runtime,
                     Context ctx) {
-  const int NUM_CELL_FIELDS = 3;
-  for(unsigned field = 0; field < NUM_CELL_FIELDS; ++field) {
+
+  PhysicalRegion* cell = CObjectWrapper::unwrap(cells[0]);
+  std::vector<legion_field_id_t> fields;
+  cell->get_fields(fields);
+  std::cout << "cell fields " << fields[0] << "," << fields[1] << "," << fields[2] << std::endl;
+
+  for(unsigned field = 0; field < fields.size(); ++field) {
     PhysicalRegion* cell = CObjectWrapper::unwrap(cells[field]);
     Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, cell->get_logical_region().get_index_space());
     bounds = indexSpaceDomain.get_rect<3>();
+    std::cout << "field " << field << " " << cells_fields[field] << std::endl;
+    
     switch(field) {
-      case 0:
-        create_cell_field_pointer(*cell, centerCoordinates, cells_fields[field], strideCenter, runtime, ctx);
-        break;
       case 1:
-        create_cell_field_pointer(*cell, velocity, cells_fields[field], strideVelocity, runtime, ctx);
+        create_field_pointer(*cell, centerCoordinates, cells_fields[field], strideCenter, runtime, ctx);
+        
+//        std::cout << "new cell in render.cc bounds " << bounds << " centerCoordinates" << std::endl;
+//        for(unsigned j = 0; j < 10; ++j) {
+//          std::cout << "(" << j << ") " << centerCoordinates[0] << "\t" << centerCoordinates[1] << "\t" << centerCoordinates[2] << std::endl;
+//        }
+        break;
+      case 0:
+        create_field_pointer(*cell, velocity, cells_fields[field], strideVelocity, runtime, ctx);
+      
+//        std::cout << "new cell in render.cc bounds " << bounds << " velocity" << std::endl;
+//        for(unsigned j = 0; j < 10; ++j) {
+//          std::cout << "(" << j << ") " << velocity[0] << "\t" << velocity[1] << "\t" << velocity[2] << std::endl;
+//        }
         break;
       case 2:
-        create_cell_field_pointer(*cell, temperature, cells_fields[field], strideTemperature, runtime, ctx);
+        create_field_pointer(*cell, temperature, cells_fields[field], strideTemperature, runtime, ctx);
+
+//        std::cout << "new cell in render.cc bounds " << bounds << " temperature" << std::endl;
+//        for(unsigned j = 0; j < 10; ++j) {
+//          std::cout << "(" << j << ") " << temperature[0] << std::endl;
+//        }
         break;
       default:
         std::cerr << "oops, field not found" << std::endl;
@@ -74,22 +105,28 @@ void writeCellsToFile(std::string filePath,
                       ByteOffset strideCenter[3],
                       ByteOffset strideVelocity[3],
                       ByteOffset strideTemperature[3]) {
-  std::cout << "strideCenter " << strideCenter[0].offset << "," << strideCenter[1].offset
-  << "," << strideCenter[2].offset << std::endl;
   
   std::ofstream outputFile;
   outputFile.open(filePath);
   outputFile << bounds << std::endl;
-  for (GenericPointInRectIterator<3> pir(bounds); pir; pir++) {
-    outputFile << pir.p << " "
-    << std::setprecision(20)
-    << centerCoordinates[0] << " " << centerCoordinates[1] << " " << centerCoordinates[2] << " "
-    << temperature[0] << " "
-    << velocity[0] << " " << velocity[1] << " " << velocity[2]
-    << std::endl;
-    centerCoordinates += strideCenter[0].offset;
-    velocity += strideVelocity[0].offset;
-    temperature += strideTemperature[0].offset;
+  int counter = 0;
+  
+  for(coord_t z = bounds.lo.x[2]; z < bounds.hi.x[2]; ++z) {
+    for(coord_t y = bounds.lo.x[1]; y < bounds.hi.x[1]; ++y) {
+      for(coord_t x = bounds.lo.x[0]; x < bounds.hi.x[0]; ++x) {
+        outputFile
+        << counter++ << " "
+        << "(" << x << "," << y << "," << z << ") "
+        << std::setprecision(10)
+        << centerCoordinates[0] << " " << centerCoordinates[1] << " " << centerCoordinates[2] << "\t"
+        << velocity[0] << " " << velocity[1] << " " << velocity[2] << "\t"
+        << temperature[0]
+        << std::endl;
+        centerCoordinates += strideCenter[0].offset / sizeof(FieldData);
+        velocity += strideVelocity[0].offset / sizeof(FieldData);
+        temperature += strideTemperature[0].offset / sizeof(FieldData);
+      }
+    }
   }
   outputFile.close();
 }
@@ -125,7 +162,7 @@ void cxx_render(legion_runtime_t runtime_,
   
   
   char filename[256];
-  sprintf(filename, "cells_%d__%lld_%lld_%lld__%lld_%lld_%lld.txt", timeStep++,
+  sprintf(filename, "cells_%d__%lld_%lld_%lld__%lld_%lld_%lld.txt", timeStep / 4,
           bounds.lo.x[0], bounds.lo.x[1], bounds.lo.x[2],
           bounds.hi.x[0], bounds.hi.x[1], bounds.hi.x[2]);
   writeCellsToFile(std::string(filename), bounds, centerCoordinates, velocity,
@@ -135,6 +172,8 @@ void cxx_render(legion_runtime_t runtime_,
   unsigned char* _d = (unsigned char*)centerCoordinates;
   printf("centerCoordinates %p = 0x%x %x %x %x %x %x %x %x = %lf\n",
          centerCoordinates, _d[0], _d[1], _d[2], _d[3], _d[4], _d[5], _d[6], _d[7], centerCoordinates[0]);
+  
+  timeStep++;
 
   
 #if 0

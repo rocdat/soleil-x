@@ -824,7 +824,7 @@ elseif radiation_options.radiationType == RadiationType.OFF then
 else assert(false) end
 
 
-local viz = (require 'viz')(grid.cells, particles, config.xnum, config.ynum, config.znum, TimeIntegrator)
+local viz = (require 'viz')(grid.cells, particles, config.xnum, config.ynum, config.znum, grid.origin, grid.width)
 
 -----------------------------------------------------------------------------
 --[[                       LOAD DATA FOR RESTART                         ]]--
@@ -3336,8 +3336,9 @@ end
 -- Visualize
 ------------
 
-function Visualize.Render(timeStep)
+function Visualize.Render()
   -- Launch a visualization task
+  M.PRINT("render timestep\n")
   M.INLINE(viz.Render)
 end
 
@@ -3370,8 +3371,7 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
     -- M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
       Statistics.ComputeSpatialAverages()
       IO.WriteOutput()
-      timeStep = TimeIntegrator.timeStep:get()
-      Visualize.Render(timeStep)
+      Visualize.Render()
       Visualize.Reduce()
     -- M.END()
   end

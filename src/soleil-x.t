@@ -823,7 +823,8 @@ elseif radiation_options.radiationType == RadiationType.OFF then
   -- do nothing
 else assert(false) end
 
-local viz = (require 'viz')(grid.cells, particles)
+
+local viz = (require 'viz')(grid.cells, particles, config.xnum, config.ynum, config.znum, TimeIntegrator)
 
 -----------------------------------------------------------------------------
 --[[                       LOAD DATA FOR RESTART                         ]]--
@@ -3335,7 +3336,7 @@ end
 -- Visualize
 ------------
 
-function Visualize.Render()
+function Visualize.Render(timeStep)
   -- Launch a visualization task
   M.INLINE(viz.Render)
 end
@@ -3366,12 +3367,13 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
   if not regentlib.config['flow-spmd'] then
-    M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
+    -- M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
       Statistics.ComputeSpatialAverages()
       IO.WriteOutput()
-      Visualize.Render()
+      timeStep = TimeIntegrator.timeStep:get()
+      Visualize.Render(timeStep)
       Visualize.Reduce()
-    M.END()
+    -- M.END()
   end
 M.END()
 

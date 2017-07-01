@@ -70,12 +70,19 @@ do
                         __physical(particles), __fields(particles), xnum, ynum, znum)
 end
 
-local task dbg(cells : cellsType)
+
+local task debug(particles : particlesType)
 where
-  reads(cells.centerCoordinates, cells.velocity, cells.temperature)
+  reads(particles.{cell, position, density, particle_temperature})
 do
-  for c in cells do
-    regentlib.c.printf("\n============ new cell in viz.rg ==============\n")
+  regentlib.c.printf("=== partiles in tile ===\n")
+  for p in particles do
+    -- if p.cell[0] > 0 then
+      regentlib.c.printf("(%d) %lf %lf %lf  %lf  %lf\n",
+        p.cell,
+        p.position[0], p.position[1], p.position[2],
+        p.density, p.particle_temperature)
+    -- end
   end
 end
 
@@ -87,8 +94,7 @@ local exports = {}
 
 exports.Render = rquote
   for tile in tiles do
-    regentlib.c.printf("tile %d %d %d\n", tile.x, tile.y, tile.z)
-    -- dbg(p_cells[tile])
+    debug(p_particles[tile])
     Render(p_cells[tile], p_particles[tile])
   end
 end

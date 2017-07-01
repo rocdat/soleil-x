@@ -3338,7 +3338,6 @@ end
 
 function Visualize.Render()
   -- Launch a visualization task
-  M.PRINT("render timestep\n")
   M.INLINE(viz.Render)
 end
 
@@ -3368,12 +3367,12 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
   if not regentlib.config['flow-spmd'] then
-    -- M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
+    M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
       Statistics.ComputeSpatialAverages()
       IO.WriteOutput()
       Visualize.Render()
       Visualize.Reduce()
-    -- M.END()
+    M.END()
   end
 M.END()
 

@@ -37,10 +37,10 @@ using namespace LegionRuntime::Accessor;
 
 static
 void create_field_pointer(PhysicalRegion region,
-                          FieldData *&field,
+                          FieldData* &field,
                           int fieldID,
                           ByteOffset stride[3],
-                          Runtime *runtime,
+                          Runtime* runtime,
                           Context context) {
   
   Domain indexSpaceDomain = runtime->get_index_space_domain(context, region.get_logical_region().get_index_space());
@@ -98,14 +98,17 @@ void accessCellData(legion_physical_region_t *cells,
     switch(field) {
       case 0:
         create_field_pointer(*cell, velocity, cells_fields[field], strideVelocity, runtime, ctx);
+        assert(strideVelocity[0].offset == 3 * sizeof(FieldData));
         break;
         
       case 1:
         create_field_pointer(*cell, centerCoordinates, cells_fields[field], strideCenter, runtime, ctx);
+        assert(strideCenter[0].offset == 3 * sizeof(FieldData));
         break;
         
       case 2:
         create_field_pointer(*cell, temperature, cells_fields[field], strideTemperature, runtime, ctx);
+        assert(strideTemperature[0].offset == sizeof(FieldData));
         break;
       default:
         std::cerr << "oops, field not found" << std::endl;
@@ -312,7 +315,7 @@ const int NUM_NODES = 4;//TODO eliminate this when timeStep is passed in
 static
 std::string fileName(std::string table, std::string ext, int timeStep, Rect<3> bounds) {
   char buffer[256];
-  sprintf(buffer, "%s.%d.%lld_%lld_%lld__%lld_%lld_%lld%s",
+  sprintf(buffer, "%s.%05d.%lld_%lld_%lld__%lld_%lld_%lld%s",
           table.c_str(),
           timeStep / NUM_NODES,//TODO don't divide by NUM_NODES once timeStep is passed in
           bounds.lo.x[0], bounds.lo.x[1], bounds.lo.x[2],
@@ -323,14 +326,14 @@ std::string fileName(std::string table, std::string ext, int timeStep, Rect<3> b
 
 #ifdef WRITE_FILE
 
-std::string dataFileName(std::string table, int timeStep, Rect<3> bounds) {
+static std::string dataFileName(std::string table, int timeStep, Rect<3> bounds) {
   return fileName(table, ".txt", timeStep, bounds);
 }
 
 #endif
 
 
-std::string imageFileName(std::string table, int timeStep, Rect<3> bounds) {
+static std::string imageFileName(std::string table, int timeStep, Rect<3> bounds) {
 #ifdef IMAGE_FORMAT_TGA
   return fileName(table, ".tga", timeStep, bounds);
 #else
@@ -339,6 +342,16 @@ std::string imageFileName(std::string table, int timeStep, Rect<3> bounds) {
 }
 
 
+
+#if 0
+static void debugPrintVectors(std::string name, FieldData* c, Rect<3> bounds) {
+  std::cout << "=== renderer " << name << " bounds " << bounds << " pointer " << c << " ===" << std::endl;
+  for(unsigned i = 0; i < 10 /* (unsigned)bounds.volume() */ ; ++i) {
+    std::cout << c << ")\t" << c[0] << " " << c[1] << " " << c[2] << std::endl;
+    c += 3;
+  }
+}
+#endif
 
 
 
@@ -364,8 +377,9 @@ void cxx_render(legion_runtime_t runtime_,
   Rect<3> bounds = Rect<3>(Point<3>::ZEROES(), Point<3>::ZEROES());
   int numCells = 0;
   
-  accessCellData(cells, cells_fields, centerCoordinates, velocity, temperature,
+  accessCellData(cells, cells_fields, velocity, centerCoordinates, temperature,
                  strideCenter, strideVelocity, strideTemperature, bounds, runtime, ctx);
+  std::cout << "cell data bounds " << bounds << std::endl;
   
 #ifdef WRITE_FILE
   std::string cellsFileName = dataFileName("./out/cells", timeStep / 4, bounds);
@@ -380,6 +394,10 @@ void cxx_render(legion_runtime_t runtime_,
   int yHi = (int)bounds.hi.x[1];
   int zHi = (int)bounds.hi.x[2];
   numCells = (xHi - xLo) * (yHi - yLo) * (zHi - zLo);
+#if 0
+  debugPrintVectors("velocity", velocity, bounds);//TODO remove
+  debugPrintVectors("centerCoordinates", centerCoordinates, bounds);//TODO remove
+#endif
 #endif
   
   
@@ -442,6 +460,13 @@ void cxx_render(legion_runtime_t runtime_,
 #else
   write_ppm(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
 #endif
+  
+  std::string depthFileName = imageFileName("./out/depth", timeStep, bounds);
+  FILE* depthFile = fopen(depthFileName.c_str(), "w");
+  fprintf(depthFile, "%d %d\n", width, height);
+  fwrite(depthBuffer, sizeof(GLfloat), width * height, depthFile);
+  fclose(depthFile);
+  std::cout << "wrote " << depthFileName << std::endl;
   
   /* free the image buffer */
   free(rgbaBuffer);

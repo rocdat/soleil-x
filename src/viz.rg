@@ -71,11 +71,11 @@ do
 end
 
 
-local task debug(particles : particlesType)
+local task debug_particles(particles : particlesType)
 where
   reads(particles.{cell, position, density, particle_temperature})
 do
-  regentlib.c.printf("=== partiles in tile ===\n")
+  regentlib.c.printf("=== particles in tile ===\n")
   for p in particles do
     -- if p.cell[0] > 0 then
       regentlib.c.printf("(%d) %lf %lf %lf  %lf  %lf\n",
@@ -83,6 +83,18 @@ do
         p.position[0], p.position[1], p.position[2],
         p.density, p.particle_temperature)
     -- end
+  end
+end
+
+local task debug_cells(cells : cellsType)
+where
+  reads(cells.{ centerCoordinates, velocity })
+do
+  regentlib.c.printf("=== cells centerCoordinates in tile ===\n")
+  for c in cells do
+    regentlib.c.printf("%lf %lf %lf   %lf %lf %lf\n",
+      c.centerCoordinates[0], c.centerCoordinates[1], c.centerCoordinates[2],
+      c.velocity[0], c.velocity[1], c.velocity[2])
   end
 end
 
@@ -94,7 +106,8 @@ local exports = {}
 
 exports.Render = rquote
   for tile in tiles do
-    -- debug(p_particles[tile])
+    -- debug_particles(p_particles[tile])
+    -- debug_cells(p_cells[tile])
     Render(p_cells[tile], p_particles[tile])
   end
 end

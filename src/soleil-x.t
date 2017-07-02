@@ -106,6 +106,7 @@ do
     mapper_so = os.tmpname() .. ".so"
     render_so = os.tmpname() .. ".so"
   end
+
   local cxx = os.getenv('CXX') or 'c++'
 
   local cxx_flags = "-O2 -Wall -Werror"
@@ -132,7 +133,10 @@ do
 
   local cmd2 = (cxx .. " " .. cxx_flags .. " -I " .. runtime_dir .. " " ..
                  " -I " .. mapper_dir .. " " .. " -I " .. legion_dir .. " " ..
-                 " -I " .. realm_dir .. " " .. render_cc .. " -o " .. render_so)
+                 " -lOSMesa " .. " -lGLU " ..
+                 " -I " .. realm_dir ..
+                 " " .. render_cc ..
+                 " -o " .. render_so)
   if os.execute(cmd2) ~= 0 then
     print("Error: failed to compile " .. mapper_cc)
     assert(false)
@@ -155,6 +159,11 @@ if os.getenv('SAVEOBJ') == '1' and os.getenv('CRAYPE_VERSION') then
   new_flags:insert("-ludreg")
   link_flags = new_flags
 end
+
+link_flags:insert("-L /usr/lib/x86_64")
+link_flags:insert("-lGLU")
+link_flags:insert("-lOSMesa")
+
 
 -----------------------------------------------------------------------------
 --[[                       COMMAND LINE OPTIONS                          ]]--
@@ -3366,12 +3375,13 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
         true)
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
+  Visualize.Render()
+  Visualize.Reduce()
+
   if not regentlib.config['flow-spmd'] then
     M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
       Statistics.ComputeSpatialAverages()
       IO.WriteOutput()
-      Visualize.Render()
-      Visualize.Reduce()
     M.END()
   end
 M.END()

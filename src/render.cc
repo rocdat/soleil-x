@@ -1,3 +1,21 @@
+/* Copyright 2016 Stanford University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+#include "psaap_render.cc"
+
 #include "legion_c.h"
 #include "legion_c_util.h"
 #include "render.h"
@@ -11,11 +29,13 @@ using namespace Legion;
 using namespace LegionRuntime::Arrays;
 using namespace LegionRuntime::Accessor;
 
-typedef double FieldData;
 
 
 
 
+
+
+static
 void create_field_pointer(PhysicalRegion region,
                           FieldData *&field,
                           int fieldID,
@@ -32,6 +52,9 @@ void create_field_pointer(PhysicalRegion region,
 }
 
 
+#if 0
+
+static
 void create_field_pointer(PhysicalRegion region,
                           int *&field,
                           int fieldID,
@@ -47,7 +70,10 @@ void create_field_pointer(PhysicalRegion region,
   assert(bounds == tempBounds);
 }
 
+#endif
 
+
+static
 void accessCellData(legion_physical_region_t *cells,
                     legion_field_id_t *cells_fields,
                     FieldData* &velocity,
@@ -87,8 +113,9 @@ void accessCellData(legion_physical_region_t *cells,
   }
 }
 
+#ifdef WRITE_FILE
 
-
+static
 void writeCellsToFile(std::string filePath,
                       Rect<3> bounds,
                       FieldData* centerCoordinates,
@@ -123,24 +150,10 @@ void writeCellsToFile(std::string filePath,
   outputFile.close();
 }
 
+#endif
 
 
-void create_field_pointer2(PhysicalRegion region,
-                           int *&field,
-                           int fieldID,
-                           ByteOffset stride[1],
-                           Runtime *runtime,
-                           Context context) {
-  
-  Domain indexSpaceDomain = runtime->get_index_space_domain(context, region.get_logical_region().get_index_space());
-  Rect<3> bounds = indexSpaceDomain.get_rect<3>();
-  RegionAccessor<AccessorType::Generic, int> acc = region.get_field_accessor(fieldID).typeify<int>();
-  Rect<3> tempBounds;
-  field = acc.raw_rect_ptr<3>(bounds, tempBounds, stride);
-  assert(bounds == tempBounds);
-}
-
-
+static
 void getBaseIndexSpaceInt(PhysicalRegion* particle, int fieldID, int* &base, IndexSpace &indexSpace) {
   RegionAccessor<AccessorType::Generic, int> acc = particle->get_field_accessor(fieldID).typeify<int>();
   void* b = NULL;
@@ -152,6 +165,7 @@ void getBaseIndexSpaceInt(PhysicalRegion* particle, int fieldID, int* &base, Ind
 }
 
 
+static
 void getBaseIndexSpaceFloat_impl(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace, int numFields) {
   RegionAccessor<AccessorType::Generic, FieldData> acc = particle->get_field_accessor(fieldID).typeify<FieldData>();
   void* b = NULL;
@@ -162,18 +176,20 @@ void getBaseIndexSpaceFloat_impl(PhysicalRegion* particle, int fieldID, FieldDat
   indexSpace = particle->get_logical_region().get_index_space();
 }
 
+
+static
 void getBaseIndexSpaceFloat(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace) {
   getBaseIndexSpaceFloat_impl(particle, fieldID, base, indexSpace, 1);
 }
 
 
-
+static
 void getBaseIndexSpaceFloat3(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace) {
   getBaseIndexSpaceFloat_impl(particle, fieldID, base, indexSpace, 3);
 }
 
 
-
+static
 void accessParticleData(legion_physical_region_t *particles,
                         legion_field_id_t *particles_fields,
                         int* &cellX,
@@ -230,10 +246,10 @@ void accessParticleData(legion_physical_region_t *particles,
 }
 
 
-static inline long long getNextInt(IndexIterator iterator) {
-  return iterator.next().value;
-}
 
+#ifdef WRITE_FILE
+
+static
 void writeParticlesToFile(std::string filePath,
                           int* cellXBase,
                           IndexSpace cellXIS,
@@ -272,7 +288,7 @@ void writeParticlesToFile(std::string filePath,
     FieldData density = NEXT(density);
     FieldData particleTemperature = NEXT(particleTemperature);
     if(cellX > 0 && cellY > 0 && cellZ > 0) {
-      std::cout << std::setprecision(10)
+      outputFile << std::setprecision(10)
       << "(" << cellX << "," << cellY << "," << cellZ << ") "
       << positionX << " " << positionY << " " << positionZ << "  "
       << density << " "
@@ -286,20 +302,44 @@ void writeParticlesToFile(std::string filePath,
   std::cout << "wrote " << counter << " particles to " << filePath << std::endl;
 }
 
+#endif
 
 
 
-int timeStep = 0;//to do pass this in
+static int volatile timeStep = 0;//to do pass this in
+const int NUM_NODES = 4;//TODO eliminate this when timeStep is passed in
 
-
-std::string dataFileName(std::string table, int timeStep, Rect<3> bounds) {
+static
+std::string fileName(std::string table, std::string ext, int timeStep, Rect<3> bounds) {
   char buffer[256];
-  sprintf(buffer, "%s.%d.%lld_%lld_%lld__%lld_%lld_%lld.txt",
-          table.c_str(), timeStep,
+  sprintf(buffer, "%s.%d.%lld_%lld_%lld__%lld_%lld_%lld%s",
+          table.c_str(),
+          timeStep / NUM_NODES,//TODO don't divide by NUM_NODES once timeStep is passed in
           bounds.lo.x[0], bounds.lo.x[1], bounds.lo.x[2],
-          bounds.hi.x[0], bounds.hi.x[1], bounds.hi.x[2]);
+          bounds.hi.x[0], bounds.hi.x[1], bounds.hi.x[2],
+          ext.c_str());
   return std::string(buffer);
 }
+
+#ifdef WRITE_FILE
+
+std::string dataFileName(std::string table, int timeStep, Rect<3> bounds) {
+  return fileName(table, ".txt", timeStep, bounds);
+}
+
+#endif
+
+
+std::string imageFileName(std::string table, int timeStep, Rect<3> bounds) {
+#ifdef IMAGE_FORMAT_TGA
+  return fileName(table, ".tga", timeStep, bounds);
+#else
+  return fileName(table, ".ppm", timeStep, bounds);
+#endif
+}
+
+
+
 
 
 void cxx_render(legion_runtime_t runtime_,
@@ -321,14 +361,26 @@ void cxx_render(legion_runtime_t runtime_,
   ByteOffset strideCenter[3];
   ByteOffset strideVelocity[3];
   ByteOffset strideTemperature[3];
-  Rect<3> bounds;
+  Rect<3> bounds = Rect<3>(Point<3>::ZEROES(), Point<3>::ZEROES());
+  int numCells = 0;
   
   accessCellData(cells, cells_fields, centerCoordinates, velocity, temperature,
                  strideCenter, strideVelocity, strideTemperature, bounds, runtime, ctx);
+  
+#ifdef WRITE_FILE
   std::string cellsFileName = dataFileName("./out/cells", timeStep / 4, bounds);
   writeCellsToFile(cellsFileName, bounds, velocity, centerCoordinates,
                    temperature, strideCenter, strideVelocity, strideTemperature);
   std::cout << cellsFileName << std::endl;
+#else
+  int xLo = (int)bounds.lo.x[0];
+  int yLo = (int)bounds.lo.x[1];
+  int zLo = (int)bounds.lo.x[2];
+  int xHi = (int)bounds.hi.x[0];
+  int yHi = (int)bounds.hi.x[1];
+  int zHi = (int)bounds.hi.x[2];
+  numCells = (xHi - xLo) * (yHi - yLo) * (zHi - zLo);
+#endif
   
   
   int* cellX = NULL;
@@ -341,17 +393,64 @@ void cxx_render(legion_runtime_t runtime_,
   IndexSpace positionIS;
   FieldData* density = NULL;
   IndexSpace densityIS;
-  FieldData* particle_temperature = NULL;
-  IndexSpace particle_temperatureIS;
+  FieldData* particleTemperature = NULL;
+  IndexSpace particleTemperatureIS;
+  int numParticles = 0;
   
   accessParticleData(particles, particles_fields, cellX, cellXIS, cellY, cellYIS,
                      cellZ, cellZIS, position, positionIS, density, densityIS,
-                     particle_temperature, particle_temperatureIS, runtime, ctx);
+                     particleTemperature, particleTemperatureIS, runtime, ctx);
+  
+#ifdef WRITE_FILE
   std::string particlesFileName = dataFileName("./out/particles", timeStep / 4, bounds);
   writeParticlesToFile(particlesFileName, cellX, cellXIS, cellY, cellYIS,
                        cellZ, cellZIS, position, positionIS, density, densityIS,
-                       particle_temperature, particle_temperatureIS, runtime, ctx);
+                       particleTemperature, particleTemperatureIS, runtime, ctx);
   std::cout << particlesFileName << std::endl;
+#else
+  IndexIterator cellXIterator(runtime, ctx, cellXIS);
+  while(cellXIterator.has_next()) {
+    numParticles++;
+    cellXIterator.next();
+  }
+#endif
+
+#ifndef WRITE_FILE
+  
+  /* Create an RGBA-mode context */
+#if OSMESA_MAJOR_VERSION * 100 + OSMESA_MINOR_VERSION >= 305
+  /* specify Z, stencil, accum sizes */
+  OSMesaContext mesaCtx = OSMesaCreateContextExt(GL_RGBA, 32, 0, 0, NULL);
+#else
+  OSMesaContext mesaCtx = OSMesaCreateContext(GL_RGBA, NULL);
+#endif
+  if (!mesaCtx) {
+    printf("OSMesaCreateContext failed!\n");
+    return;
+  }
+
+  GLfloat* rgbaBuffer = NULL;
+  GLfloat* depthBuffer = NULL;
+  const int width = 3840;
+  const int height = 2160;
+  
+  render_image(width, height, centerCoordinates, velocity, temperature, numCells,
+               position, density, particleTemperature, numParticles, &rgbaBuffer, &depthBuffer, mesaCtx);
+
+#ifdef IMAGE_FORMAT_TGA
+  write_targa(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
+#else
+  write_ppm(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
+#endif
+  
+  /* free the image buffer */
+  free(rgbaBuffer);
+  free(depthBuffer);
+  
+  /* destroy the context */
+  OSMesaDestroyContext(mesaCtx);
+
+#endif
   
   timeStep++;
   

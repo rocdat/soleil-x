@@ -94,7 +94,7 @@ local exports = {}
 
 exports.Render = rquote
   for tile in tiles do
-    debug(p_particles[tile])
+    -- debug(p_particles[tile])
     Render(p_cells[tile], p_particles[tile])
   end
 end

@@ -80,6 +80,7 @@ write_targa(const char *filename, const GLfloat *buffer, int width, int height)
         fputc(r, f); /* write red */
       }
     }
+    fclose(f);
   }
 }
 
@@ -120,6 +121,7 @@ write_ppm(const char *filename, const GLfloat *rgba, int width, int height)
       fwrite(outputBuffer, 3 * sizeof(unsigned char), width, f);
     }
   }
+  fclose(f);
 }
 
 #endif
@@ -170,7 +172,7 @@ static void temperatureToColor(GLfloat temperature,
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
-  GLfloat scale = 0.5f;
+  GLfloat scale = 0.05f;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
   GLfloat base[] = {
     (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
   };
@@ -203,7 +205,7 @@ static void drawParticle(GLUquadricObj* qobj, FieldData* position, FieldData* de
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
   
   glPushMatrix();
-  const GLfloat verticalOffset = 0.5;
+  const GLfloat verticalOffset = 0.5;//TODO this is testcase dependent
   glTranslatef(position[0], position[1], position[2] + verticalOffset);
   const float densityScale = 0.000001f;
   gluSphere(qobj, density[0] * densityScale, 10, 10);
@@ -244,7 +246,7 @@ static void drawParticles(bool* __validBase,
 }
 
 
-static void setCamera() {
+static void setCamera() {//TODO this is testcase dependent
   gluLookAt(/*eye*/3.0, 3.0, 1.0, /*at*/0.5, 0.5, 0.0, /*up*/0.0, 0.0, 1.0);
 }
 
@@ -313,7 +315,7 @@ void render_image(int width,
   
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho(-1, 1, -1, 1, -5.0, 5.0);
+  glOrtho(-1, 1, -1, 1, -5.0, 5.0);//TODO this may be testcase dependent
   glMatrixMode(GL_MODELVIEW);
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -458,7 +460,7 @@ void writeCellsToFile(std::string filePath,
                       ByteOffset strideTemperature[3]) {
   
   std::ofstream outputFile;
-  outputFile.open(filePath);
+  outputFile.open(filePath.c_str());
   outputFile << bounds << std::endl;
   int counter = 0;
   
@@ -620,7 +622,7 @@ void writeParticlesToFile(std::string filePath,
                           Context ctx) {
   
   std::ofstream outputFile;
-  outputFile.open(filePath);
+  outputFile.open(filePath.c_str());
   int counter = 0;
   
   IndexIterator __validIterator(runtime, ctx, __validIS);
@@ -703,6 +705,7 @@ static void debugPrintVectors(std::string name, FieldData* c, Rect<3> bounds) {
 #endif
 
 
+// this is the entry point from regent
 
 void cxx_render(legion_runtime_t runtime_,
                 legion_context_t ctx_,
@@ -716,7 +719,7 @@ void cxx_render(legion_runtime_t runtime_,
 {
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
-  bool writeFiles = true;
+  bool writeFiles = false;
   
   FieldData* centerCoordinates = NULL;
   FieldData* velocity = NULL;
@@ -802,6 +805,7 @@ void cxx_render(legion_runtime_t runtime_,
   
   std::string depthFileName = imageFileName("./out/depth", timeStep, bounds);
   FILE* depthFile = fopen(depthFileName.c_str(), "w");
+  std::cout << "depthFile " << depthFile << depthFileName << std::endl;
   fprintf(depthFile, "%d %d\n", width, height);
   fwrite(depthBuffer, sizeof(GLfloat), width * height, depthFile);
   fclose(depthFile);

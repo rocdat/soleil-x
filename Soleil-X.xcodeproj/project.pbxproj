@@ -1846,7 +1846,6 @@
 		4168CDDD1F06C3AE00530CC9 /* multiple_partitions.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4168C6AC1F06C3AC00530CC9 /* multiple_partitions.cc */; };
 		4168CDDE1F06C3AE00530CC9 /* custom_mapper.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4168C6B01F06C3AC00530CC9 /* custom_mapper.cc */; };
 		4168CDDF1F06C3AE00530CC9 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 4168C6B11F06C3AC00530CC9 /* Makefile */; };
-		4168CDE91F0878F400530CC9 /* psaap_render.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4168CDE81F0878F400530CC9 /* psaap_render.cc */; };
 		E9519EC91BD70630000851BC /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = E9519EB91BD70630000851BC /* README.md */; };
 /* End PBXBuildFile section */
 
@@ -2156,7 +2155,6 @@
 		4168B7661F06C3A000530CC9 /* virtual_map.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = virtual_map.cc; sourceTree = "<group>"; };
 		4168B7681F06C3A000530CC9 /* .gitignore */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		4168B7691F06C3A000530CC9 /* .rdir.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = .rdir.json; sourceTree = "<group>"; };
-		4168B76A1F06C3A000530CC9 /* .tmp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .tmp; sourceTree = "<group>"; };
 		4168B76C1F06C3A000530CC9 /* cholesky.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cholesky.rg; sourceTree = "<group>"; };
 		4168B76E1F06C3A000530CC9 /* circuit_base.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = circuit_base.rg; sourceTree = "<group>"; };
 		4168B76F1F06C3A000530CC9 /* circuit_config.t */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = circuit_config.t; sourceTree = "<group>"; };
@@ -4159,11 +4157,6 @@
 		4168BFE11F06C3A500530CC9 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4168BFE21F06C3A500530CC9 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4168BFE51F06C3A600530CC9 /* terra */ = {isa = PBXFileReference; lastKnownFileType = file; path = terra; sourceTree = "<group>"; };
-		4168BFE81F06C3A600530CC9 /* lauxlib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lauxlib.h; sourceTree = "<group>"; };
-		4168BFE91F06C3A600530CC9 /* lua.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lua.h; sourceTree = "<group>"; };
-		4168BFEA1F06C3A600530CC9 /* luaconf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = luaconf.h; sourceTree = "<group>"; };
-		4168BFEB1F06C3A600530CC9 /* lualib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lualib.h; sourceTree = "<group>"; };
-		4168BFEC1F06C3A600530CC9 /* terra.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = terra.h; sourceTree = "<group>"; };
 		4168BFEE1F06C3A600530CC9 /* libterra.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libterra.a; sourceTree = "<group>"; };
 		4168BFEF1F06C3A600530CC9 /* terra.so */ = {isa = PBXFileReference; lastKnownFileType = file; path = terra.so; sourceTree = "<group>"; };
 		4168BFF21F06C3A600530CC9 /* LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
@@ -4225,7 +4218,6 @@
 		4168C02B1F06C3A600530CC9 /* treadnumber.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = treadnumber.c; sourceTree = "<group>"; };
 		4168C02C1F06C3A600530CC9 /* treadnumber.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = treadnumber.h; sourceTree = "<group>"; };
 		4168C02D1F06C3A600530CC9 /* unpacklibraries.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = unpacklibraries.lua; sourceTree = "<group>"; };
-		4168C02E1F06C3A600530CC9 /* terra */ = {isa = PBXFileReference; lastKnownFileType = file; path = terra; sourceTree = "<group>"; };
 		4168C02F1F06C3A600530CC9 /* terra-scm-1.rockspec */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "terra-scm-1.rockspec"; sourceTree = "<group>"; };
 		4168C0311F06C3A600530CC9 /* abouttocompile.t */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = abouttocompile.t; sourceTree = "<group>"; };
 		4168C0321F06C3A600530CC9 /* addlanguage1.t */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = addlanguage1.t; sourceTree = "<group>"; };
@@ -5834,7 +5826,6 @@
 		4168C6B01F06C3AC00530CC9 /* custom_mapper.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = custom_mapper.cc; sourceTree = "<group>"; };
 		4168C6B11F06C3AC00530CC9 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		4168C6B21F06C3AC00530CC9 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
-		4168CDE81F0878F400530CC9 /* psaap_render.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = psaap_render.cc; path = ../../renderSample/renderSample/psaap_render.cc; sourceTree = "<group>"; };
 		E9519EB81BD70630000851BC /* params_template.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = params_template.lua; sourceTree = "<group>"; };
 		E9519EB91BD70630000851BC /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E9519EBC1BD70630000851BC /* soleil-x.t */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "soleil-x.t"; sourceTree = "<group>"; };
@@ -8080,7 +8071,6 @@
 			children = (
 				4168B7681F06C3A000530CC9 /* .gitignore */,
 				4168B7691F06C3A000530CC9 /* .rdir.json */,
-				4168B76A1F06C3A000530CC9 /* .tmp */,
 				4168B76B1F06C3A000530CC9 /* examples */,
 				4168B7DE1F06C3A000530CC9 /* install.py */,
 				4168B7DF1F06C3A000530CC9 /* README.md */,
@@ -8537,7 +8527,6 @@
 				4168BFE21F06C3A500530CC9 /* README.md */,
 				4168BFE31F06C3A500530CC9 /* release */,
 				4168BFF41F06C3A600530CC9 /* src */,
-				4168C02E1F06C3A600530CC9 /* terra */,
 				4168C02F1F06C3A600530CC9 /* terra-scm-1.rockspec */,
 				4168C0301F06C3A600530CC9 /* tests */,
 				4168C2721F06C3A800530CC9 /* TODO.txt */,
@@ -11461,11 +11450,6 @@
 		4168BFE71F06C3A600530CC9 /* terra */ = {
 			isa = PBXGroup;
 			children = (
-				4168BFE81F06C3A600530CC9 /* lauxlib.h */,
-				4168BFE91F06C3A600530CC9 /* lua.h */,
-				4168BFEA1F06C3A600530CC9 /* luaconf.h */,
-				4168BFEB1F06C3A600530CC9 /* lualib.h */,
-				4168BFEC1F06C3A600530CC9 /* terra.h */,
 			);
 			path = terra;
 			sourceTree = "<group>";
@@ -13647,7 +13631,6 @@
 		E9519EBA1BD70630000851BC /* src */ = {
 			isa = PBXGroup;
 			children = (
-				4168CDE81F0878F400530CC9 /* psaap_render.cc */,
 				4168B63A1F06C0F300530CC9 /* viz.rg */,
 				4168B6371F06C0EB00530CC9 /* soleil_mapper.cc */,
 				4168B6381F06C0EB00530CC9 /* soleil_mapper.h */,
@@ -13926,7 +13909,6 @@
 				4168CDA41F06C3AD00530CC9 /* lowlevel_disk.cc in Sources */,
 				4168CCD61F06C3AD00530CC9 /* lj_mcode.c in Sources */,
 				4168C6F11F06C3AC00530CC9 /* llex.d in Sources */,
-				4168CDE91F0878F400530CC9 /* psaap_render.cc in Sources */,
 				4168C6B51F06C3AC00530CC9 /* bishop_c.cc in Sources */,
 				4168CD0F1F06C3AD00530CC9 /* lj_tab.c in Sources */,
 				4168CD291F06C3AD00530CC9 /* tcompiler.d in Sources */,

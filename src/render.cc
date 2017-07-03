@@ -14,7 +14,6 @@
  */
 
 
-#include "psaap_render.cc"
 
 #include "legion_c.h"
 #include "legion_c_util.h"
@@ -30,6 +29,365 @@ using namespace LegionRuntime::Arrays;
 using namespace LegionRuntime::Accessor;
 
 
+
+
+
+#ifdef IMAGE_FORMAT_TGA
+
+void
+write_targa(const char *filename, const GLfloat *buffer, int width, int height)
+{
+  FILE *f = fopen(filename, "w");
+  if (f) {
+    int i, x, y;
+    const GLfloat *ptr = buffer;
+    printf ("writing tga file %s\n", filename);
+    fputc (0x00, f);	/* ID Length, 0 => No ID	*/
+    fputc (0x00, f);	/* Color Map Type, 0 => No color map included	*/
+    fputc (0x02, f);	/* Image Type, 2 => Uncompressed, True-color Image */
+    fputc (0x00, f);	/* Next five bytes are about the color map entries */
+    fputc (0x00, f);	/* 2 bytes Index, 2 bytes length, 1 byte size */
+    fputc (0x00, f);
+    fputc (0x00, f);
+    fputc (0x00, f);
+    fputc (0x00, f);	/* X-origin of Image	*/
+    fputc (0x00, f);
+    fputc (0x00, f);	/* Y-origin of Image	*/
+    fputc (0x00, f);
+    fputc (width & 0xff, f);      /* Image Width	*/
+    fputc ((width>>8) & 0xff, f);
+    fputc (height & 0xff, f);     /* Image Height	*/
+    fputc ((height>>8) & 0xff, f);
+    fputc (0x18, f);		/* Pixel Depth, 0x18 => 24 Bits	*/
+    fputc (0x20, f);		/* Image Descriptor	*/
+    fclose(f);
+    
+    f = fopen( filename, "ab" );  /* reopen in binary append mode */
+    for (y=height-1; y>=0; y--) {
+      for (x=0; x<width; x++) {
+        
+        int r, g, b;
+        i = (y*width + x) * 4;
+        
+        r = (int) (ptr[i+0] * 255.0);
+        g = (int) (ptr[i+1] * 255.0);
+        b = (int) (ptr[i+2] * 255.0);
+        if (r > 255) r = 255;
+        if (g > 255) g = 255;
+        if (b > 255) b = 255;
+        
+        fputc(b, f); /* write blue */
+        fputc(g, f); /* write green */
+        fputc(r, f); /* write red */
+      }
+    }
+  }
+}
+
+#else
+
+void
+write_ppm(const char *filename, const GLfloat *buffer, int width, int height)
+{
+  const int binary = 1;
+  FILE *f = fopen( filename, "w" );
+  if (f) {
+    printf ("writing ppm file %s\n", filename);
+    int i, x, y;
+    const GLfloat *ptr = buffer;
+    if (binary) {
+      fprintf(f,"P6\n");
+      fprintf(f,"# binary ppm file %s\n", filename);
+      fprintf(f,"%i %i\n", width,height);
+      fprintf(f,"255\n");
+      fclose(f);
+      f = fopen( filename, "ab" );  /* reopen in binary append mode */
+      for (y=height-1; y>=0; y--) {
+        unsigned char outputBuffer[width * 3];
+        unsigned char *outputPtr = outputBuffer;
+        for (x=0; x<width; x++) {
+          int r, g, b;
+          i = (y*width + x) * 4;
+          r = (int) (ptr[i+0] * 255.0);
+          g = (int) (ptr[i+1] * 255.0);
+          b = (int) (ptr[i+2] * 255.0);
+          if (r > 255) r = 255;
+          if (g > 255) g = 255;
+          if (b > 255) b = 255;
+          outputPtr[0] = r;
+          outputPtr[1] = g;
+          outputPtr[2] = b;
+          outputPtr += 3;
+        }
+        fwrite(outputBuffer, 3 * sizeof(unsigned char), width, f);
+      }
+    }
+    else {
+      /*ASCII*/
+      int counter = 0;
+      fprintf(f,"P3\n");
+      fprintf(f,"# ascii ppm file %s\n", filename);
+      fprintf(f,"%i %i\n", width, height);
+      fprintf(f,"255\n");
+      for (y=height-1; y>=0; y--) {
+        for (x=0; x<width; x++) {
+          int r, g, b;
+          i = (y*width + x) * 4;
+          r = (int) (ptr[i+0] * 255.0);
+          g = (int) (ptr[i+1] * 255.0);
+          b = (int) (ptr[i+2] * 255.0);
+          if (r > 255) r = 255;
+          if (g > 255) g = 255;
+          if (b > 255) b = 255;
+          fprintf(f, " %3d %3d %3d", r, g, b);
+          counter++;
+          if (counter % 5 == 0)
+            fprintf(f, "\n");
+        }
+      }
+    }
+    fclose(f);
+  }
+}
+
+#endif
+
+
+
+static void temperatureToColor(GLfloat temperature,
+                               GLfloat color[4]) {
+  
+  // https://stackoverflow.com/questions/7229895/display-temperature-as-a-color-with-c
+  
+  float x = (float)(temperature / 1000.0);
+  float x2 = x * x;
+  float x3 = x2 * x;
+  float x4 = x3 * x;
+  float x5 = x4 * x;
+  
+  float R, G, B = 0.0f;
+  
+  // red
+  if (temperature <= 6600)
+    R = 1.0f;
+  else
+    R = 0.0002889f * x5 - 0.01258f * x4 + 0.2148f * x3 - 1.776f * x2 + 6.907f * x - 8.723f;
+  
+  // green
+  if (temperature <= 6600)
+    G = -4.593e-05f * x5 + 0.001424f * x4 - 0.01489f * x3 + 0.0498f * x2 + 0.1669f * x - 0.1653f;
+  else
+    G = -1.308e-07f * x5 + 1.745e-05f * x4 - 0.0009116f * x3 + 0.02348f * x2 - 0.3048f * x + 2.159f;
+  
+  // blue
+  if (temperature <= 2000)
+    B = 0.0f;
+  else if (temperature < 6600)
+    B = 1.764e-05f * x5 + 0.0003575f * x4 - 0.01554f * x3 + 0.1549f * x2 - 0.3682f * x + 0.2386f;
+  else
+    B = 1.0f;
+  
+  color[0] = R;
+  color[1] = G;
+  color[2] = B;
+  color[3] = 1.0f;
+}
+
+
+
+static void drawVelocityVector(FieldData* centerCoordinate,
+                               FieldData* velocity,
+                               FieldData* temperature) {
+  GLfloat scale = 1.0f;
+  GLfloat base[] = {
+    (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
+  };
+  GLfloat v[] = {
+    (GLfloat)velocity[0], (GLfloat)velocity[1], (GLfloat)velocity[2]
+  };
+  GLfloat top[] = {
+    base[0] + v[0] * scale, base[1] + v[1] * scale, base[2] + v[2] * scale
+  };
+  GLfloat t = temperature[0];
+  GLfloat color[4];
+  temperatureToColor(t, color);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, color);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
+  
+  glVertex3fv(base);
+  glVertex3fv(top);
+}
+
+
+
+static void drawParticle(GLUquadricObj* qobj, FieldData* position, FieldData* density, FieldData* particleTemperature) {
+  
+  GLfloat t = particleTemperature[0];
+  GLfloat color[4];
+  temperatureToColor(t, color);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, color);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
+  
+  glPushMatrix();
+  const GLfloat verticalOffset = 1.0;
+  glTranslatef(position[0], position[1], position[2] + verticalOffset);
+  const float densityScale = 0.0000001f;
+  gluSphere(qobj, density[0] * densityScale, 10, 10);
+  glPopMatrix();
+}
+
+
+
+static void drawParticles(bool* __validBase,
+                          IndexSpace __validIS,
+                          FieldData* positionBase,
+                          IndexSpace positionIS,
+                          FieldData* densityBase,
+                          IndexSpace densityIS,
+                          FieldData* particleTemperatureBase,
+                          IndexSpace particleTemperatureIS,
+                          Runtime* runtime,
+                          Context ctx,
+                          GLUquadricObj* qobj) {
+  
+  IndexIterator __validIterator(runtime, ctx, __validIS);
+  IndexIterator positionIterator(runtime, ctx, positionIS);
+  IndexIterator densityIterator(runtime, ctx, densityIS);
+  IndexIterator particleTemperatureIterator(runtime, ctx, particleTemperatureIS);
+  
+  while(__validIterator.has_next()) {
+#define NEXT(FIELD) (FIELD##Base + FIELD##Iterator.next().value)
+#define NEXT3(FIELD) (FIELD##Base + FIELD##Iterator.next().value * 3)
+    bool valid = *NEXT(__valid);
+    if(valid) {
+      FieldData* position = NEXT3(position);
+      FieldData* density = NEXT(density);
+      FieldData* particleTemperature = NEXT(particleTemperature);
+      drawParticle(qobj, position, density, particleTemperature);
+    }
+  }
+  
+}
+
+
+static void setCamera() {
+  gluLookAt(2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+
+}
+
+
+
+
+void render_image(int width,
+                  int height,
+                  FieldData* centerCoordinates,
+                  FieldData* velocity,
+                  FieldData* temperature,
+                  int numCells,
+                  bool* __valid,
+                  IndexSpace __validIS,
+                  FieldData* position,
+                  IndexSpace positionIS,
+                  FieldData* density,
+                  IndexSpace densityIS,
+                  FieldData* particleTemperature,
+                  IndexSpace particleTemperatureIS,
+                  GLfloat** rgbaBuffer,
+                  GLfloat** depthBuffer,
+                  OSMesaContext mesaCtx,
+                  Runtime* runtime,
+                  Context ctx)
+{
+  
+  
+  /* Allocate the image buffer */
+  const int fieldsPerPixel = 4;
+  *rgbaBuffer = (GLfloat *) malloc(width * height * fieldsPerPixel * sizeof(GLfloat));
+  if (!*rgbaBuffer) {
+    printf("Alloc image buffer failed!\n");
+    return;
+  }
+  
+  /* Bind the buffer to the context and make it current */
+  if (!OSMesaMakeCurrent(mesaCtx, *rgbaBuffer, GL_FLOAT, width, height)) {
+    printf("OSMesaMakeCurrent failed!\n");
+    return;
+  }
+  
+  
+  
+  
+  GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
+  GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
+  GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+  GLfloat light_position[] = { 0.0, 0.0, 4.0, 1.0 };
+  //  GLfloat red_mat[]   = { 1.0, 0.2, 0.2, 1.0 };
+  //  GLfloat green_mat[] = { 0.2, 1.0, 0.2, 0.5 };
+  //  GLfloat blue_mat[]  = { 0.2, 0.2, 1.0, 1.0 };
+  //  GLfloat white_mat[]  = { 1.0, 1.0, 1.0, 1.0 };
+  //  GLfloat purple_mat[] = { 1.0, 0.2, 1.0, 1.0 };
+  
+  GLUquadricObj *qobj = gluNewQuadric();
+  
+  glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+  glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+  glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+  
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glEnable(GL_DEPTH_TEST);
+  
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(-1, 1, -1, 1, -5.0, 5.0);
+  glMatrixMode(GL_MODELVIEW);
+  
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  
+  glPushMatrix();
+  setCamera();
+  
+  
+  // draw cells
+  
+  glLineWidth(4);
+  glBegin(GL_LINES);
+  for(int i = 0; i < numCells; ++i) {
+    drawVelocityVector(centerCoordinates, velocity, temperature);
+    centerCoordinates += 3;
+    velocity += 3;
+    temperature++;
+  }
+  glEnd();
+  
+  
+  // draw particles
+  
+  drawParticles(__valid, __validIS, position, positionIS, density, densityIS,
+                particleTemperature, particleTemperatureIS,
+                runtime, ctx, qobj);
+  
+  
+  glPopMatrix();
+  
+  
+  /* This is very important!!!
+   * Make sure buffered commands are finished!!!
+   */
+  glFinish();
+  
+  gluDeleteQuadric(qobj);
+  
+  
+  
+  int size = width * height * sizeof(GLfloat);
+  *depthBuffer = (GLfloat*)calloc(1, size);
+  glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, *depthBuffer);
+  
+}
 
 
 
@@ -116,7 +474,7 @@ void accessCellData(legion_physical_region_t *cells,
   }
 }
 
-#ifdef WRITE_FILE
+
 
 static
 void writeCellsToFile(std::string filePath,
@@ -153,7 +511,20 @@ void writeCellsToFile(std::string filePath,
   outputFile.close();
 }
 
-#endif
+
+
+// TODO make this a template
+
+static
+void getBaseIndexSpaceBool(PhysicalRegion* particle, int fieldID, bool* &base, IndexSpace &indexSpace) {
+  RegionAccessor<AccessorType::Generic, bool> acc = particle->get_field_accessor(fieldID).typeify<bool>();
+  void* b = NULL;
+  size_t stride = 0;
+  acc.get_soa_parameters(b, stride);
+  base = (bool*)b;
+  assert(stride == sizeof(bool));
+  indexSpace = particle->get_logical_region().get_index_space();
+}
 
 
 static
@@ -195,6 +566,8 @@ void getBaseIndexSpaceFloat3(PhysicalRegion* particle, int fieldID, FieldData* &
 static
 void accessParticleData(legion_physical_region_t *particles,
                         legion_field_id_t *particles_fields,
+                        bool* &__valid,
+                        IndexSpace &__validIS,
                         int* &cellX,
                         IndexSpace &cellXIS,
                         int* &cellY,
@@ -216,7 +589,7 @@ void accessParticleData(legion_physical_region_t *particles,
   
   for(unsigned field = 0; field < fields.size(); ++field) {
     PhysicalRegion* particle = CObjectWrapper::unwrap(particles[field]);
-    
+
     switch(field) {
       case 0:
         getBaseIndexSpaceInt(particle, particles_fields[field], cellX, cellXIS);
@@ -242,6 +615,10 @@ void accessParticleData(legion_physical_region_t *particles,
         getBaseIndexSpaceFloat(particle, particles_fields[field], particleTemperature, particleTemperatureIS);
         break;
         
+      case 6:
+        getBaseIndexSpaceBool(particle, particles_fields[field], __valid, __validIS);
+        break;
+        
       default:
         std::cerr << "oops, field not found" << std::endl;
     }
@@ -250,10 +627,11 @@ void accessParticleData(legion_physical_region_t *particles,
 
 
 
-#ifdef WRITE_FILE
 
 static
 void writeParticlesToFile(std::string filePath,
+                          bool* __validBase,
+                          IndexSpace __validIS,
                           int* cellXBase,
                           IndexSpace cellXIS,
                           int* cellYBase,
@@ -273,6 +651,7 @@ void writeParticlesToFile(std::string filePath,
   outputFile.open(filePath);
   int counter = 0;
   
+  IndexIterator __validIterator(runtime, ctx, __validIS);
   IndexIterator cellXIterator(runtime, ctx, cellXIS);
   IndexIterator cellYIterator(runtime, ctx, cellYIS);
   IndexIterator cellZIterator(runtime, ctx, cellZIS);
@@ -281,23 +660,25 @@ void writeParticlesToFile(std::string filePath,
   IndexIterator particleTemperatureIterator(runtime, ctx, particleTemperatureIS);
   
   while(cellXIterator.has_next()) {
-#define NEXT(FIELD) (*(FIELD##Base + FIELD##Iterator.next().value))
-    int cellX = NEXT(cellX);
-    int cellY = NEXT(cellY);
-    int cellZ = NEXT(cellZ);
-    FieldData positionX = NEXT(position);
-    FieldData positionY = NEXT(position);
-    FieldData positionZ = NEXT(position);
-    FieldData density = NEXT(density);
-    FieldData particleTemperature = NEXT(particleTemperature);
-    if(cellX > 0 && cellY > 0 && cellZ > 0) {
-      outputFile << std::setprecision(10)
-      << "(" << cellX << "," << cellY << "," << cellZ << ") "
-      << positionX << " " << positionY << " " << positionZ << "  "
-      << density << " "
-      << particleTemperature
-      << std::endl;
-      counter++;
+#define NEXT(FIELD) (FIELD##Base + FIELD##Iterator.next().value)
+#define NEXT3(FIELD) (FIELD##Base + FIELD##Iterator.next().value * 3)
+    bool valid = *NEXT(__valid);
+    if(valid) {
+      int cellX = *NEXT(cellX);
+      int cellY = *NEXT(cellY);
+      int cellZ = *NEXT(cellZ);
+      FieldData* p = NEXT3(position);
+      FieldData density = *NEXT(density);
+      FieldData particleTemperature = *NEXT(particleTemperature);
+      if(cellX > 0 && cellY > 0 && cellZ > 0) {
+        outputFile << std::setprecision(10)
+        << "(" << cellX << "," << cellY << "," << cellZ << ") "
+        << p[0] << " " << p[1] << " " << p[2] << "  "
+        << density << " "
+        << particleTemperature
+        << std::endl;
+        counter++;
+      }
     }
   }
   
@@ -305,7 +686,6 @@ void writeParticlesToFile(std::string filePath,
   std::cout << "wrote " << counter << " particles to " << filePath << std::endl;
 }
 
-#endif
 
 
 
@@ -324,13 +704,10 @@ std::string fileName(std::string table, std::string ext, int timeStep, Rect<3> b
   return std::string(buffer);
 }
 
-#ifdef WRITE_FILE
-
 static std::string dataFileName(std::string table, int timeStep, Rect<3> bounds) {
   return fileName(table, ".txt", timeStep, bounds);
 }
 
-#endif
 
 
 static std::string imageFileName(std::string table, int timeStep, Rect<3> bounds) {
@@ -346,7 +723,7 @@ static std::string imageFileName(std::string table, int timeStep, Rect<3> bounds
 #if 0
 static void debugPrintVectors(std::string name, FieldData* c, Rect<3> bounds) {
   std::cout << "=== renderer " << name << " bounds " << bounds << " pointer " << c << " ===" << std::endl;
-  for(unsigned i = 0; i < 10 /* (unsigned)bounds.volume() */ ; ++i) {
+  for(unsigned i = 0; i < (unsigned)bounds.volume(); ++i) {
     std::cout << c << ")\t" << c[0] << " " << c[1] << " " << c[2] << std::endl;
     c += 3;
   }
@@ -379,14 +756,12 @@ void cxx_render(legion_runtime_t runtime_,
   
   accessCellData(cells, cells_fields, velocity, centerCoordinates, temperature,
                  strideCenter, strideVelocity, strideTemperature, bounds, runtime, ctx);
-  std::cout << "cell data bounds " << bounds << std::endl;
   
-#ifdef WRITE_FILE
   std::string cellsFileName = dataFileName("./out/cells", timeStep / 4, bounds);
   writeCellsToFile(cellsFileName, bounds, velocity, centerCoordinates,
                    temperature, strideCenter, strideVelocity, strideTemperature);
   std::cout << cellsFileName << std::endl;
-#else
+
   int xLo = (int)bounds.lo.x[0];
   int yLo = (int)bounds.lo.x[1];
   int zLo = (int)bounds.lo.x[2];
@@ -394,13 +769,10 @@ void cxx_render(legion_runtime_t runtime_,
   int yHi = (int)bounds.hi.x[1];
   int zHi = (int)bounds.hi.x[2];
   numCells = (xHi - xLo) * (yHi - yLo) * (zHi - zLo);
-#if 0
-  debugPrintVectors("velocity", velocity, bounds);//TODO remove
-  debugPrintVectors("centerCoordinates", centerCoordinates, bounds);//TODO remove
-#endif
-#endif
   
   
+  bool* __valid = NULL;
+  IndexSpace __validIS;
   int* cellX = NULL;
   IndexSpace cellXIS;
   int* cellY = NULL;
@@ -413,27 +785,17 @@ void cxx_render(legion_runtime_t runtime_,
   IndexSpace densityIS;
   FieldData* particleTemperature = NULL;
   IndexSpace particleTemperatureIS;
-  int numParticles = 0;
   
-  accessParticleData(particles, particles_fields, cellX, cellXIS, cellY, cellYIS,
+  accessParticleData(particles, particles_fields, __valid, __validIS, cellX, cellXIS, cellY, cellYIS,
                      cellZ, cellZIS, position, positionIS, density, densityIS,
                      particleTemperature, particleTemperatureIS, runtime, ctx);
   
-#ifdef WRITE_FILE
-  std::string particlesFileName = dataFileName("./out/particles", timeStep / 4, bounds);
-  writeParticlesToFile(particlesFileName, cellX, cellXIS, cellY, cellYIS,
+  std::string particlesFileName = dataFileName("./out/particles", timeStep, bounds);
+  writeParticlesToFile(particlesFileName, __valid, __validIS, cellX, cellXIS, cellY, cellYIS,
                        cellZ, cellZIS, position, positionIS, density, densityIS,
                        particleTemperature, particleTemperatureIS, runtime, ctx);
   std::cout << particlesFileName << std::endl;
-#else
-  IndexIterator cellXIterator(runtime, ctx, cellXIS);
-  while(cellXIterator.has_next()) {
-    numParticles++;
-    cellXIterator.next();
-  }
-#endif
-
-#ifndef WRITE_FILE
+  
   
   /* Create an RGBA-mode context */
 #if OSMESA_MAJOR_VERSION * 100 + OSMESA_MINOR_VERSION >= 305
@@ -446,15 +808,17 @@ void cxx_render(legion_runtime_t runtime_,
     printf("OSMesaCreateContext failed!\n");
     return;
   }
-
+  
   GLfloat* rgbaBuffer = NULL;
   GLfloat* depthBuffer = NULL;
   const int width = 3840;
   const int height = 2160;
   
   render_image(width, height, centerCoordinates, velocity, temperature, numCells,
-               position, density, particleTemperature, numParticles, &rgbaBuffer, &depthBuffer, mesaCtx);
-
+               __valid, __validIS, position, positionIS, density, densityIS,
+               particleTemperature, particleTemperatureIS,
+               &rgbaBuffer, &depthBuffer, mesaCtx, runtime, ctx);
+  
 #ifdef IMAGE_FORMAT_TGA
   write_targa(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
 #else
@@ -474,8 +838,6 @@ void cxx_render(legion_runtime_t runtime_,
   
   /* destroy the context */
   OSMesaDestroyContext(mesaCtx);
-
-#endif
   
   timeStep++;
   

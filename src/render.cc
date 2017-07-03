@@ -14,7 +14,6 @@
  */
 
 
-
 #include "legion_c.h"
 #include "legion_c_util.h"
 #include "render.h"
@@ -87,66 +86,39 @@ write_targa(const char *filename, const GLfloat *buffer, int width, int height)
 #else
 
 void
-write_ppm(const char *filename, const GLfloat *buffer, int width, int height)
+write_ppm(const char *filename, const GLfloat *rgba, int width, int height)
 {
-  const int binary = 1;
   FILE *f = fopen( filename, "w" );
   if (f) {
     printf ("writing ppm file %s\n", filename);
-    int i, x, y;
-    const GLfloat *ptr = buffer;
-    if (binary) {
-      fprintf(f,"P6\n");
-      fprintf(f,"# binary ppm file %s\n", filename);
-      fprintf(f,"%i %i\n", width,height);
-      fprintf(f,"255\n");
-      fclose(f);
-      f = fopen( filename, "ab" );  /* reopen in binary append mode */
-      for (y=height-1; y>=0; y--) {
-        unsigned char outputBuffer[width * 3];
-        unsigned char *outputPtr = outputBuffer;
-        for (x=0; x<width; x++) {
-          int r, g, b;
-          i = (y*width + x) * 4;
-          r = (int) (ptr[i+0] * 255.0);
-          g = (int) (ptr[i+1] * 255.0);
-          b = (int) (ptr[i+2] * 255.0);
-          if (r > 255) r = 255;
-          if (g > 255) g = 255;
-          if (b > 255) b = 255;
-          outputPtr[0] = r;
-          outputPtr[1] = g;
-          outputPtr[2] = b;
-          outputPtr += 3;
-        }
-        fwrite(outputBuffer, 3 * sizeof(unsigned char), width, f);
-      }
-    }
-    else {
-      /*ASCII*/
-      int counter = 0;
-      fprintf(f,"P3\n");
-      fprintf(f,"# ascii ppm file %s\n", filename);
-      fprintf(f,"%i %i\n", width, height);
-      fprintf(f,"255\n");
-      for (y=height-1; y>=0; y--) {
-        for (x=0; x<width; x++) {
-          int r, g, b;
-          i = (y*width + x) * 4;
-          r = (int) (ptr[i+0] * 255.0);
-          g = (int) (ptr[i+1] * 255.0);
-          b = (int) (ptr[i+2] * 255.0);
-          if (r > 255) r = 255;
-          if (g > 255) g = 255;
-          if (b > 255) b = 255;
-          fprintf(f, " %3d %3d %3d", r, g, b);
-          counter++;
-          if (counter % 5 == 0)
-            fprintf(f, "\n");
-        }
-      }
-    }
+    int x, y;
+    fprintf(f,"P6\n");
+    fprintf(f,"# binary ppm file %s\n", filename);
+    fprintf(f,"%i %i\n", width,height);
+    fprintf(f,"255\n");
     fclose(f);
+    
+    f = fopen( filename, "ab" );  /* reopen in binary append mode */
+    for (y = height - 1; y >= 0; y--) {
+      unsigned char outputBuffer[width * 3];
+      unsigned char *outputPtr = outputBuffer;
+      GLfloat* rgbaPtr = (GLfloat*)rgba + (y * width * 4);
+      for (x = 0; x < width; x++) {
+        int r, g, b;
+        r = (int) (rgbaPtr[0] * 255.0);
+        g = (int) (rgbaPtr[1] * 255.0);
+        b = (int) (rgbaPtr[2] * 255.0);
+        if (r > 255) r = 255;
+        if (g > 255) g = 255;
+        if (b > 255) b = 255;
+        outputPtr[0] = r;
+        outputPtr[1] = g;
+        outputPtr[2] = b;
+        outputPtr += 3;
+        rgbaPtr += 4;
+      }
+      fwrite(outputBuffer, 3 * sizeof(unsigned char), width, f);
+    }
   }
 }
 
@@ -198,7 +170,7 @@ static void temperatureToColor(GLfloat temperature,
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
-  GLfloat scale = 1.0f;
+  GLfloat scale = 0.5f;
   GLfloat base[] = {
     (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
   };
@@ -231,9 +203,9 @@ static void drawParticle(GLUquadricObj* qobj, FieldData* position, FieldData* de
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
   
   glPushMatrix();
-  const GLfloat verticalOffset = 1.0;
+  const GLfloat verticalOffset = 0.5;
   glTranslatef(position[0], position[1], position[2] + verticalOffset);
-  const float densityScale = 0.0000001f;
+  const float densityScale = 0.000001f;
   gluSphere(qobj, density[0] * densityScale, 10, 10);
   glPopMatrix();
 }
@@ -273,8 +245,7 @@ static void drawParticles(bool* __validBase,
 
 
 static void setCamera() {
-  gluLookAt(2.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-
+  gluLookAt(/*eye*/3.0, 3.0, 1.0, /*at*/0.5, 0.5, 0.0, /*up*/0.0, 0.0, 1.0);
 }
 
 
@@ -509,6 +480,7 @@ void writeCellsToFile(std::string filePath,
     }
   }
   outputFile.close();
+  std::cout << "wrote " << counter << " cells to " << filePath << std::endl;
 }
 
 
@@ -589,7 +561,7 @@ void accessParticleData(legion_physical_region_t *particles,
   
   for(unsigned field = 0; field < fields.size(); ++field) {
     PhysicalRegion* particle = CObjectWrapper::unwrap(particles[field]);
-
+    
     switch(field) {
       case 0:
         getBaseIndexSpaceInt(particle, particles_fields[field], cellX, cellXIS);
@@ -744,6 +716,7 @@ void cxx_render(legion_runtime_t runtime_,
 {
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
+  bool writeFiles = true;
   
   FieldData* centerCoordinates = NULL;
   FieldData* velocity = NULL;
@@ -757,11 +730,12 @@ void cxx_render(legion_runtime_t runtime_,
   accessCellData(cells, cells_fields, velocity, centerCoordinates, temperature,
                  strideCenter, strideVelocity, strideTemperature, bounds, runtime, ctx);
   
-  std::string cellsFileName = dataFileName("./out/cells", timeStep / 4, bounds);
-  writeCellsToFile(cellsFileName, bounds, velocity, centerCoordinates,
-                   temperature, strideCenter, strideVelocity, strideTemperature);
-  std::cout << cellsFileName << std::endl;
-
+  if(writeFiles) {
+    std::string cellsFileName = dataFileName("./out/cells", timeStep, bounds);
+    writeCellsToFile(cellsFileName, bounds, velocity, centerCoordinates,
+                     temperature, strideCenter, strideVelocity, strideTemperature);
+  }
+  
   int xLo = (int)bounds.lo.x[0];
   int yLo = (int)bounds.lo.x[1];
   int zLo = (int)bounds.lo.x[2];
@@ -790,11 +764,12 @@ void cxx_render(legion_runtime_t runtime_,
                      cellZ, cellZIS, position, positionIS, density, densityIS,
                      particleTemperature, particleTemperatureIS, runtime, ctx);
   
-  std::string particlesFileName = dataFileName("./out/particles", timeStep, bounds);
-  writeParticlesToFile(particlesFileName, __valid, __validIS, cellX, cellXIS, cellY, cellYIS,
-                       cellZ, cellZIS, position, positionIS, density, densityIS,
-                       particleTemperature, particleTemperatureIS, runtime, ctx);
-  std::cout << particlesFileName << std::endl;
+  if(writeFiles) {
+    std::string particlesFileName = dataFileName("./out/particles", timeStep, bounds);
+    writeParticlesToFile(particlesFileName, __valid, __validIS, cellX, cellXIS, cellY, cellYIS,
+                         cellZ, cellZIS, position, positionIS, density, densityIS,
+                         particleTemperature, particleTemperatureIS, runtime, ctx);
+  }
   
   
   /* Create an RGBA-mode context */

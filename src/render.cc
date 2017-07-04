@@ -100,6 +100,7 @@ write_ppm(const char *filename, const GLfloat *rgba, int width, int height)
     fclose(f);
     
     f = fopen( filename, "ab" );  /* reopen in binary append mode */
+    assert(f != NULL);
     for (y = height - 1; y >= 0; y--) {
       unsigned char outputBuffer[width * 3];
       unsigned char *outputPtr = outputBuffer;
@@ -120,8 +121,10 @@ write_ppm(const char *filename, const GLfloat *rgba, int width, int height)
       }
       fwrite(outputBuffer, 3 * sizeof(unsigned char), width, f);
     }
+    fclose(f);
+  } else {
+    printf("could not write %s\n", filename);
   }
-  fclose(f);
 }
 
 #endif
@@ -805,6 +808,7 @@ void cxx_render(legion_runtime_t runtime_,
   
   std::string depthFileName = imageFileName("./out/depth", timeStep, bounds);
   FILE* depthFile = fopen(depthFileName.c_str(), "w");
+  assert(depthFile != NULL);
   std::cout << "depthFile " << depthFile << depthFileName << std::endl;
   fprintf(depthFile, "%d %d\n", width, height);
   fwrite(depthBuffer, sizeof(GLfloat), width * height, depthFile);

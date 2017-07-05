@@ -29,63 +29,6 @@ using namespace LegionRuntime::Accessor;
 
 
 
-
-
-#ifdef IMAGE_FORMAT_TGA
-
-void
-write_targa(const char *filename, const GLfloat *buffer, int width, int height)
-{
-  FILE *f = fopen(filename, "w");
-  if (f) {
-    int i, x, y;
-    const GLfloat *ptr = buffer;
-    printf ("writing tga file %s\n", filename);
-    fputc (0x00, f);	/* ID Length, 0 => No ID	*/
-    fputc (0x00, f);	/* Color Map Type, 0 => No color map included	*/
-    fputc (0x02, f);	/* Image Type, 2 => Uncompressed, True-color Image */
-    fputc (0x00, f);	/* Next five bytes are about the color map entries */
-    fputc (0x00, f);	/* 2 bytes Index, 2 bytes length, 1 byte size */
-    fputc (0x00, f);
-    fputc (0x00, f);
-    fputc (0x00, f);
-    fputc (0x00, f);	/* X-origin of Image	*/
-    fputc (0x00, f);
-    fputc (0x00, f);	/* Y-origin of Image	*/
-    fputc (0x00, f);
-    fputc (width & 0xff, f);      /* Image Width	*/
-    fputc ((width>>8) & 0xff, f);
-    fputc (height & 0xff, f);     /* Image Height	*/
-    fputc ((height>>8) & 0xff, f);
-    fputc (0x18, f);		/* Pixel Depth, 0x18 => 24 Bits	*/
-    fputc (0x20, f);		/* Image Descriptor	*/
-    fclose(f);
-    
-    f = fopen( filename, "ab" );  /* reopen in binary append mode */
-    for (y=height-1; y>=0; y--) {
-      for (x=0; x<width; x++) {
-        
-        int r, g, b;
-        i = (y*width + x) * 4;
-        
-        r = (int) (ptr[i+0] * 255.0);
-        g = (int) (ptr[i+1] * 255.0);
-        b = (int) (ptr[i+2] * 255.0);
-        if (r > 255) r = 255;
-        if (g > 255) g = 255;
-        if (b > 255) b = 255;
-        
-        fputc(b, f); /* write blue */
-        fputc(g, f); /* write green */
-        fputc(r, f); /* write red */
-      }
-    }
-    fclose(f);
-  }
-}
-
-#else
-
 void
 write_ppm(const char *filename, const GLfloat *rgba, int width, int height)
 {
@@ -127,7 +70,6 @@ write_ppm(const char *filename, const GLfloat *rgba, int width, int height)
   }
 }
 
-#endif
 
 
 
@@ -171,6 +113,16 @@ static void temperatureToColor(GLfloat temperature,
 }
 
 
+static void scaledTemperatureToColor(GLfloat temperature,
+                                     GLfloat color[2]) {
+  const GLfloat min = 240.0f;
+  const GLfloat max = 340.0f;
+  const GLfloat Kmin = 0.0f;
+  const GLfloat Kmax = 10000.0f;
+  GLfloat scaledTemperature = (temperature - min) * ((Kmax - Kmin) / (max - min));
+  return temperatureToColor(scaledTemperature, color);
+}
+
 
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
@@ -187,7 +139,7 @@ static void drawVelocityVector(FieldData* centerCoordinate,
   };
   GLfloat t = temperature[0];
   GLfloat color[4];
-  temperatureToColor(t, color);
+  scaledTemperatureToColor(t, color);
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, color);
   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color);
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
@@ -202,7 +154,7 @@ static void drawParticle(GLUquadricObj* qobj, FieldData* position, FieldData* de
   
   GLfloat t = particleTemperature[0];
   GLfloat color[4];
-  temperatureToColor(t, color);
+  scaledTemperatureToColor(t, color);
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, color);
   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color);
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
@@ -800,11 +752,7 @@ void cxx_render(legion_runtime_t runtime_,
                particleTemperature, particleTemperatureIS,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, ctx);
   
-#ifdef IMAGE_FORMAT_TGA
-  write_targa(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
-#else
   write_ppm(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
-#endif
   
   std::string depthFileName = imageFileName("./out/depth", timeStep, bounds);
   FILE* depthFile = fopen(depthFileName.c_str(), "w");

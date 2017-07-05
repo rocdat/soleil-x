@@ -21,3 +21,6 @@ done < .tmp_timesteps
 
 echo === create video ===
 ffmpeg -r 10 -s 3840x2160 -f image2 -i ${SOURCE_DIR}/image.%05d.final.png -crf 25 -vcodec libx264 ${SOURCE_DIR}/video.final.mp4
+
+echo to add a soundtrack do this
+echo ffmpeg -i ${SOURCE_DIR}/video.final.mp4 -i <soundtrack> -shortest ${SOURCE_DIR}/video_with_soundtrack.final.mp4

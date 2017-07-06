@@ -13,6 +13,7 @@ else
   MYHOST=`echo ${HOSTNAME} | sed -e 's/daint.*/daint/'`
   if [[ "${MYHOST}" == "daint" ]]
   then
+    rm -rf $LEGION_PATH/language/terra.build
     ${SOLEIL_PATH}/scripts/install_piz_daint.bash
     mv terra.build terra.build.master
     CC=cc CXX=CC HOST_CC=gcc HOST_CXX=g++ scripts/setup_env.py

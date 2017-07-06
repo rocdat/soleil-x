@@ -1,7 +1,13 @@
 #!/bin/bash
-git clone -b master https://github.com/StanfordLegion/legion.git $LEGION_PATH
-git clone https://github.com/manopapad/liszt-legion.git $LISZT_PATH
-git clone https://github.com/stanfordhpccenter/soleil-x.git $SOLEIL_PATH
+if [[ -d $LEGION_PATH ]] ; then echo skipping legion.git ; else
+  git clone -b master https://github.com/StanfordLegion/legion.git $LEGION_PATH
+fi
+if [[ -d $LISZT_PATH ]] ; then echo skipping liszt-legion.git ; else
+  git clone https://github.com/manopapad/liszt-legion.git $LISZT_PATH
+fi
+if [[ -d $SOLEIL_PATH ]] ; then echo skipping soleil-x; else
+  git clone https://github.com/stanfordhpccenter/soleil-x.git $SOLEIL_PATH
+fi
 cd $LEGION_PATH/language
 git clone -b luajit2.1 https://github.com/magnatelee/terra.git
 
@@ -13,16 +19,7 @@ else
   MYHOST=`echo ${HOSTNAME} | sed -e 's/daint.*/daint/'`
   if [[ "${MYHOST}" == "daint" ]]
   then
-    rm -rf $LEGION_PATH/language/terra.build
     ${SOLEIL_PATH}/scripts/install_piz_daint.bash
-    mv terra.build terra.build.master
-    CC=cc CXX=CC HOST_CC=gcc HOST_CXX=g++ scripts/setup_env.py
-    git clone -b luajit2.1 https://github.com/magnatelee/terra.git terra.build
-
-    cd terra.build
-    CC=gcc CXX=g++ make LLVM_CONFIG=`readlink -f ../llvm/install/bin/llvm-config` CLANG=`readlink -f ../llvm/install/bin/clang` -j
-    cd ..
-
   else
     ./install.py
   fi

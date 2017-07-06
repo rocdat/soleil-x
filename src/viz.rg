@@ -55,6 +55,7 @@ local cellsType = cellsRel:regionType()
 local p_particles   = particlesRel:primPartSymbol()
 local particlesType = particlesRel:regionType()
 local tiles = A.primColors()
+local imageRegion
 
 -------------------------------------------------------------------------------
 -- Local tasks
@@ -98,6 +99,88 @@ do
   end
 end
 
+
+
+fspace PixelFields {
+  R : float,
+  G : float,
+  B : float,
+  A : float,
+  Z : float
+}
+
+
+
+local task MakePartition(r : region(ispace(int3d), PixelFields),
+                         colors : ispace(int3d),
+                         level : int,
+                         pow2level : int)
+
+  regentlib.c.printf('level %d:\n', level)
+
+  regentlib.assert([int](colors.bounds.lo.x) == 0, '')
+  regentlib.assert([int](colors.bounds.lo.y) == 0, '')
+  regentlib.assert([int](colors.bounds.lo.z) == 0, '')
+
+  regentlib.assert([int](r.bounds.lo.x) == 0, '')
+  regentlib.assert([int](r.bounds.lo.y) == 0, '')
+  regentlib.assert([int](r.bounds.lo.z) == 0, '')
+
+  regentlib.assert(([int](r.bounds.hi.x) + 1) % ([int](colors.bounds.hi.x) + 1) == 0, '')
+  regentlib.assert(([int](r.bounds.hi.y) + 1) % ([int](colors.bounds.hi.y) + 1) == 0, '')
+  regentlib.assert(([int](r.bounds.hi.z) + 1) % ([int](colors.bounds.hi.z) + 1) == 0, '')
+
+  var elemsPerTileX = ([int](r.bounds.hi.x) + 1) / ([int](colors.bounds.hi.x) + 1)
+  var elemsPerTileY = ([int](r.bounds.hi.y) + 1) / ([int](colors.bounds.hi.y) + 1)
+  var elemsPerTileZ = ([int](r.bounds.hi.z) + 1) / ([int](colors.bounds.hi.z) + 1)
+
+  var coloring = regentlib.c.legion_domain_point_coloring_create()
+
+  for c in colors do
+    var rect : rect3d
+    if [int](c.z) % pow2level == 0 then
+      rect = rect3d {
+        lo = c * elemsPerTile,
+        hi = (c + pow2level) * elemsPerTile - 1
+      }
+      regentlib.c.printf('  color %d: %d - %d\n', c, rect.lo, rect.hi)
+    else
+      -- create an empty rectangle
+      rect = rect3d {
+        lo = 1,
+        hi = 0
+      }
+    end
+    regentlib.c.legion_domain_point_coloring_color_domain(coloring, c, rect)
+  end
+  var p = partition(disjoint, r, coloring, colors)
+  regentlib.c.legion_domain_point_coloring_destroy(coloring)
+  return p
+end
+
+
+
+
+
+local task AllocateImage()
+do
+  var width = 3840
+  var height = 2160
+  var numLayers = 4
+  var indices = ispace(int3d, (width, height, numLayers))
+  imageRegion = region(indices, PixelFields)
+end
+
+
+local task PartitionImage(imageRegion : region(ispace(int3d), PixelFields))
+do
+  var fragmentsX = 1
+  var fragmentsY = 1
+  var colors = ispace(int3d, (fragmentsX, fragmentsY, numLayers))
+  var partitionLevel1 = MakePartition(imageRegion, colors, 1, 2)
+end
+
+
 -------------------------------------------------------------------------------
 -- Exported quotes
 -------------------------------------------------------------------------------
@@ -106,10 +189,13 @@ local exports = {}
 
 exports.Render = rquote
   for tile in tiles do
-    -- debug_particles(p_particles[tile])
-    -- debug_cells(p_cells[tile])
     Render(p_cells[tile], p_particles[tile])
   end
+end
+
+exports.Initialize = rquote
+  AllocateImage()
+  PartitionImage()
 end
 
 -------------------------------------------------------------------------------

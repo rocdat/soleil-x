@@ -1,6 +1,6 @@
 #!/bin/bash
-SOURCE_DIR=../soleil-x/src/out
-ls ${SOURCE_DIR}/image.*.ppm | sed -e "s:../soleil-x/src/out/image.::" | sed -e "s:\..*.ppm::" | uniq > .tmp_timesteps
+SOURCE_DIR=../out
+ls -1 ${SOURCE_DIR}/image.*.ppm | sed -e "s:${SOURCE_DIR}/image.::" | sed -e "s:\..*.ppm::" | uniq > .tmp_timesteps
 while read TIMESTEP
 do
   echo
@@ -23,4 +23,4 @@ echo === create video ===
 ffmpeg -r 10 -s 3840x2160 -f image2 -i ${SOURCE_DIR}/image.%05d.final.png -crf 25 -vcodec libx264 ${SOURCE_DIR}/video.final.mp4
 
 echo to add a soundtrack do this
-echo ffmpeg -i ${SOURCE_DIR}/video.final.mp4 -i <soundtrack> -shortest ${SOURCE_DIR}/video_with_soundtrack.final.mp4
+echo ffmpeg -i ${SOURCE_DIR}/video.final.mp4 -i soundtrack.wav -shortest ${SOURCE_DIR}/video_with_soundtrack.final.mp4

@@ -3345,6 +3345,10 @@ end
 -- Visualize
 ------------
 
+function Visualize.Initialize()
+  M.INLINE(viz.Initialize)
+end
+
 function Visualize.Render()
   -- Launch a visualization task
   M.INLINE(viz.Render)
@@ -3367,6 +3371,7 @@ if radiation_options.radiationType ~= RadiationType.OFF then
   M.INLINE(radiation.InitRadiation)
 end
 IO.WriteOutput()
+Visualize.Initialize()
 
 -- Main iteration loop
 

@@ -1862,6 +1862,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		41500CC31F0D4C1D000C77C0 /* sample_traverse_unstructured_index_space.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = sample_traverse_unstructured_index_space.cpp; path = ../../sample_traverse_unstructured_index_space.cpp; sourceTree = "<group>"; };
 		4168B6111F06C0BE00530CC9 /* algebraic.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = algebraic.rg; sourceTree = "<group>"; };
 		4168B6121F06C0C700530CC9 /* particles_init_uniform.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = particles_init_uniform.rg; sourceTree = "<group>"; };
 		4168B6141F06C0CF00530CC9 /* 110.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 110.txt; sourceTree = "<group>"; };
@@ -13635,6 +13636,7 @@
 				4168B6371F06C0EB00530CC9 /* soleil_mapper.cc */,
 				4168B6381F06C0EB00530CC9 /* soleil_mapper.h */,
 				4168B6341F06C0DD00530CC9 /* render.cc */,
+				41500CC31F0D4C1D000C77C0 /* sample_traverse_unstructured_index_space.cpp */,
 				4168B6351F06C0DD00530CC9 /* render.h */,
 				4168B6131F06C0CF00530CC9 /* LMquads */,
 				4168B6121F06C0C700530CC9 /* particles_init_uniform.rg */,

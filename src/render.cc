@@ -733,9 +733,9 @@ void cxx_render(legion_runtime_t runtime_,
   /* Create an RGBA-mode context */
 #if OSMESA_MAJOR_VERSION * 100 + OSMESA_MINOR_VERSION >= 305
   /* specify Z, stencil, accum sizes */
-  OSMesaContext mesaCtx = OSMesaCreateContextExt(GL_RGBA, 32, 0, 0, NULL);
+  OSMesaContext mesaCtx = OSMesaCreateContextExt(OSMESA_RGBA, 32, 0, 0, NULL);
 #else
-  OSMesaContext mesaCtx = OSMesaCreateContext(GL_RGBA, NULL);
+  OSMesaContext mesaCtx = OSMesaCreateContext(OSMESA_RGBA, NULL);
 #endif
   if (!mesaCtx) {
     printf("OSMesaCreateContext failed!\n");

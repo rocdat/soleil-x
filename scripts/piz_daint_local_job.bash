@@ -17,6 +17,7 @@ root_dir="$PWD"
 
 if [[ ! -d runX ]]; then mkdir runX; fi
 pushd runX
+mkdir out
 
 for n in 1 2; do
         echo "Running $n""x10..."

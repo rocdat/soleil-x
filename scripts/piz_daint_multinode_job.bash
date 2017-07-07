@@ -14,9 +14,10 @@ export GASNET_BACKTRACE=1
 export LD_LIBRARY_PATH="$PWD:$PWD/../../legion/bindings/terra/:$OSMESA_PATH/lib"
 export REALM_BACKTRACE=1
 root_dir="$PWD"
+OUTDIR=/scratch/snx3000/aheirich/runX
 
-if [[ ! -d runX ]]; then mkdir runX; fi
-pushd runX
+if [[ ! -d ${OUTDIR} ]]; then mkdir ${OUTDIR}; fi
+pushd ${OUTDIR}
 mkdir out
 
 for n in 1 2 3 4; do

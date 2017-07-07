@@ -28,6 +28,7 @@ using namespace LegionRuntime::Arrays;
 using namespace LegionRuntime::Accessor;
 
 
+static const bool writeFiles = false;//write out text files with data
 
 void
 write_ppm(const char *filename, const GLfloat *rgba, int width, int height)
@@ -674,7 +675,6 @@ void cxx_render(legion_runtime_t runtime_,
 {
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
-  bool writeFiles = true;
   
   FieldData* centerCoordinates = NULL;
   FieldData* velocity = NULL;

@@ -202,7 +202,7 @@ static void drawParticles(bool* __validBase,
 
 
 static void setCamera() {//TODO this is testcase dependent
-  gluLookAt(/*eye*/3.0, 3.0, 1.0, /*at*/0.5, 0.5, 0.0, /*up*/0.0, 0.0, 1.0);
+  gluLookAt(/*eye*/50.0, 50.0, 50.0, /*at*/0.5, 0.5, 10.0, /*up*/0.0, 0.0, 1.0);
 }
 
 
@@ -250,7 +250,7 @@ void render_image(int width,
   GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
   GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
   GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-  GLfloat light_position[] = { 0.0, 0.0, 4.0, 1.0 };
+  GLfloat light_position[] = { 0.0, 0.0, 50.0, 1.0 };
   //  GLfloat red_mat[]   = { 1.0, 0.2, 0.2, 1.0 };
   //  GLfloat green_mat[] = { 0.2, 1.0, 0.2, 0.5 };
   //  GLfloat blue_mat[]  = { 0.2, 0.2, 1.0, 1.0 };

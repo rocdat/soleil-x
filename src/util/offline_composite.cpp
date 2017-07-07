@@ -6,7 +6,7 @@
 //  Copyright © 2017 Alan Heirich. All rights reserved.
 //
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
 #include <assert.h>

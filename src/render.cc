@@ -28,6 +28,23 @@ using namespace LegionRuntime::Arrays;
 using namespace LegionRuntime::Accessor;
 
 
+#ifdef RENDER_SAMPLE
+
+FieldData* centerCoordinates;
+FieldData* velocity;
+FieldData* temperature;
+int numCells;
+FieldData min[3];
+FieldData max[3];
+
+int* cellID;
+FieldData* position;
+FieldData* density;
+FieldData* particleTemperature;
+int numParticles;
+
+#endif
+
 
 void
 write_ppm(const char *filename, const GLfloat *rgba, int width, int height)
@@ -88,23 +105,23 @@ static void temperatureToColor(GLfloat temperature,
   
   // red
   if (temperature <= 6600)
-    R = 1.0f;
+  R = 1.0f;
   else
-    R = 0.0002889f * x5 - 0.01258f * x4 + 0.2148f * x3 - 1.776f * x2 + 6.907f * x - 8.723f;
+  R = 0.0002889f * x5 - 0.01258f * x4 + 0.2148f * x3 - 1.776f * x2 + 6.907f * x - 8.723f;
   
   // green
   if (temperature <= 6600)
-    G = -4.593e-05f * x5 + 0.001424f * x4 - 0.01489f * x3 + 0.0498f * x2 + 0.1669f * x - 0.1653f;
+  G = -4.593e-05f * x5 + 0.001424f * x4 - 0.01489f * x3 + 0.0498f * x2 + 0.1669f * x - 0.1653f;
   else
-    G = -1.308e-07f * x5 + 1.745e-05f * x4 - 0.0009116f * x3 + 0.02348f * x2 - 0.3048f * x + 2.159f;
+  G = -1.308e-07f * x5 + 1.745e-05f * x4 - 0.0009116f * x3 + 0.02348f * x2 - 0.3048f * x + 2.159f;
   
   // blue
   if (temperature <= 2000)
-    B = 0.0f;
+  B = 0.0f;
   else if (temperature < 6600)
-    B = 1.764e-05f * x5 + 0.0003575f * x4 - 0.01554f * x3 + 0.1549f * x2 - 0.3682f * x + 0.2386f;
+  B = 1.764e-05f * x5 + 0.0003575f * x4 - 0.01554f * x3 + 0.1549f * x2 - 0.3682f * x + 0.2386f;
   else
-    B = 1.0f;
+  B = 1.0f;
   
   color[0] = R;
   color[1] = G;
@@ -382,17 +399,17 @@ void accessCellData(legion_physical_region_t *cells,
     bounds = indexSpaceDomain.get_rect<3>();
     
     switch(field) {
-      case 0:
+        case 0:
         create_field_pointer(*cell, velocity, cells_fields[field], strideVelocity, runtime, ctx);
         assert(strideVelocity[0].offset == 3 * sizeof(FieldData));
         break;
         
-      case 1:
+        case 1:
         create_field_pointer(*cell, centerCoordinates, cells_fields[field], strideCenter, runtime, ctx);
         assert(strideCenter[0].offset == 3 * sizeof(FieldData));
         break;
         
-      case 2:
+        case 2:
         create_field_pointer(*cell, temperature, cells_fields[field], strideTemperature, runtime, ctx);
         assert(strideTemperature[0].offset == sizeof(FieldData));
         break;
@@ -520,31 +537,31 @@ void accessParticleData(legion_physical_region_t *particles,
     PhysicalRegion* particle = CObjectWrapper::unwrap(particles[field]);
     
     switch(field) {
-      case 0:
+        case 0:
         getBaseIndexSpaceInt(particle, particles_fields[field], cellX, cellXIS);
         break;
         
-      case 1:
+        case 1:
         getBaseIndexSpaceInt(particle, particles_fields[field], cellY, cellYIS);
         break;
         
-      case 2:
+        case 2:
         getBaseIndexSpaceInt(particle, particles_fields[field], cellZ, cellZIS);
         break;
         
-      case 3:
+        case 3:
         getBaseIndexSpaceFloat3(particle, particles_fields[field], position, positionIS);
         break;
         
-      case 4:
+        case 4:
         getBaseIndexSpaceFloat(particle, particles_fields[field], density, densityIS);
         break;
         
-      case 5:
+        case 5:
         getBaseIndexSpaceFloat(particle, particles_fields[field], particleTemperature, particleTemperatureIS);
         break;
         
-      case 6:
+        case 6:
         getBaseIndexSpaceBool(particle, particles_fields[field], __valid, __validIS);
         break;
         
@@ -773,3 +790,148 @@ void cxx_render(legion_runtime_t runtime_,
   timeStep++;
   
 }
+
+
+#ifdef RENDER_SAMPLE//offline development
+
+
+static
+void readCellData(std::string filePath,
+                  FieldData* &centerCoordinates,
+                  FieldData* &velocity,
+                  FieldData* &temperature,
+                  int &numCells,
+                  FieldData min[3],
+                  FieldData max[3]) {
+  std::ifstream inputFile(filePath);
+  
+  if (inputFile.is_open()) {
+    std::string inputLine;
+    if(getline(inputFile, inputLine)) {
+      unsigned xLo, yLo, zLo, xHi, yHi, zHi;
+      sscanf(inputLine.c_str(), "[(%d,%d,%d),(%d,%d,%d)]",
+             &xLo, &yLo, &zLo, &xHi, &yHi, &zHi);
+      
+      unsigned expectedNumCells = (xHi - xLo) * (yHi - yLo) * (zHi - zLo);
+      centerCoordinates = new FieldData[expectedNumCells * 3];
+      velocity = new FieldData[expectedNumCells * 3];
+      temperature = new FieldData[expectedNumCells];
+      
+      FieldData* cc = centerCoordinates;
+      FieldData* v = velocity;
+      FieldData* t = temperature;
+      unsigned cellCount = 0;
+      min[0] = 999999.0;
+      min[1] = 999999.0;
+      min[2] = 999999.0;
+      max[0] = -min[0];
+      max[1] = -min[1];
+      max[2] = -min[2];
+      
+      while (getline(inputFile, inputLine)) {
+        unsigned serialID;
+        unsigned x, y, z;
+        sscanf(inputLine.c_str(), "%d (%d,%d,%d) %lf %lf %lf %lf %lf %lf %lf",
+               &serialID, &x, &y, &z,
+               cc, cc + 1, cc + 2,
+               v, v + 1, v + 2,
+               t);
+        for(unsigned j = 0; j < 3; ++j) {
+          min[j] = (min[j] > cc[j]) ? cc[j] : min[j];
+          max[j] = (max[j] < cc[j]) ? cc[j] : max[j];
+        }
+        
+        cc += 3;
+        v += 3;
+        t++;
+        cellCount++;
+      }
+      inputFile.close();
+      numCells = cellCount;
+      if(cellCount == expectedNumCells) {
+        std::cout << "loaded " << cellCount << " cells" << std::endl;
+      } else {
+        std::cerr << "expected " << expectedNumCells << " cells but loaded " << cellCount << std::endl;
+      }
+    }
+  } else {
+    std::cerr << "Unable to open file " << filePath << std::endl;
+  }
+  
+  std::cout << "min " << min[0] << "," << min[1] << "," << min[2] << std::endl;
+  std::cout << "max " << max[0] << "," << max[1] << "," << max[2] << std::endl;
+  
+}
+
+
+static
+void readParticleData(std::string filePath,
+                      int* &cellID,
+                      FieldData* &position,
+                      FieldData* &density,
+                      FieldData* &particleTemperature,
+                      int &numParticles) {
+  std::ifstream inputFile(filePath);
+  
+  if (inputFile.is_open()) {
+    std::string inputLine;
+    const int maxParticles = 400;
+    cellID = new int[maxParticles * 3];
+    position = new FieldData[maxParticles * 3];
+    density = new FieldData[maxParticles];
+    particleTemperature = new FieldData[maxParticles];
+    
+    int* cID = cellID;
+    FieldData* p = position;
+    FieldData* d = density;
+    FieldData* pt = particleTemperature;
+    unsigned particleCount = 0;
+    
+    while (getline(inputFile, inputLine)) {
+      sscanf(inputLine.c_str(), "(%d,%d,%d) %lf %lf %lf %lf %lf",
+             cID, cID + 1, cID + 2,
+             p, p + 1, p + 2,
+             d, pt);
+      cID += 3;
+      p += 3;
+      d++;
+      pt++;
+      particleCount++;
+    }
+    inputFile.close();
+    numParticles = particleCount;
+    std::cout << "loaded " << particleCount << " particles" << std::endl;
+  } else {
+    std::cerr << "Unable to open file " << filePath << std::endl;
+  }
+}
+
+
+
+void main(int argc, char *argv[]) {
+  if(argc != 4) {
+    std::cout << "usage: " << argv[0] << " <cellfile> <particlefile> <outputimage>" << std::endl;
+    std::cout << "e.g. " << argv[0] << "cells.00007.0_0_0__127_127_255.txt	particles.00007.0_0_0__127_127_255.txt image.ppm" << std::endl;
+    exit(-1);
+  }
+  
+  std::string cellFilePath = argv[1];
+  std::string particleFilePath = argv[2];
+  std::string outputFilePath = argv[3];
+  
+  std::cout << "reading cell data from " << cellFilePath << std::endl;
+  readCellData(cellFilePath, centerCoordinates, velocity, temperature, numCells, min, max);
+  
+  std::cout << "reading particle data from " << particleFilePath << std::endl;
+  readParticleData(particleFilePath, cellID, position, density, particleTemperature, numParticles);
+  
+  std::cout << "calling cxx_render with output to " << outputFilePath << std::endl;
+  Context ctx;
+  cxx_render(NULL, ctx, NULL, NULL, NULL, NULL, -1, -1, -1);
+  
+}
+
+#endif
+
+
+

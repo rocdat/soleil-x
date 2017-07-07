@@ -8,9 +8,9 @@ fi
 TESTCASE=$1
 if [[ "$1" == "" ]]
 then
-  TESTCASE=cavity/cavity_32x32.lua
+  TESTCASE=taylor_with_smaller_particles/taylor_green_vortex_256_256_256.lua
 fi
 
 echo === Build test case ${TESTCASE} ===
 
-cd $SOLEIL_PATH/src ; git checkout soleil_viz ; CC=gcc CXX=g++ USE_HDF=0 DEBUG=1 SAVEOBJ=1 OBJNAME=soleil.exec $LISZT_PATH/liszt-legion.sh $SOLEIL_PATH/src/soleil-x.t -i $SOLEIL_PATH/testcases/${TESTCASE} -fparallelize 1 -fparallelize-dop 2,2,1
+cd $SOLEIL_PATH/src ; git checkout soleil_viz ; CC=gcc CXX=g++ USE_HDF=0 DEBUG=0 SAVEOBJ=1 OBJNAME=soleil.exec $LISZT_PATH/liszt-legion.sh $SOLEIL_PATH/src/soleil-x.t -i $SOLEIL_PATH/testcases/${TESTCASE} -fparallelize 1 -fparallelize-dop 2,2,1

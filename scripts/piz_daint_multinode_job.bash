@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=PSAAP_cavity32x32_local
+#SBATCH --job-name=PSAAP_taylor_green_vortex
 #SBATCH --mail-user=aheirich@stanford.edu
 #SBATCH --time=00:10:00
 #SBATCH --nodes=4

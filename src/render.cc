@@ -202,7 +202,7 @@ static void drawParticles(bool* __validBase,
 
 
 static void setCamera() {//TODO this is testcase dependent
-  gluLookAt(/*eye*/50.0, 50.0, 50.0, /*at*/0.5, 0.5, 10.0, /*up*/0.0, 0.0, 1.0);
+  gluLookAt(/*eye*/20.0, 20.0, 10.0, /*at*/3.0, 3.0, 3.0, /*up*/0.0, 0.0, 1.0);
 }
 
 
@@ -674,7 +674,7 @@ void cxx_render(legion_runtime_t runtime_,
 {
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
-  bool writeFiles = false;
+  bool writeFiles = true;
   
   FieldData* centerCoordinates = NULL;
   FieldData* velocity = NULL;

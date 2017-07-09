@@ -25,6 +25,10 @@ using namespace LegionRuntime::Arrays;
 using namespace Legion;
 using namespace LegionRuntime::Accessor;
 
+#define NEXT(FIELD) (FIELD##Base + FIELD##Iterator.next().value)
+#define NEXT3(FIELD) (FIELD##Base + FIELD##Iterator.next().value * 3)
+
+
 #endif
 
 
@@ -37,12 +41,8 @@ using namespace LegionRuntime::Accessor;
 static int volatile timeStep = 0;//to do pass this in
 const int NUM_NODES = 4;//TODO eliminate this when timeStep is passed in
 
-typedef struct {
-  float position[3];
-  float density;
-  float particleTemperature;
-  int numSamples;
-} MeanParticle;
+const int trackedParticlesPerNode = 128;
+
 
 
 #ifdef STANDALONE
@@ -65,11 +65,6 @@ int numCells[3];
 FieldData min[3];
 FieldData max[3];
 
-int* cellID;
-FieldData* position;
-FieldData* density;
-FieldData* particleTemperature;
-int numParticles;
 
 #endif
 
@@ -138,23 +133,23 @@ static void temperatureToColor(GLfloat temperature,
   
   // red
   if (temperature <= 6600)
-  R = 1.0f;
+    R = 1.0f;
   else
-  R = 0.0002889f * x5 - 0.01258f * x4 + 0.2148f * x3 - 1.776f * x2 + 6.907f * x - 8.723f;
+    R = 0.0002889f * x5 - 0.01258f * x4 + 0.2148f * x3 - 1.776f * x2 + 6.907f * x - 8.723f;
   
   // green
   if (temperature <= 6600)
-  G = -4.593e-05f * x5 + 0.001424f * x4 - 0.01489f * x3 + 0.0498f * x2 + 0.1669f * x - 0.1653f;
+    G = -4.593e-05f * x5 + 0.001424f * x4 - 0.01489f * x3 + 0.0498f * x2 + 0.1669f * x - 0.1653f;
   else
-  G = -1.308e-07f * x5 + 1.745e-05f * x4 - 0.0009116f * x3 + 0.02348f * x2 - 0.3048f * x + 2.159f;
+    G = -1.308e-07f * x5 + 1.745e-05f * x4 - 0.0009116f * x3 + 0.02348f * x2 - 0.3048f * x + 2.159f;
   
   // blue
   if (temperature <= 2000)
-  B = 0.0f;
+    B = 0.0f;
   else if (temperature < 6600)
-  B = 1.764e-05f * x5 + 0.0003575f * x4 - 0.01554f * x3 + 0.1549f * x2 - 0.3682f * x + 0.2386f;
+    B = 1.764e-05f * x5 + 0.0003575f * x4 - 0.01554f * x3 + 0.1549f * x2 - 0.3682f * x + 0.2386f;
   else
-  B = 1.0f;
+    B = 1.0f;
   
   color[0] = R;
   color[1] = G;
@@ -210,20 +205,108 @@ static void drawParticle(GLUquadricObj* qobj, float* position, float density, fl
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
   const GLfloat verticalOffset = 0.0f;//TODO this is testcase dependent
   
-#if 0
   glPushMatrix();
   glTranslatef(position[0], position[1], position[2] + verticalOffset);
-  const GLfloat densityScale = 0.001f;
+  const GLfloat densityScale = 0.00001f;
   gluSphere(qobj, density * densityScale, 3, 3);
   glPopMatrix();
-#else
-  glVertex3f(position[0], position[1], position[2] + verticalOffset);
-#endif
 }
 
 
+#ifndef STANDALONE
+
+static void drawParticles(bool* __validBase,
+                          IndexSpace __validIS,
+                          FieldData* positionBase,
+                          IndexSpace positionIS,
+                          FieldData* densityBase,
+                          IndexSpace densityIS,
+                          FieldData* particleTemperatureBase,
+                          IndexSpace particleTemperatureIS,
+                          bool* trackingBase,
+                          IndexSpace trackingIS,
+                          GLUquadricObj* qobj,
+                          Context ctx,
+                          Runtime* runtime,
+                          int &numTracking) {
+  
+  IndexIterator __validIterator(runtime, ctx, __validIS);
+  IndexIterator positionIterator(runtime, ctx, positionIS);
+  IndexIterator densityIterator(runtime, ctx, densityIS);
+  IndexIterator particleTemperatureIterator(runtime, ctx, particleTemperatureIS);
+  IndexIterator trackingIterator(runtime, ctx, trackingIS);
+  
+  numTracking = 0;
+  while(__validIterator.has_next()) {
+    bool valid = *NEXT(__valid);
+    FieldData* p = NEXT3(position);
+    float pos[3] = { (float)p[0], (float)p[1], (float)p[2] };
+    float density = *NEXT(density);
+    float particleTemperature = *NEXT(particleTemperature);
+    bool tracking = *NEXT(tracking);
+    if(valid && tracking) {
+      drawParticle(qobj, pos, density, particleTemperature);
+      numTracking++;
+    }
+  }
+}
 
 
+static void trackParticles(int numTracking,
+                           const int trackedParticlesPerNode,
+                           bool* __validBase,
+                           IndexSpace __validIS,
+                           bool* trackingBase,
+                           IndexSpace trackingIS,
+                           Context ctx,
+                           Runtime* runtime) {
+  
+  IndexIterator __validIterator(runtime, ctx, __validIS);
+  IndexIterator trackingIterator(runtime, ctx, trackingIS);
+  
+  int needMore = trackedParticlesPerNode - numTracking;
+  while(__validIterator.has_next() && needMore > 0) {
+    bool valid = *NEXT(__valid);
+    bool* tracking = NEXT(tracking);
+    if(valid && !*tracking) {
+      *tracking = true;
+      needMore--;
+    }
+  }
+}
+
+
+#else
+
+
+
+static void drawParticles(std::string particleFilePath,
+                          GLUquadricObj* qobj) {
+  // (1,1,1) 0.03689573118 0.03673534665 0.03681553891  8900 20.05031482
+  
+  std::ifstream particleFile;
+  particleFile.open(particleFilePath);
+  int numTracking = 0;
+  char buffer[256];
+  while(particleFile.getline(buffer, sizeof(buffer)) && numTracking < trackedParticlesPerNode) {
+    int cellX, cellY, cellZ;
+    FieldData position[3];
+    FieldData density;
+    FieldData particleTemperature;
+    sscanf(buffer, "(%d,%d,%d) %lf %lf %lf %lf %lf",
+           &cellX, &cellY, &cellZ,
+           position, position + 1, position + 2,
+           &density,
+           &particleTemperature);
+    float pos[3] = { (float)position[0], (float)position[1], (float)position[2] };
+    drawParticle(qobj, pos, density, particleTemperature);
+    numTracking++;
+  }
+  particleFile.close();
+  
+}
+
+#endif
 
 
 
@@ -231,11 +314,11 @@ static void drawParticle(GLUquadricObj* qobj, float* position, float density, fl
 static void setCamera() {//TODO this is testcase dependent
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho(-8, 8, -1, 10, 0.0, 40.0);//TODO this may be testcase dependent
-
+  glOrtho(-5, 5, -5, 8, 0.0, 40.0);//TODO this may be testcase dependent
+  
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  gluLookAt(/*eye*/15, 15, 6, /*at*/0.0, 0.0, 0.0, /*up*/0.0, 0.0, 1.0);
+  gluLookAt(/*eye*/10, 10, 5, /*at*/0.0, 0.0, 0.0, /*up*/0.0, 0.0, 1.0);
 }
 
 
@@ -247,7 +330,7 @@ void render_image(int width,
                   FieldData* velocity,
                   FieldData* temperature,
                   int totalCells,
-                  MeanParticle* meanParticles,
+                  std::string particleFilePath,
                   GLfloat** rgbaBuffer,
                   GLfloat** depthBuffer,
                   OSMesaContext mesaCtx)
@@ -262,7 +345,16 @@ void render_image(int width,
                   FieldData* velocity,
                   FieldData* temperature,
                   int totalCells,
-                  MeanParticle* meanParticles,
+                  bool* __validBase,
+                  IndexSpace __validIS,
+                  FieldData* positionBase,
+                  IndexSpace positionIS,
+                  FieldData* densityBase,
+                  IndexSpace densityIS,
+                  FieldData* particleTemperatureBase,
+                  IndexSpace particleTemperatureIS,
+                  bool* trackingBase,
+                  IndexSpace trackingIS,
                   GLfloat** rgbaBuffer,
                   GLfloat** depthBuffer,
                   OSMesaContext mesaCtx,
@@ -270,7 +362,6 @@ void render_image(int width,
                   Context ctx)
 #endif
 {
-  
   
   /* Allocate the image buffer */
   const int fieldsPerPixel = 4;
@@ -332,20 +423,23 @@ void render_image(int width,
   
   // draw particles
   
+#ifndef STANDALONE
   
-  int numDrawn = 0;
-  glBegin(GL_POINTS);
-  for(int i = 0; i < totalCells; ++i) {
-    if(meanParticles[i].numSamples > 0) {
-      drawParticle(qobj, meanParticles[i].position, meanParticles[i].density,
-                   meanParticles[i].particleTemperature);
-      numDrawn++;
-    }
+  int numTracking;
+  drawParticles(__validBase, __validIS, positionBase, positionIS, densityBase, densityIS,
+                particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS,
+                qobj, ctx, runtime, numTracking);
+  
+  if(numTracking < trackedParticlesPerNode) {
+    trackParticles(numTracking, trackedParticlesPerNode, __validBase, __validIS,
+                   trackingBase, trackingIS, ctx, runtime);
   }
-  glEnd();
-  std::cout << "drew " << numDrawn << " particles as points" << std::endl;
   
+#else
   
+  drawParticles(particleFilePath, qobj);
+  
+#endif
   
   
   /* This is very important!!!
@@ -384,25 +478,8 @@ void create_field_pointer(PhysicalRegion region,
 }
 
 
-#if 0
 
-static
-void create_field_pointer(PhysicalRegion region,
-                          int *&field,
-                          int fieldID,
-                          ByteOffset stride[3],
-                          Runtime *runtime,
-                          Context context) {
-  
-  Domain indexSpaceDomain = runtime->get_index_space_domain(context, region.get_logical_region().get_index_space());
-  Rect<3> bounds = indexSpaceDomain.get_rect<3>();
-  RegionAccessor<AccessorType::Generic, int> acc = region.get_field_accessor(fieldID).typeify<int>();
-  Rect<3> tempBounds;
-  field = acc.raw_rect_ptr<3>(bounds, tempBounds, stride);
-  assert(bounds == tempBounds);
-}
 
-#endif
 
 
 static
@@ -428,17 +505,17 @@ void accessCellData(legion_physical_region_t *cells,
     bounds = indexSpaceDomain.get_rect<3>();
     
     switch(field) {
-        case 0:
+      case 0:
         create_field_pointer(*cell, velocity, cells_fields[field], strideVelocity, runtime, ctx);
         assert(strideVelocity[0].offset == 3 * sizeof(FieldData));
         break;
         
-        case 1:
+      case 1:
         create_field_pointer(*cell, centerCoordinates, cells_fields[field], strideCenter, runtime, ctx);
         assert(strideCenter[0].offset == 3 * sizeof(FieldData));
         break;
         
-        case 2:
+      case 2:
         create_field_pointer(*cell, temperature, cells_fields[field], strideTemperature, runtime, ctx);
         assert(strideTemperature[0].offset == sizeof(FieldData));
         break;
@@ -494,7 +571,7 @@ static
 void getBaseIndexSpaceBool(PhysicalRegion* particle, int fieldID, bool* &base, IndexSpace &indexSpace) {
   RegionAccessor<AccessorType::Generic, bool> acc = particle->get_field_accessor(fieldID).typeify<bool>();
   void* b = NULL;
-  size_t stride = 0;
+  size_t stride = stride == sizeof(bool);
   acc.get_soa_parameters(b, stride);
   base = (bool*)b;
   assert(stride == sizeof(bool));
@@ -506,7 +583,7 @@ static
 void getBaseIndexSpaceInt(PhysicalRegion* particle, int fieldID, int* &base, IndexSpace &indexSpace) {
   RegionAccessor<AccessorType::Generic, int> acc = particle->get_field_accessor(fieldID).typeify<int>();
   void* b = NULL;
-  size_t stride = 0;
+  size_t stride = sizeof(int);
   acc.get_soa_parameters(b, stride);
   base = (int*)b;
   assert(stride == sizeof(int));
@@ -518,7 +595,7 @@ static
 void getBaseIndexSpaceFloat_impl(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace, int numFields) {
   RegionAccessor<AccessorType::Generic, FieldData> acc = particle->get_field_accessor(fieldID).typeify<FieldData>();
   void* b = NULL;
-  size_t stride = 0;
+  size_t stride = sizeof(FieldData) * numFields;
   acc.get_soa_parameters(b, stride);
   base = (FieldData*)b;
   assert(stride == sizeof(FieldData) * numFields);
@@ -555,6 +632,8 @@ void accessParticleData(legion_physical_region_t *particles,
                         IndexSpace &densityIS,
                         FieldData* &particleTemperature,
                         IndexSpace &particleTemperatureIS,
+                        bool* &tracking,
+                        IndexSpace &trackingIS,
                         Runtime* runtime,
                         Context ctx) {
   
@@ -566,32 +645,36 @@ void accessParticleData(legion_physical_region_t *particles,
     PhysicalRegion* particle = CObjectWrapper::unwrap(particles[field]);
     
     switch(field) {
-        case 0:
+      case 0:
         getBaseIndexSpaceInt(particle, particles_fields[field], cellX, cellXIS);
         break;
         
-        case 1:
+      case 1:
         getBaseIndexSpaceInt(particle, particles_fields[field], cellY, cellYIS);
         break;
         
-        case 2:
+      case 2:
         getBaseIndexSpaceInt(particle, particles_fields[field], cellZ, cellZIS);
         break;
         
-        case 3:
+      case 3:
         getBaseIndexSpaceFloat3(particle, particles_fields[field], position, positionIS);
         break;
         
-        case 4:
+      case 4:
         getBaseIndexSpaceFloat(particle, particles_fields[field], density, densityIS);
         break;
         
-        case 5:
+      case 5:
         getBaseIndexSpaceFloat(particle, particles_fields[field], particleTemperature, particleTemperatureIS);
         break;
         
-        case 6:
+      case 6:
         getBaseIndexSpaceBool(particle, particles_fields[field], __valid, __validIS);
+        break;
+        
+      case 7:
+        getBaseIndexSpaceBool(particle, particles_fields[field], tracking, trackingIS);
         break;
         
       default:
@@ -619,6 +702,8 @@ void writeParticlesToFile(std::string filePath,
                           IndexSpace densityIS,
                           FieldData* particleTemperatureBase,
                           IndexSpace particleTemperatureIS,
+                          bool* trackingBase,
+                          IndexSpace trackingIS,
                           Runtime* runtime,
                           Context ctx) {
   
@@ -633,27 +718,26 @@ void writeParticlesToFile(std::string filePath,
   IndexIterator positionIterator(runtime, ctx, positionIS);
   IndexIterator densityIterator(runtime, ctx, densityIS);
   IndexIterator particleTemperatureIterator(runtime, ctx, particleTemperatureIS);
+  IndexIterator trackingIterator(runtime, ctx, trackingIS);
   
   while(cellXIterator.has_next()) {
-#define NEXT(FIELD) (FIELD##Base + FIELD##Iterator.next().value)
-#define NEXT3(FIELD) (FIELD##Base + FIELD##Iterator.next().value * 3)
     bool valid = *NEXT(__valid);
+    int cellX = *NEXT(cellX);
+    int cellY = *NEXT(cellY);
+    int cellZ = *NEXT(cellZ);
+    FieldData* p = NEXT3(position);
+    FieldData density = *NEXT(density);
+    FieldData particleTemperature = *NEXT(particleTemperature);
+    bool tracking = *NEXT(tracking);
     if(valid) {
-      int cellX = *NEXT(cellX);
-      int cellY = *NEXT(cellY);
-      int cellZ = *NEXT(cellZ);
-      FieldData* p = NEXT3(position);
-      FieldData density = *NEXT(density);
-      FieldData particleTemperature = *NEXT(particleTemperature);
-      if(cellX > 0 && cellY > 0 && cellZ > 0) {
-        outputFile << std::setprecision(10)
-        << "(" << cellX << "," << cellY << "," << cellZ << ") "
-        << p[0] << " " << p[1] << " " << p[2] << "  "
-        << density << " "
-        << particleTemperature
-        << std::endl;
-        counter++;
-      }
+      outputFile << std::setprecision(10)
+      << "(" << cellX << "," << cellY << "," << cellZ << ") "
+      << p[0] << " " << p[1] << " " << p[2] << "  "
+      << density << " "
+      << particleTemperature << " "
+      << tracking
+      << std::endl;
+      counter++;
     }
   }
   
@@ -714,7 +798,9 @@ void cxx_render(legion_runtime_t runtime_,
                 int znum)
 #endif
 {
+  
 #ifndef STANDALONE
+  
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
   
@@ -761,122 +847,25 @@ void cxx_render(legion_runtime_t runtime_,
   IndexSpace densityIS;
   FieldData* particleTemperatureBase = NULL;
   IndexSpace particleTemperatureIS;
+  bool* trackingBase;
+  IndexSpace trackingIS;
   
   accessParticleData(particles, particles_fields, __validBase, __validIS, cellXBase, cellXIS, cellYBase, cellYIS,
                      cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
-                     particleTemperatureBase, particleTemperatureIS, runtime, ctx);
+                     particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS,
+                     runtime, ctx);
   
   if(writeFiles) {
     std::string particlesFileName = dataFileName("./out/particles", timeStep, bounds);
     writeParticlesToFile(particlesFileName, __validBase, __validIS, cellXBase, cellXIS, cellYBase, cellYIS,
                          cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
-                         particleTemperatureBase, particleTemperatureIS, runtime, ctx);
+                         particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS, runtime, ctx);
   }
   
 #endif
   
   
-  // set up average particle grid
   
-  MeanParticle* meanParticles = (MeanParticle*)calloc(totalCells, sizeof(MeanParticle));
-  if(meanParticles == NULL) {
-    std::cerr << "calloc failure on meanParticles" << std::endl;
-    exit(-1);
-  }
-  
-#ifdef STANDALONE
-  char buffer[256];
-  std::ifstream particleFile(particleFilePath);
-  while(particleFile.getline(buffer, sizeof(buffer)))
-  {
-    int cellX;
-    int cellY;
-    int cellZ;
-    double position[3];
-    double density;
-    double particleTemperature;
-    
-    sscanf(buffer, "(%d,%d,%d) %lf %lf %lf %lf %lf",
-           &cellX, &cellY, &cellZ,
-           position, position + 1, position + 2,
-           &density,
-           &particleTemperature);
-    int index = cellX + (cellY * numCells[0]) + (cellZ * numCells[1] * numCells[0]);
-    MeanParticle* meanParticle = meanParticles + index;
-    meanParticle->position[0] += position[0];
-    meanParticle->position[1] += position[1];
-    meanParticle->position[2] += position[2];
-    meanParticle->density += density;
-    meanParticle->particleTemperature += particleTemperature;
-    meanParticle->numSamples++;
-  }
-  particleFile.close();
-  
-#else
-  
-  IndexIterator __validIterator(runtime, ctx, __validIS);
-  IndexIterator cellXIterator(runtime, ctx, cellXIS);
-  IndexIterator cellYIterator(runtime, ctx, cellYIS);
-  IndexIterator cellZIterator(runtime, ctx, cellZIS);
-  IndexIterator positionIterator(runtime, ctx, positionIS);
-  IndexIterator densityIterator(runtime, ctx, densityIS);
-  IndexIterator particleTemperatureIterator(runtime, ctx, particleTemperatureIS);
-  
-  while(cellXIterator.has_next()) {
-#define NEXT(FIELD) (FIELD##Base + FIELD##Iterator.next().value)
-#define NEXT3(FIELD) (FIELD##Base + FIELD##Iterator.next().value * 3)
-    bool valid = *NEXT(__valid);
-    if(valid) {
-      int cellX = *NEXT(cellX);
-      int cellY = *NEXT(cellY);
-      int cellZ = *NEXT(cellZ);
-      int index = cellX + (cellY * numCells[0]) + (cellZ * numCells[1] * numCells[0]);
-      FieldData* p = NEXT3(position);
-      FieldData density = *NEXT(density);
-      FieldData particleTemperature = *NEXT(particleTemperature);
-      MeanParticle* meanParticle = meanParticles + index;
-      meanParticle->position[0] += p[0];
-      meanParticle->position[1] += p[1];
-      meanParticle->position[2] += p[2];
-      meanParticle->density += density;
-      meanParticle->particleTemperature += particleTemperature;
-      meanParticle->numSamples++;
-    }
-  }
-  
-#endif
-  
-  float minPos[3] = { 999999, 999999, 999999 };
-  float maxPos[3] = { -99999, -99999, -99999 };
-  float meanPos[3] = { 0 };
-  float meanDensity = 0;
-  
-  for(int i = 0; i < totalCells; ++i) {
-    if(meanParticles[i].numSamples > 0) {
-      meanParticles[i].position[0] /= meanParticles[i].numSamples;
-      meanParticles[i].position[1] /= meanParticles[i].numSamples;
-      meanParticles[i].position[2] /= meanParticles[i].numSamples;
-      meanParticles[i].density /= meanParticles[i].numSamples;
-      meanParticles[i].particleTemperature /= meanParticles[i].numSamples;
-    }
-    
-    for(unsigned j = 0; j < 3; ++j) {
-      minPos[j] = std::min(minPos[j], meanParticles[i].position[j]);
-      maxPos[j] = std::max(maxPos[j], meanParticles[i].position[j]);
-      meanPos[j] += meanParticles[i].position[j];
-    }
-    meanDensity += meanParticles[i].density;
-  }
-  
-  meanPos[0] /= totalCells;
-  meanPos[1] /= totalCells;
-  meanPos[2] /= totalCells;
-  meanDensity /= totalCells;
-  
-  std::cout << "particle min position " << minPos[0] << " " << minPos[1] << " " << minPos[2] << std::endl;
-  std::cout << "particle max position " << maxPos[0] << " " << maxPos[1] << " " << maxPos[2] << std::endl;
-  std::cout << "particle mean position " << meanPos[0] << " " << meanPos[1] << " " << meanPos[2] << std::endl;
-  std::cout << "particle mean density " << meanDensity << std::endl;
   
   /* Create an RGBA-mode context */
 #if OSMESA_MAJOR_VERSION * 100 + OSMESA_MINOR_VERSION >= 305
@@ -897,15 +886,19 @@ void cxx_render(legion_runtime_t runtime_,
   
 #ifdef STANDALONE
   
-  render_image(width, height, centerCoordinates, velocity, temperature, totalCells, meanParticles,
+  render_image(width, height, centerCoordinates, velocity, temperature, totalCells, particleFilePath,
                &rgbaBuffer, &depthBuffer, mesaCtx);
   write_ppm(outputFileName.c_str(), rgbaBuffer, width, height);
   std::string depthFileName = outputFileName + ".depth.ppm";
   
 #else
   
-  
-  render_image(width, height, centerCoordinates, velocity, temperature, totalCells, meanParticles,
+  render_image(width, height, centerCoordinates, velocity, temperature, totalCells,
+               __validBase, __validIS,
+               positionBase, positionIS,
+               densityBase, densityIS,
+               particleTemperatureBase, particleTemperatureIS,
+               trackingBase, trackingIS,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, ctx);
   write_ppm(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
   std::string depthFileName = imageFileName("./out/depth", timeStep, bounds);
@@ -933,7 +926,6 @@ void cxx_render(legion_runtime_t runtime_,
 
 
 #ifdef STANDALONE//offline development
-
 
 static
 void readCellData(std::string filePath,

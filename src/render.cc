@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-//#define RENDER_SAMPLE // debug
+//#define STANDALONE // debug
 
-#ifndef RENDER_SAMPLE
+#ifndef STANDALONE
 
 #include "legion_c.h"
 #include "legion_c_util.h"
@@ -32,6 +32,7 @@ using namespace LegionRuntime::Accessor;
 #include <fstream>
 #include <iomanip>
 #include <assert.h>
+#include <math.h>
 
 static int volatile timeStep = 0;//to do pass this in
 const int NUM_NODES = 4;//TODO eliminate this when timeStep is passed in
@@ -44,7 +45,7 @@ typedef struct {
 } MeanParticle;
 
 
-#ifdef RENDER_SAMPLE
+#ifdef STANDALONE
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -176,7 +177,7 @@ static void scaledTemperatureToColor(GLfloat temperature,
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
-  GLfloat scale = 0.05f;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
+  GLfloat scale = 0.00025f;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
   GLfloat base[] = {
     (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
   };
@@ -207,13 +208,17 @@ static void drawParticle(GLUquadricObj* qobj, float* position, float density, fl
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, color);
   glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color);
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
+  const GLfloat verticalOffset = 0.0f;//TODO this is testcase dependent
   
+#if 0
   glPushMatrix();
-  const GLfloat verticalOffset = 0.5;//TODO this is testcase dependent
   glTranslatef(position[0], position[1], position[2] + verticalOffset);
-  const GLfloat densityScale = 0.00001f;
+  const GLfloat densityScale = 0.001f;
   gluSphere(qobj, density * densityScale, 3, 3);
   glPopMatrix();
+#else
+  glVertex3f(position[0], position[1], position[2] + verticalOffset);
+#endif
 }
 
 
@@ -224,11 +229,17 @@ static void drawParticle(GLUquadricObj* qobj, float* position, float density, fl
 
 
 static void setCamera() {//TODO this is testcase dependent
-  gluLookAt(/*eye*/8.0, 8.0, 0.5, /*at*/0.0, 0.0, 0.0, /*up*/0.0, 0.0, 1.0);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(-8, 8, -1, 10, 0.0, 40.0);//TODO this may be testcase dependent
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  gluLookAt(/*eye*/15, 15, 6, /*at*/0.0, 0.0, 0.0, /*up*/0.0, 0.0, 1.0);
 }
 
 
-#ifdef RENDER_SAMPLE
+#ifdef STANDALONE
 
 void render_image(int width,
                   int height,
@@ -278,7 +289,7 @@ void render_image(int width,
   GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
   GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
   GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-  GLfloat light_position[] = { 0.0, 0.0, 50.0, 1.0 };
+  GLfloat light_position[] = { 0.0, 0.0, 10.0, 1.0 };
   //  GLfloat red_mat[]   = { 1.0, 0.2, 0.2, 1.0 };
   //  GLfloat green_mat[] = { 0.2, 1.0, 0.2, 0.5 };
   //  GLfloat blue_mat[]  = { 0.2, 0.2, 1.0, 1.0 };
@@ -295,40 +306,46 @@ void render_image(int width,
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glEnable(GL_DEPTH_TEST);
-  
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glOrtho(-4, 4, -1, 1, 0.0, 20.0);//TODO this may be testcase dependent
-  glMatrixMode(GL_MODELVIEW);
-  
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   
-  glPushMatrix();
   setCamera();
   
   
   // draw cells
   
+  float totalVelocityMagnitude = 0;
+  
   glLineWidth(4);
   glBegin(GL_LINES);
   for(int i = 0; i < totalCells; ++i) {
     drawVelocityVector(centerCoordinates, velocity, temperature);
+    float velocityMagnitude = sqrtf(velocity[0] * velocity[0] + velocity[1] * velocity[1] + velocity[2] * velocity[2]);
+    totalVelocityMagnitude += velocityMagnitude;
     centerCoordinates += 3;
     velocity += 3;
     temperature++;
   }
   glEnd();
   
+  float meanVelocityMagnitude = totalVelocityMagnitude / totalCells;
+  std::cout << "mean velocity magnitude " << meanVelocityMagnitude << std::endl;
+  
   // draw particles
   
+  
+  int numDrawn = 0;
+  glBegin(GL_POINTS);
   for(int i = 0; i < totalCells; ++i) {
     if(meanParticles[i].numSamples > 0) {
       drawParticle(qobj, meanParticles[i].position, meanParticles[i].density,
                    meanParticles[i].particleTemperature);
+      numDrawn++;
     }
   }
+  glEnd();
+  std::cout << "drew " << numDrawn << " particles as points" << std::endl;
   
-  glPopMatrix();
+  
   
   
   /* This is very important!!!
@@ -348,7 +365,7 @@ void render_image(int width,
 
 
 
-#ifndef RENDER_SAMPLE
+#ifndef STANDALONE
 
 static
 void create_field_pointer(PhysicalRegion region,
@@ -680,7 +697,7 @@ static std::string imageFileName(std::string table, int timeStep, Rect<3> bounds
 
 // this is the entry point from regent
 
-#ifdef RENDER_SAMPLE
+#ifdef STANDALONE
 
 void cxx_render(std::string particleFilePath, std::string outputFileName, int numCells[3])
 
@@ -697,7 +714,7 @@ void cxx_render(legion_runtime_t runtime_,
                 int znum)
 #endif
 {
-#ifndef RENDER_SAMPLE
+#ifndef STANDALONE
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
   
@@ -767,7 +784,7 @@ void cxx_render(legion_runtime_t runtime_,
     exit(-1);
   }
   
-#ifdef RENDER_SAMPLE
+#ifdef STANDALONE
   char buffer[256];
   std::ifstream particleFile(particleFilePath);
   while(particleFile.getline(buffer, sizeof(buffer)))
@@ -878,7 +895,7 @@ void cxx_render(legion_runtime_t runtime_,
   const int width = 3840;
   const int height = 2160;
   
-#ifdef RENDER_SAMPLE
+#ifdef STANDALONE
   
   render_image(width, height, centerCoordinates, velocity, temperature, totalCells, meanParticles,
                &rgbaBuffer, &depthBuffer, mesaCtx);
@@ -898,7 +915,6 @@ void cxx_render(legion_runtime_t runtime_,
   
   FILE* depthFile = fopen(depthFileName.c_str(), "w");
   assert(depthFile != NULL);
-  std::cout << "depthFile " << depthFile << depthFileName << std::endl;
   fprintf(depthFile, "%d %d\n", width, height);
   fwrite(depthBuffer, sizeof(GLfloat), width * height, depthFile);
   fclose(depthFile);
@@ -916,7 +932,7 @@ void cxx_render(legion_runtime_t runtime_,
 }
 
 
-#ifdef RENDER_SAMPLE//offline development
+#ifdef STANDALONE//offline development
 
 
 static
@@ -936,11 +952,11 @@ void readCellData(std::string filePath,
       unsigned xLo, yLo, zLo, xHi, yHi, zHi;
       sscanf(inputLine.c_str(), "[(%d,%d,%d),(%d,%d,%d)]",
              &xLo, &yLo, &zLo, &xHi, &yHi, &zHi);
-      numCells[0] = xHi - xLo;
-      numCells[1] = yHi - yLo;
-      numCells[2] = zHi - zLo;
+      numCells[0] = xHi - xLo + 1;
+      numCells[1] = yHi - yLo + 1;
+      numCells[2] = zHi - zLo + 1;
       
-      unsigned expectedNumCells = (xHi - xLo) * (yHi - yLo) * (zHi - zLo);
+      unsigned expectedNumCells = numCells[0] * numCells[1] * numCells[2];
       centerCoordinates = new FieldData[expectedNumCells * 3];
       velocity = new FieldData[expectedNumCells * 3];
       temperature = new FieldData[expectedNumCells];

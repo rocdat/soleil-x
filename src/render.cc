@@ -173,9 +173,6 @@ static void scaledTemperatureToColor(GLfloat temperature,
 }
 
 
-static float meanVelocity[3];
-static float meanCenterCoordinate[3];
-
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
@@ -227,7 +224,7 @@ static void drawParticle(GLUquadricObj* qobj, float* position, float density, fl
 
 
 static void setCamera() {//TODO this is testcase dependent
-  gluLookAt(/*eye*/8.0, 8.0, 0.5, /*at*/1.5, 1.5, 0.0, /*up*/0.0, 0.0, 1.0);
+  gluLookAt(/*eye*/8.0, 8.0, 0.5, /*at*/0.0, 0.0, 0.0, /*up*/0.0, 0.0, 1.0);
 }
 
 
@@ -254,14 +251,7 @@ void render_image(int width,
                   FieldData* velocity,
                   FieldData* temperature,
                   int totalCells,
-                  bool* __valid,
-                  IndexSpace __validIS,
-                  FieldData* position,
-                  IndexSpace positionIS,
-                  FieldData* density,
-                  IndexSpace densityIS,
-                  FieldData* particleTemperature,
-                  IndexSpace particleTemperatureIS,
+                  MeanParticle* meanParticles,
                   GLfloat** rgbaBuffer,
                   GLfloat** depthBuffer,
                   OSMesaContext mesaCtx,
@@ -308,7 +298,7 @@ void render_image(int width,
   
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho(-10, 10, 0, 1, 0.0, 20.0);//TODO this may be testcase dependent
+  glOrtho(-4, 4, -1, 1, 0.0, 20.0);//TODO this may be testcase dependent
   glMatrixMode(GL_MODELVIEW);
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -332,9 +322,6 @@ void render_image(int width,
   // draw particles
   
   for(int i = 0; i < totalCells; ++i) {
-    if(i%1000==0) std::cout << i << " / " << totalCells << " "
-    << meanParticles[i].position[0] << " " << meanParticles[i].position[1] << " " << meanParticles[i].position[2]
-    << "  " << meanParticles[i].density << "  " << meanParticles[i].particleTemperature << std::endl;
     if(meanParticles[i].numSamples > 0) {
       drawParticle(qobj, meanParticles[i].position, meanParticles[i].density,
                    meanParticles[i].particleTemperature);
@@ -738,34 +725,35 @@ void cxx_render(legion_runtime_t runtime_,
   int xHi = (int)bounds.hi.x[0];
   int yHi = (int)bounds.hi.x[1];
   int zHi = (int)bounds.hi.x[2];
-  totalCells = (xHi - xLo + 1) * (yHi - yLo + 1) * (zHi - zLo + 1);
+  int numCells[3] = { (xHi - xLo + 1), (yHi - yLo + 1), (zHi - zLo + 1) };
+  totalCells = numCells[0] * numCells[1] * numCells[2];
   std::cout << "cells bounds (" << xLo << "," << yLo << "," << zLo << "), ("
   << xHi << "," << yHi << "," << zHi << ") totalCells = " << totalCells << std::endl;
   
-  bool* __valid = NULL;
+  bool* __validBase = NULL;
   IndexSpace __validIS;
-  int* cellX = NULL;
+  int* cellXBase = NULL;
   IndexSpace cellXIS;
-  int* cellY = NULL;
+  int* cellYBase = NULL;
   IndexSpace cellYIS;
-  int* cellZ = NULL;
+  int* cellZBase = NULL;
   IndexSpace cellZIS;
-  FieldData* position = NULL;
+  FieldData* positionBase = NULL;
   IndexSpace positionIS;
-  FieldData* density = NULL;
+  FieldData* densityBase = NULL;
   IndexSpace densityIS;
-  FieldData* particleTemperature = NULL;
+  FieldData* particleTemperatureBase = NULL;
   IndexSpace particleTemperatureIS;
   
-  accessParticleData(particles, particles_fields, __valid, __validIS, cellX, cellXIS, cellY, cellYIS,
-                     cellZ, cellZIS, position, positionIS, density, densityIS,
-                     particleTemperature, particleTemperatureIS, runtime, ctx);
+  accessParticleData(particles, particles_fields, __validBase, __validIS, cellXBase, cellXIS, cellYBase, cellYIS,
+                     cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
+                     particleTemperatureBase, particleTemperatureIS, runtime, ctx);
   
   if(writeFiles) {
     std::string particlesFileName = dataFileName("./out/particles", timeStep, bounds);
-    writeParticlesToFile(particlesFileName, __valid, __validIS, cellX, cellXIS, cellY, cellYIS,
-                         cellZ, cellZIS, position, positionIS, density, densityIS,
-                         particleTemperature, particleTemperatureIS, runtime, ctx);
+    writeParticlesToFile(particlesFileName, __validBase, __validIS, cellXBase, cellXIS, cellYBase, cellYIS,
+                         cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
+                         particleTemperatureBase, particleTemperatureIS, runtime, ctx);
   }
   
 #endif
@@ -825,7 +813,7 @@ void cxx_render(legion_runtime_t runtime_,
       int cellX = *NEXT(cellX);
       int cellY = *NEXT(cellY);
       int cellZ = *NEXT(cellZ);
-      int index = cellX + (cellY * numCells[0] ) + (cellZ * numCells[1] * numCells[0]);
+      int index = cellX + (cellY * numCells[0]) + (cellZ * numCells[1] * numCells[0]);
       FieldData* p = NEXT3(position);
       FieldData density = *NEXT(density);
       FieldData particleTemperature = *NEXT(particleTemperature);
@@ -846,7 +834,7 @@ void cxx_render(legion_runtime_t runtime_,
   float meanPos[3] = { 0 };
   float meanDensity = 0;
   
-  for(unsigned i = 0; i < totalCells; ++i) {
+  for(int i = 0; i < totalCells; ++i) {
     if(meanParticles[i].numSamples > 0) {
       meanParticles[i].position[0] /= meanParticles[i].numSamples;
       meanParticles[i].position[1] /= meanParticles[i].numSamples;
@@ -892,17 +880,15 @@ void cxx_render(legion_runtime_t runtime_,
   
 #ifdef RENDER_SAMPLE
   
-  render_image(width, height, centerCoordinates, velocity, temperature, totalCells,
-               meanParticles,
+  render_image(width, height, centerCoordinates, velocity, temperature, totalCells, meanParticles,
                &rgbaBuffer, &depthBuffer, mesaCtx);
   write_ppm(outputFileName.c_str(), rgbaBuffer, width, height);
   std::string depthFileName = outputFileName + ".depth.ppm";
   
 #else
   
-  render_image(width, height, centerCoordinates, velocity, temperature, numCells,
-               __valid, __validIS, position, positionIS, density, densityIS,
-               particleTemperature, particleTemperatureIS,
+  
+  render_image(width, height, centerCoordinates, velocity, temperature, totalCells, meanParticles,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, ctx);
   write_ppm(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
   std::string depthFileName = imageFileName("./out/depth", timeStep, bounds);

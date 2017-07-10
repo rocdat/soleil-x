@@ -48,79 +48,35 @@ end
 -- Module parameters
 -------------------------------------------------------------------------------
 
-return function(cellsRel, particlesRel, xnum, ynum, znum, origin, domainWidth)
+return function(cellsRel, particlesRel, xnum, ynum, znum, gridOrigin, gridWidth, imageRegion)
 
 local p_cells   = cellsRel:primPartSymbol()
 local cellsType = cellsRel:regionType()
 local p_particles   = particlesRel:primPartSymbol()
 local particlesType = particlesRel:regionType()
 local tiles = A.primColors()
-local imageRegion
 
 local width = 3840
 local height = 2160
 local numLayers = 4
-local partitionLevel0
-local partitionLevel1
-local partitionLevel2
-local partitionLevel3
-local partitionLevel4
-local partitionLevel5
-local partitionLevel6
-local partitionLevel7
-local partitionLevel8
-local partitionLevel9
-local partitionLevel10
-local partitionLevel11
-local partitionLevel12
-local partitionLevel13
-local partitionLevel14
+local imageRegion = regentlib.newsymbol("imageRegion")
+local partitionLevel0 = regentlib.newsymbol("partitionLevel0")
+local partitionLevel1 = regentlib.newsymbol("partitionLevel1")
+local partitionLevel2 = regentlib.newsymbol("partitionLevel2")
+local partitionLevel3 = regentlib.newsymbol("partitionLevel3")
+local partitionLevel4 = regentlib.newsymbol("partitionLevel4")
+local partitionLevel5 = regentlib.newsymbol("partitionLevel5")
+local partitionLevel6 = regentlib.newsymbol("partitionLevel6")
+local partitionLevel7 = regentlib.newsymbol("partitionLevel7")
+local partitionLevel8 = regentlib.newsymbol("partitionLevel8")
+local partitionLevel9 = regentlib.newsymbol("partitionLevel9")
+local partitionLevel10 = regentlib.newsymbol("partitionLevel10")
+local partitionLevel11 = regentlib.newsymbol("partitionLevel11")
+local partitionLevel12 = regentlib.newsymbol("partitionLevel12")
+local partitionLevel13 = regentlib.newsymbol("partitionLevel13")
+local partitionLevel14 = regentlib.newsymbol("partitionLevel14")
 
--------------------------------------------------------------------------------
--- Local tasks
--------------------------------------------------------------------------------
-
-local task Render(cells : cellsType, particles : particlesType)
-where
-  reads(cells.{centerCoordinates, velocity, temperature}),
-  reads(particles.{__valid, cell, position, density, particle_temperature, tracking})
-do
-  -- var pr_cells : regentlib.c.legion_physical_region_t[3] = __physical(cells)
-  crender.cxx_render(__runtime(), __context(), __physical(cells), __fields(cells),
-                        __physical(particles), __fields(particles), xnum, ynum, znum)
-end
-
-
-local task debug_particles(particles : particlesType)
-where
-  reads(particles.{cell, position, density, particle_temperature})
-do
-  regentlib.c.printf("=== particles in tile ===\n")
-  for p in particles do
-    -- if p.cell[0] > 0 then
-      regentlib.c.printf("(%d) %lf %lf %lf  %lf  %lf\n",
-        p.cell,
-        p.position[0], p.position[1], p.position[2],
-        p.density, p.particle_temperature)
-    -- end
-  end
-end
-
-local task debug_cells(cells : cellsType)
-where
-  reads(cells.{ centerCoordinates, velocity })
-do
-  regentlib.c.printf("=== cells centerCoordinates in tile ===\n")
-  for c in cells do
-    regentlib.c.printf("%lf %lf %lf   %lf %lf %lf\n",
-      c.centerCoordinates[0], c.centerCoordinates[1], c.centerCoordinates[2],
-      c.velocity[0], c.velocity[1], c.velocity[2])
-  end
-end
-
-
-
-fspace PixelFields {
+local fspace PixelFields {
   R : float,
   G : float,
   B : float,
@@ -129,11 +85,30 @@ fspace PixelFields {
 }
 
 
+-------------------------------------------------------------------------------
+-- Local tasks
+-------------------------------------------------------------------------------
+
+local task Render(cells : cellsType, particles : particlesType, imageRegion : region(ispace(int3d), PixelFields))
+where
+  reads(cells.{centerCoordinates, velocity, temperature}),
+  reads(particles.{__valid, cell, position, density, particle_temperature, tracking})
+do
+  -- var pr_cells : regentlib.c.legion_physical_region_t[3] = __physical(cells)
+  crender.cxx_render(__runtime(), __context(), __physical(cells), __fields(cells),
+                     __physical(particles), __fields(particles),
+                     __physical(imageRegion), __fields(imageRegion),
+                     xnum, ynum, znum)
+end
+
+local task Composite()
+end
+
 
 local task MakePartition(r : region(ispace(int3d), PixelFields),
-                         colors : ispace(int3d),
-                         level : int,
-                         pow2level : int)
+  colors : ispace(int3d),
+  level : int,
+  pow2level : int)
 
   regentlib.c.printf('level %d:\n', level)
 
@@ -149,9 +124,9 @@ local task MakePartition(r : region(ispace(int3d), PixelFields),
   regentlib.assert(([int](r.bounds.hi.y) + 1) % ([int](colors.bounds.hi.y) + 1) == 0, '')
   regentlib.assert(([int](r.bounds.hi.z) + 1) % ([int](colors.bounds.hi.z) + 1) == 0, '')
 
-  var elemsPerTileX = ([int](r.bounds.hi.x) + 1) / ([int](colors.bounds.hi.x) + 1)
-  var elemsPerTileY = ([int](r.bounds.hi.y) + 1) / ([int](colors.bounds.hi.y) + 1)
-  var elemsPerTileZ = ([int](r.bounds.hi.z) + 1) / ([int](colors.bounds.hi.z) + 1)
+  var elementsPerTileX = ([int](r.bounds.hi.x) + 1) / ([int](colors.bounds.hi.x) + 1)
+  var elementsPerTileY = ([int](r.bounds.hi.y) + 1) / ([int](colors.bounds.hi.y) + 1)
+  var elementsPerTileZ = ([int](r.bounds.hi.z) + 1) / ([int](colors.bounds.hi.z) + 1)
 
   var coloring = regentlib.c.legion_domain_point_coloring_create()
 
@@ -159,17 +134,16 @@ local task MakePartition(r : region(ispace(int3d), PixelFields),
     var rect : rect3d
     if [int](c.z) % pow2level == 0 then
       rect = rect3d {
--- TODO in 3D
-        lo = c * elemsPerTile,
-        hi = (c + pow2level) * elemsPerTile - 1
+        lo = int3d{c.x * elementsPerTileX, c.y * elementsPerTileY, c.z * elementsPerTileZ},
+        hi = {(c.x + pow2level) * elementsPerTileX - 1,
+          (c.y * pow2level) * elementsPerTileY - 1,
+          (c.z * pow2level) * elementsPerTileZ - 1}
       }
-      regentlib.c.printf('  color %d: %d - %d\n', c, rect.lo, rect.hi)
     else
       -- create an empty rectangle
       rect = rect3d {
---- TODO in 3D
-        lo = 1,
-        hi = 0
+        lo = int3d{1, 1, 1},
+        hi = int3d{0, 0, 0}
       }
     end
     regentlib.c.legion_domain_point_coloring_color_domain(coloring, c, rect)
@@ -182,38 +156,6 @@ end
 
 
 
-
-local task AllocateImage()
-do
--- TODO
-  var indices = ispace(int3d, width, height, numLayers)
-  imageRegion = region(indices, PixelFields)
-end
-
-
-local task PartitionImage(imageRegion : region(ispace(int3d), PixelFields))
-do
-  var fragmentsX = 1
-  var fragmentsY = 1
-  var colors = ispace(int3d, (fragmentsX, fragmentsY, numLayers))
-  partitionLevel0 = MakePartition(imageRegion, colors, 0, 1)
-  partitionLevel1 = MakePartition(imageRegion, colors, 1, 2)
-  partitionLevel2 = MakePartition(imageRegion, colors, 2, 4)
-  partitionLevel3 = MakePartition(imageRegion, colors, 3, 8)
-  partitionLevel4 = MakePartition(imageRegion, colors, 4, 16)
-  partitionLevel5 = MakePartition(imageRegion, colors, 5, 32)
-  partitionLevel6 = MakePartition(imageRegion, colors, 6, 64)
-  partitionLevel7 = MakePartition(imageRegion, colors, 7, 128)
-  partitionLevel8 = MakePartition(imageRegion, colors, 8, 256)
-  partitionLevel9 = MakePartition(imageRegion, colors, 9, 512)
-  partitionLevel10 = MakePartition(imageRegion, colors, 10, 1024)
-  partitionLevel11 = MakePartition(imageRegion, colors, 11, 2048)
-  partitionLevel12 = MakePartition(imageRegion, colors, 12, 4096)
-  partitionLevel13 = MakePartition(imageRegion, colors, 13, 8192)
-  partitionLevel14 = MakePartition(imageRegion, colors, 14, 16384)
-end
-
-
 -------------------------------------------------------------------------------
 -- Exported quotes
 -------------------------------------------------------------------------------
@@ -222,13 +164,39 @@ local exports = {}
 
 exports.Render = rquote
   for tile in tiles do
-    Render(p_cells[tile], p_particles[tile])
+    Render(p_cells[tile], p_particles[tile], imageRegion)
   end
 end
 
+
+
 exports.Initialize = rquote
-  AllocateImage()
-  PartitionImage()
+  var indices = ispace(int3d, int3d{width, height, numLayers})
+  var [imageRegion] = region(indices, PixelFields)
+  var fragmentsX = 1
+  var fragmentsY = 1
+  var colors = ispace(int3d, int3d{fragmentsX, fragmentsY, numLayers})
+  var [partitionLevel0] = MakePartition(imageRegion, colors, 0, 1)
+  var [partitionLevel1] = MakePartition(imageRegion, colors, 1, 2)
+  var [partitionLevel2] = MakePartition(imageRegion, colors, 2, 4)
+  var [partitionLevel3] = MakePartition(imageRegion, colors, 3, 8)
+  var [partitionLevel4] = MakePartition(imageRegion, colors, 4, 16)
+  var [partitionLevel5] = MakePartition(imageRegion, colors, 5, 32)
+  var [partitionLevel6] = MakePartition(imageRegion, colors, 6, 64)
+  var [partitionLevel7] = MakePartition(imageRegion, colors, 7, 128)
+  var [partitionLevel8] = MakePartition(imageRegion, colors, 8, 256)
+  var [partitionLevel9] = MakePartition(imageRegion, colors, 9, 512)
+  var [partitionLevel10] = MakePartition(imageRegion, colors, 10, 1024)
+  var [partitionLevel11] = MakePartition(imageRegion, colors, 11, 2048)
+  var [partitionLevel12] = MakePartition(imageRegion, colors, 12, 4096)
+  var [partitionLevel13] = MakePartition(imageRegion, colors, 13, 8192)
+  var [partitionLevel14] = MakePartition(imageRegion, colors, 14, 16384)
+end
+
+exports.Composite = rquote
+  for tile in tiles do
+    -- Composite(partitionLevel0[tile])
+  end
 end
 
 -------------------------------------------------------------------------------

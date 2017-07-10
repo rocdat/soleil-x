@@ -1862,6 +1862,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		412C676F1F14155300962655 /* tree_reduction.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = tree_reduction.rg; path = ../tree_reduction.rg; sourceTree = "<group>"; };
 		41500CC31F0D4C1D000C77C0 /* sample_traverse_unstructured_index_space.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = sample_traverse_unstructured_index_space.cpp; path = ../../sample_traverse_unstructured_index_space.cpp; sourceTree = "<group>"; };
 		4168B6111F06C0BE00530CC9 /* algebraic.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = algebraic.rg; sourceTree = "<group>"; };
 		4168B6121F06C0C700530CC9 /* particles_init_uniform.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = particles_init_uniform.rg; sourceTree = "<group>"; };
@@ -13620,6 +13621,7 @@
 		E9519EA41BD705D2000851BC = {
 			isa = PBXGroup;
 			children = (
+				412C676F1F14155300962655 /* tree_reduction.rg */,
 				4168B63B1F06C3A000530CC9 /* legion */,
 				E9519EB81BD70630000851BC /* params_template.lua */,
 				E9519EB91BD70630000851BC /* README.md */,

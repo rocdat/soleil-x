@@ -793,6 +793,8 @@ void cxx_render(legion_runtime_t runtime_,
                 legion_field_id_t *cells_fields,
                 legion_physical_region_t *particles,
                 legion_field_id_t *particles_fields,
+                legion_physical_region_t *imageRegion,
+                legion_field_id_t *imageRegion_fields,
                 int xnum,
                 int ynum,
                 int znum)

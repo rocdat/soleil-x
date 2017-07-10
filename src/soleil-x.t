@@ -82,7 +82,7 @@ double rand_gauss() {
 local rand_float = L.rand
 
 -----------------------------------------------------------------------------
---[[                       MAPPER CONFIGURATION                          ]]--
+--[[                       MAPPER AND RENDER CONFIGURATION               ]]--
 -----------------------------------------------------------------------------
 
 local SAVE_MAPPER_ONLY = os.getenv('SAVE_MAPPER_ONLY') == '1'
@@ -813,6 +813,7 @@ Flow.averagePD          = L.Global('Flow.averagePD', L.double, 0.0)
 Flow.averageDissipation = L.Global('Flow.averageDissipation', L.double, 0.0)
 Flow.averageFe          = L.Global('Flow.averageFe', L.double, 0.0)
 Flow.averageK           = L.Global('Flow.averageK', L.double, 0.0)
+
 
 -----------------------------------------------------------------------------
 --[[                       EXTERNAL REGENT MODULES                       ]]--

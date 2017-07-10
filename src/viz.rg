@@ -48,7 +48,7 @@ end
 -- Module parameters
 -------------------------------------------------------------------------------
 
-return function(cellsRel, particlesRel, xnum, ynum, znum, origin, width)
+return function(cellsRel, particlesRel, xnum, ynum, znum, origin, domainWidth)
 
 local p_cells   = cellsRel:primPartSymbol()
 local cellsType = cellsRel:regionType()
@@ -56,6 +56,25 @@ local p_particles   = particlesRel:primPartSymbol()
 local particlesType = particlesRel:regionType()
 local tiles = A.primColors()
 local imageRegion
+
+local width = 3840
+local height = 2160
+local numLayers = 4
+local partitionLevel0
+local partitionLevel1
+local partitionLevel2
+local partitionLevel3
+local partitionLevel4
+local partitionLevel5
+local partitionLevel6
+local partitionLevel7
+local partitionLevel8
+local partitionLevel9
+local partitionLevel10
+local partitionLevel11
+local partitionLevel12
+local partitionLevel13
+local partitionLevel14
 
 -------------------------------------------------------------------------------
 -- Local tasks
@@ -140,6 +159,7 @@ local task MakePartition(r : region(ispace(int3d), PixelFields),
     var rect : rect3d
     if [int](c.z) % pow2level == 0 then
       rect = rect3d {
+-- TODO in 3D
         lo = c * elemsPerTile,
         hi = (c + pow2level) * elemsPerTile - 1
       }
@@ -147,6 +167,7 @@ local task MakePartition(r : region(ispace(int3d), PixelFields),
     else
       -- create an empty rectangle
       rect = rect3d {
+--- TODO in 3D
         lo = 1,
         hi = 0
       }
@@ -164,10 +185,8 @@ end
 
 local task AllocateImage()
 do
-  var width = 3840
-  var height = 2160
-  var numLayers = 4
-  var indices = ispace(int3d, (width, height, numLayers))
+-- TODO
+  var indices = ispace(int3d, width, height, numLayers)
   imageRegion = region(indices, PixelFields)
 end
 
@@ -177,7 +196,21 @@ do
   var fragmentsX = 1
   var fragmentsY = 1
   var colors = ispace(int3d, (fragmentsX, fragmentsY, numLayers))
-  var partitionLevel1 = MakePartition(imageRegion, colors, 1, 2)
+  partitionLevel0 = MakePartition(imageRegion, colors, 0, 1)
+  partitionLevel1 = MakePartition(imageRegion, colors, 1, 2)
+  partitionLevel2 = MakePartition(imageRegion, colors, 2, 4)
+  partitionLevel3 = MakePartition(imageRegion, colors, 3, 8)
+  partitionLevel4 = MakePartition(imageRegion, colors, 4, 16)
+  partitionLevel5 = MakePartition(imageRegion, colors, 5, 32)
+  partitionLevel6 = MakePartition(imageRegion, colors, 6, 64)
+  partitionLevel7 = MakePartition(imageRegion, colors, 7, 128)
+  partitionLevel8 = MakePartition(imageRegion, colors, 8, 256)
+  partitionLevel9 = MakePartition(imageRegion, colors, 9, 512)
+  partitionLevel10 = MakePartition(imageRegion, colors, 10, 1024)
+  partitionLevel11 = MakePartition(imageRegion, colors, 11, 2048)
+  partitionLevel12 = MakePartition(imageRegion, colors, 12, 4096)
+  partitionLevel13 = MakePartition(imageRegion, colors, 13, 8192)
+  partitionLevel14 = MakePartition(imageRegion, colors, 14, 16384)
 end
 
 

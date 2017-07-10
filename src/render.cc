@@ -670,11 +670,11 @@ void accessParticleData(legion_physical_region_t *particles,
         break;
         
       case 6:
-        getBaseIndexSpaceBool(particle, particles_fields[field], __valid, __validIS);
+        getBaseIndexSpaceBool(particle, particles_fields[field], tracking, trackingIS);
         break;
         
       case 7:
-        getBaseIndexSpaceBool(particle, particles_fields[field], tracking, trackingIS);
+        getBaseIndexSpaceBool(particle, particles_fields[field], __valid, __validIS);
         break;
         
       default:

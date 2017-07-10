@@ -5,5 +5,7 @@ For example,
 cd ~
 mkdir PSAAP
 cd PSAAP
-../soleil-x/scripts/prepare.bash
+git clone https://github.com/stanfordhpccenter/soleil-x.git
+./soleil-x/scripts/setup.bash
+./soleil-x/scripts/prepare.bash
 

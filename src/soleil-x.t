@@ -775,6 +775,9 @@ if particles_options.modeParticles then
   particles:NewField('velocity_t', L.vec3d)
   particles:NewField('temperature_t', L.double)
 
+  -- visualization
+  particles:NewField('tracking', L.bool)
+
 end
 
 -----------------------------------------------------------------------------

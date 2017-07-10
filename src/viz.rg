@@ -64,7 +64,7 @@ local imageRegion
 local task Render(cells : cellsType, particles : particlesType)
 where
   reads(cells.{centerCoordinates, velocity, temperature}),
-  reads(particles.{__valid, cell, position, density, particle_temperature})
+  reads(particles.{__valid, cell, position, density, particle_temperature, tracking})
 do
   -- var pr_cells : regentlib.c.legion_physical_region_t[3] = __physical(cells)
   crender.cxx_render(__runtime(), __context(), __physical(cells), __fields(cells),

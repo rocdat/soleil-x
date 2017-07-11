@@ -3358,6 +3358,7 @@ end
 
 function Visualize.Reduce()
   -- Launch an image reduction
+  M.INLINE(viz.Reduce)
 end
 
 -----------------------------------------------------------------------------

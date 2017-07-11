@@ -807,6 +807,7 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
   assert(fields.size() == 6);
   Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, image->get_logical_region().get_index_space());
   Rect<3> bounds = indexSpaceDomain.get_rect<3>();
+  std::cout << "image bounds " << bounds << std::endl;
   
   float* R = NULL;
   float* G = NULL;

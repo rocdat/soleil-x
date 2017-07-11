@@ -59,6 +59,11 @@ local tiles = A.primColors()
 local width = 3840
 local height = 2160
 local numLayers = 4
+local fragmentsX = 1
+local fragmentsY = 1
+local fragmentSizeX = (width / fragmentsX)
+local fragmentSizeY = (height / fragmentsY)
+
 local imageRegion = regentlib.newsymbol("imageRegion")
 local partitionByDepth = regentlib.newsymbol("partitionByDepth")
 local partitionLevel0 = regentlib.newsymbol("partitionLevel0")
@@ -91,33 +96,6 @@ local fspace PixelFields {
 -- Local tasks
 -------------------------------------------------------------------------------
 
-
---
--- Render: produce an RGBA and DEPTH buffer image, write the pixels into the imageRegion
---
-
-local task Render(cells : cellsType, particles : particlesType, imageRegion : region(ispace(int3d), PixelFields))
-where
-  reads(cells.{centerCoordinates, velocity, temperature}),
-  reads(particles.{__valid, cell, position, density, particle_temperature, tracking}),
-  writes(imageRegion.{R, G, B, A, Z, UserData})
-do
-  regentlib.c.printf('in task Render\n')
-  crender.cxx_render(__runtime(), __context(),
-                     __physical(cells), __fields(cells),
-                     __physical(particles), __fields(particles),
-                     __physical(imageRegion), __fields(imageRegion),
-                     xnum, ynum, znum)
-end
-
-
-
---
--- Composite: reduce images to one
---
-
-local task Composite()
-end
 
 
 
@@ -200,6 +178,70 @@ local task DepthPartition(r : region(ispace(int3d), PixelFields),
 end
 
 
+
+--
+-- Render: produce an RGBA and DEPTH buffer image, write the pixels into the imageRegion
+--
+
+local task Render(cells : cellsType, particles : particlesType, imageRegion : region(ispace(int3d), PixelFields))
+where
+  reads(cells.{centerCoordinates, velocity, temperature}),
+  reads(particles.{__valid, cell, position, density, particle_temperature, tracking}),
+  writes(imageRegion.{R, G, B, A, Z, UserData})
+do
+  crender.cxx_render(__runtime(), __context(),
+    __physical(cells), __fields(cells),
+    __physical(particles), __fields(particles),
+    __physical(imageRegion), __fields(imageRegion),
+    xnum, ynum, znum)
+end
+
+
+
+--
+-- Reduce: reduce images to one
+--
+
+local task Reduce(left : region(ispace(int3d), PixelFields),
+  right : region(ispace(int3d), PixelFields))
+where
+  reads(left), writes(left), reads(right)
+do
+  regentlib.c.printf("in reduce]n")
+end
+
+
+--
+-- ReduceTreeLevel: launch reductions for one tree level
+
+local task ReduceTreeLevel(treeLevel : int,
+  offset : int,
+  imageRegion : region(ispace(int3d), PixelFields))
+where
+  reads(imageRegion), writes(imageRegion)
+do
+  var x = 0
+  var y = 0
+  while y < height
+  do
+    while x < width
+    do
+      var z = 0
+      while z < numLayers
+      do
+        var left = int3d{ x, y, z }
+        var right = int3d{ x, y, z + offset }
+        Reduce(imageRegion[left], imageRegion[right])
+        z = z + offset * 2
+      end
+      x = x + fragmentSizeX
+    end
+    y = y + fragmentSizeY
+  end
+end
+
+
+
 -------------------------------------------------------------------------------
 -- Exported quotes
 -------------------------------------------------------------------------------
@@ -212,8 +254,6 @@ exports.Initialize = rquote
   var indices = ispace(int3d, int3d{width, height, numLayers})
   var [imageRegion] = region(indices, PixelFields)
   var [partitionByDepth] = DepthPartition([imageRegion], width, height)
-  var fragmentsX = 1
-  var fragmentsY = 1
   var colors = ispace(int3d, int3d{fragmentsX, fragmentsY, numLayers})
   var [partitionLevel0] = MakePartition([imageRegion], colors, 0, 1)
   var [partitionLevel1] = MakePartition([imageRegion], colors, 1, 2)
@@ -243,10 +283,15 @@ exports.Render = rquote
 end
 
 
-exports.Composite = rquote
-  for tile in tiles do
-    -- Composite(partitionLevel0[tile])
+exports.Reduce = rquote
+  var numTreeLevels = log2(numLayers)
+  if numTreeLevels > 0 then
+    ReduceTreeLevel(0, 1, [partitionLevel0])
   end
+  if numTreeLEvels > 1 then
+    ReduceTreeLevel(1, 2, [partitionLevel1])
+  end
+  -- etcetera up to tree level 14
 end
 
 -------------------------------------------------------------------------------

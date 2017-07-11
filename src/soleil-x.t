@@ -3204,28 +3204,21 @@ end
 
 function TimeIntegrator.CalculateDeltaTime()
 
-  M.PRINT("A\n")
   -- Check whether we are imposing a delta time or basing it on the CFL,
   -- i.e. a negative CFL was imposed in the config
   if time_options.cfl < 0 then
-    M.PRINT("B\n")
 
     -- Impose a fixed time step from the config
     TimeIntegrator.deltaTime:set(time_options.delta_time)
 
   else
-    M.PRINT("C\n")
 
     -- Calculate the convective, viscous, and heat spectral radii
     Flow.CalculateSpectralRadii(grid.cells)
-    M.PRINT("D\n")
 
     local maxV = maxViscousSpectralRadius:get()
-    M.PRINT("D1\n")
     local maxH = maxHeatConductionSpectralRadius:get()
-    M.PRINT("D2\n")
     local maxC = maxConvectiveSpectralRadius:get()
-    M.PRINT("E cfl %f maxC %f maxV %f maxH %f\n", time_options.cfl, maxC, maxV, maxH)
 
     -- Calculate diffusive spectral radius as the maximum between
     -- heat conduction and convective spectral radii
@@ -3234,9 +3227,7 @@ function TimeIntegrator.CalculateDeltaTime()
     -- Delta time using the CFL and max spectral radius for stability
     TimeIntegrator.deltaTime:set(time_options.cfl /
                                  M.MAX(maxC,M.MAX(maxV,maxH)))
-    M.PRINT("F\n")
   end
-  M.PRINT("G\n")
 end
 
 
@@ -3358,14 +3349,10 @@ end
 ------------
 
 function Visualize.Initialize()
-  M.PRINT("Visualize.Initialize\n")
   M.INLINE(viz.Initialize)
-  M.PRINT("Back from Initialize\n")
 end
 
 function Visualize.Render()
-  M.PRINT("Visualize.Render\n")
-  -- Launch a visualization task
   M.INLINE(viz.Render)
 end
 
@@ -3393,13 +3380,9 @@ Visualize.Initialize()
 M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
               M.LT(TimeIntegrator.timeStep:get(), time_options.max_iter)),
         true)
-  M.PRINT("one\n")
   TimeIntegrator.CalculateDeltaTime()
-  M.PRINT("two\n")
   TimeIntegrator.AdvanceTimeStep()
-  M.PRINT("three\n")
   Visualize.Render()
-  M.PRINT("four\n")
   Visualize.Reduce()
 
   if not regentlib.config['flow-spmd'] then

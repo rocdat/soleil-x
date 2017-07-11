@@ -231,15 +231,17 @@ static void drawParticles(bool* __validBase,
                           Context ctx,
                           Runtime* runtime,
                           int &numTracking) {
-  
+  _T
   IndexIterator __validIterator(runtime, ctx, __validIS);
   IndexIterator positionIterator(runtime, ctx, positionIS);
   IndexIterator densityIterator(runtime, ctx, densityIS);
   IndexIterator particleTemperatureIterator(runtime, ctx, particleTemperatureIS);
   IndexIterator trackingIterator(runtime, ctx, trackingIS);
   
+  _T
   numTracking = 0;
   while(__validIterator.has_next()) {
+    _T
     bool valid = *NEXT(__valid);
     FieldData* p = NEXT3(position);
     float pos[3] = { (float)p[0], (float)p[1], (float)p[2] };
@@ -426,6 +428,7 @@ void render_image(int width,
   // draw particles
   
 #ifndef STANDALONE
+  _T
   
   int numTracking;
   drawParticles(__validBase, __validIS, positionBase, positionIS, densityBase, densityIS,

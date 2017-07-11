@@ -231,17 +231,14 @@ static void drawParticles(bool* __validBase,
                           Context ctx,
                           Runtime* runtime,
                           int &numTracking) {
-  _T
   IndexIterator __validIterator(runtime, ctx, __validIS);
   IndexIterator positionIterator(runtime, ctx, positionIS);
   IndexIterator densityIterator(runtime, ctx, densityIS);
   IndexIterator particleTemperatureIterator(runtime, ctx, particleTemperatureIS);
   IndexIterator trackingIterator(runtime, ctx, trackingIS);
   
-  _T
   numTracking = 0;
   while(__validIterator.has_next()) {
-    _T
     bool valid = *NEXT(__valid);
     FieldData* p = NEXT3(position);
     float pos[3] = { (float)p[0], (float)p[1], (float)p[2] };
@@ -428,7 +425,6 @@ void render_image(int width,
   // draw particles
   
 #ifndef STANDALONE
-  _T
   
   int numTracking;
   drawParticles(__validBase, __validIS, positionBase, positionIS, densityBase, densityIS,
@@ -795,6 +791,7 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
   assert(fields.size() == 6);
   Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, image->get_logical_region().get_index_space());
   Rect<3> bounds = indexSpaceDomain.get_rect<3>();
+  std::cout << "image bounds " << bounds << std::endl;
   
   FieldData* R = NULL;
   FieldData* G = NULL;
@@ -845,8 +842,8 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
   GLfloat* depth = depthBuffer;
   unsigned pixelCounter = 0;
   
-  for(int y = bounds.lo.x[1]; y <= bounds.hi.x[1]; ++y) {
-    for(int x = bounds.lo.x[0]; x <= bounds.hi.x[0]; ++x) {
+  for(coord_t y = bounds.lo.x[1]; y <= bounds.hi.x[1]; ++y) {
+    for(coord_t x = bounds.lo.x[0]; x <= bounds.hi.x[0]; ++x) {
       *R = rgba[0];
       *G = rgba[1];
       *B = rgba[2];
@@ -894,7 +891,7 @@ void cxx_render(legion_runtime_t runtime_,
                 int znum)
 #endif
 {
-  _T
+  
   
 #ifndef STANDALONE
   
@@ -962,8 +959,6 @@ void cxx_render(legion_runtime_t runtime_,
 #endif
   
   
-  _T
-  
   /* Create an RGBA-mode context */
 #if OSMESA_MAJOR_VERSION * 100 + OSMESA_MINOR_VERSION >= 305
   /* specify Z, stencil, accum sizes */
@@ -980,8 +975,6 @@ void cxx_render(legion_runtime_t runtime_,
   GLfloat* depthBuffer = NULL;
   const int width = 3840;
   const int height = 2160;
-  
-  _T
   
 #ifdef STANDALONE
   
@@ -1004,16 +997,12 @@ void cxx_render(legion_runtime_t runtime_,
   
 #endif
   
-  _T
-  
   FILE* depthFile = fopen(depthFileName.c_str(), "w");
   assert(depthFile != NULL);
   fprintf(depthFile, "%d %d\n", width, height);
   fwrite(depthBuffer, sizeof(GLfloat), width * height, depthFile);
   fclose(depthFile);
   std::cout << "wrote " << depthFileName << std::endl;
-  
-  _T
   
 #ifndef STANDALONE
   

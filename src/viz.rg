@@ -98,11 +98,11 @@ where
   writes(imageRegion.{R, G, B, A, Z, UserData})
 do
   regentlib.c.printf('in task Render\n')
-  crender.cxx_render(__runtime(), __context(),
-                     __physical(cells), __fields(cells),
-                     __physical(particles), __fields(particles),
-                     __physical(imageRegion), __fields(imageRegion),
-                     xnum, ynum, znum)
+--  crender.cxx_render(__runtime(), __context(),
+--                     __physical(cells), __fields(cells),
+--                     __physical(particles), __fields(particles),
+--                     __physical(imageRegion), __fields(imageRegion),
+--                     xnum, ynum, znum)
 end
 
 local task Composite()
@@ -213,10 +213,13 @@ end
 
 exports.Render = rquote
   regentlib.c.printf('Render\n')
+  var depthPartitionNumber = 0
   for tile in tiles do
-    -- Render(p_cells[tile], p_particles[tile], [imageRegion])
-    --Render(p_cells[tile], p_particles[tile])
-    Render(p_cells[tile], p_particles[tile], [partitionByDepth][tile])
+    regentlib.c.printf("tile %d %d %d\n", tile.x, tile.y, tile.z)
+    var partitionID = int3d{ 0, 0, depthPartitionNumber }
+    depthPartitionNumber = depthPartitionNumber + 1
+    regentlib.c.printf("partitionID %d %d %d\n", partitionID.x, partitionID.y, partitionID.z)
+    Render(p_cells[tile], p_particles[tile], [partitionByDepth][partitionID])
   end
   regentlib.c.printf('end Render\n')
 end

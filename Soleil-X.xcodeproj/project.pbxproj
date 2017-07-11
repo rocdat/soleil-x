@@ -1863,6 +1863,18 @@
 
 /* Begin PBXFileReference section */
 		412C676F1F14155300962655 /* tree_reduction.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = tree_reduction.rg; path = ../tree_reduction.rg; sourceTree = "<group>"; };
+		412C67711F14733F00962655 /* taylor_green_vortex_1024_1024_1024.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_1024_1024_1024.lua; sourceTree = "<group>"; };
+		412C67721F14733F00962655 /* taylor_green_vortex_1024_1024_512.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_1024_1024_512.lua; sourceTree = "<group>"; };
+		412C67731F14733F00962655 /* taylor_green_vortex_1024_512_512.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_1024_512_512.lua; sourceTree = "<group>"; };
+		412C67741F14733F00962655 /* taylor_green_vortex_2048_1024_1024.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_2048_1024_1024.lua; sourceTree = "<group>"; };
+		412C67751F14733F00962655 /* taylor_green_vortex_2048_2048_1024.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_2048_2048_1024.lua; sourceTree = "<group>"; };
+		412C67761F14733F00962655 /* taylor_green_vortex_2048_2048_2048.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_2048_2048_2048.lua; sourceTree = "<group>"; };
+		412C67771F14733F00962655 /* taylor_green_vortex_256_256_256.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_256_256_256.lua; sourceTree = "<group>"; };
+		412C67781F14733F00962655 /* taylor_green_vortex_4096_2048_2048.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_4096_2048_2048.lua; sourceTree = "<group>"; };
+		412C67791F14733F00962655 /* taylor_green_vortex_4096_4096_2048.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_4096_4096_2048.lua; sourceTree = "<group>"; };
+		412C677A1F14733F00962655 /* taylor_green_vortex_512_256_256.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_512_256_256.lua; sourceTree = "<group>"; };
+		412C677B1F14733F00962655 /* taylor_green_vortex_512_512_256.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_512_512_256.lua; sourceTree = "<group>"; };
+		412C677C1F14733F00962655 /* taylor_green_vortex_512_512_512.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_512_512_512.lua; sourceTree = "<group>"; };
 		41500CC31F0D4C1D000C77C0 /* sample_traverse_unstructured_index_space.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = sample_traverse_unstructured_index_space.cpp; path = ../../sample_traverse_unstructured_index_space.cpp; sourceTree = "<group>"; };
 		4168B6111F06C0BE00530CC9 /* algebraic.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = algebraic.rg; sourceTree = "<group>"; };
 		4168B6121F06C0C700530CC9 /* particles_init_uniform.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = particles_init_uniform.rg; sourceTree = "<group>"; };
@@ -7382,6 +7394,25 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		412C67701F14733F00962655 /* taylor_with_smaller_particles */ = {
+			isa = PBXGroup;
+			children = (
+				412C67711F14733F00962655 /* taylor_green_vortex_1024_1024_1024.lua */,
+				412C67721F14733F00962655 /* taylor_green_vortex_1024_1024_512.lua */,
+				412C67731F14733F00962655 /* taylor_green_vortex_1024_512_512.lua */,
+				412C67741F14733F00962655 /* taylor_green_vortex_2048_1024_1024.lua */,
+				412C67751F14733F00962655 /* taylor_green_vortex_2048_2048_1024.lua */,
+				412C67761F14733F00962655 /* taylor_green_vortex_2048_2048_2048.lua */,
+				412C67771F14733F00962655 /* taylor_green_vortex_256_256_256.lua */,
+				412C67781F14733F00962655 /* taylor_green_vortex_4096_2048_2048.lua */,
+				412C67791F14733F00962655 /* taylor_green_vortex_4096_4096_2048.lua */,
+				412C677A1F14733F00962655 /* taylor_green_vortex_512_256_256.lua */,
+				412C677B1F14733F00962655 /* taylor_green_vortex_512_512_256.lua */,
+				412C677C1F14733F00962655 /* taylor_green_vortex_512_512_512.lua */,
+			);
+			path = taylor_with_smaller_particles;
+			sourceTree = "<group>";
+		};
 		4168B6131F06C0CF00530CC9 /* LMquads */ = {
 			isa = PBXGroup;
 			children = (
@@ -13651,6 +13682,7 @@
 		E9519EBD1BD70630000851BC /* testcases */ = {
 			isa = PBXGroup;
 			children = (
+				412C67701F14733F00962655 /* taylor_with_smaller_particles */,
 				E9519EBE1BD70630000851BC /* cavity */,
 				E9519EC11BD70630000851BC /* couette */,
 				E9519EC31BD70630000851BC /* forced_turbulence */,

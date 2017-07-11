@@ -15,6 +15,8 @@
 
 //#define STANDALONE // debug
 
+#define _T {std::cout<<__FUNCTION__<<" "<<__FILE__<<":"<<__LINE__<<std::endl;}
+
 #ifndef STANDALONE
 
 #include "legion_c.h"
@@ -592,7 +594,7 @@ void getBaseIndexSpaceInt(PhysicalRegion* particle, int fieldID, int* &base, Ind
 
 
 static
-void getBaseIndexSpaceFloat_impl(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace, int numFields) {
+void getBaseIndexSpaceFieldData_impl(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace, int numFields) {
   RegionAccessor<AccessorType::Generic, FieldData> acc = particle->get_field_accessor(fieldID).typeify<FieldData>();
   void* b = NULL;
   size_t stride = sizeof(FieldData) * numFields;
@@ -604,14 +606,14 @@ void getBaseIndexSpaceFloat_impl(PhysicalRegion* particle, int fieldID, FieldDat
 
 
 static
-void getBaseIndexSpaceFloat(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace) {
-  getBaseIndexSpaceFloat_impl(particle, fieldID, base, indexSpace, 1);
+void getBaseIndexSpaceFieldData(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace) {
+  getBaseIndexSpaceFieldData_impl(particle, fieldID, base, indexSpace, 1);
 }
 
 
 static
-void getBaseIndexSpaceFloat3(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace) {
-  getBaseIndexSpaceFloat_impl(particle, fieldID, base, indexSpace, 3);
+void getBaseIndexSpaceFieldData3(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace) {
+  getBaseIndexSpaceFieldData_impl(particle, fieldID, base, indexSpace, 3);
 }
 
 
@@ -658,15 +660,15 @@ void accessParticleData(legion_physical_region_t *particles,
         break;
         
       case 3:
-        getBaseIndexSpaceFloat3(particle, particles_fields[field], position, positionIS);
+        getBaseIndexSpaceFieldData3(particle, particles_fields[field], position, positionIS);
         break;
         
       case 4:
-        getBaseIndexSpaceFloat(particle, particles_fields[field], density, densityIS);
+        getBaseIndexSpaceFieldData(particle, particles_fields[field], density, densityIS);
         break;
         
       case 5:
-        getBaseIndexSpaceFloat(particle, particles_fields[field], particleTemperature, particleTemperatureIS);
+        getBaseIndexSpaceFieldData(particle, particles_fields[field], particleTemperature, particleTemperatureIS);
         break;
         
       case 6:
@@ -774,6 +776,95 @@ static std::string imageFileName(std::string table, int timeStep, Rect<3> bounds
 #endif
 }
 
+
+static void
+writeImageToImageRegion(GLfloat* rgbaBuffer,
+                        GLfloat* depthBuffer,
+                        Runtime* runtime,
+                        Context ctx,
+                        legion_physical_region_t *imageRegion,
+                        legion_field_id_t *imageRegion_fields) {
+  
+  PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion[0]);
+  std::cout << "image is " << image << std::endl;
+  std::vector<legion_field_id_t> fields;
+  image->get_fields(fields);
+  assert(fields.size() == 6);
+  Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, image->get_logical_region().get_index_space());
+  Rect<3> bounds = indexSpaceDomain.get_rect<3>();
+  
+  FieldData* R = NULL;
+  FieldData* G = NULL;
+  FieldData* B = NULL;
+  FieldData* A = NULL;
+  FieldData* Z = NULL;
+  FieldData* UserData = NULL;
+  
+  ByteOffset strideR[3];
+  ByteOffset strideG[3];
+  ByteOffset strideB[3];
+  ByteOffset strideA[3];
+  ByteOffset strideZ[3];
+  ByteOffset strideUserData[3];
+  
+  
+  for(unsigned field = 0; field < fields.size(); ++field) {
+    PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion[field]);
+    switch(field) {
+      case 0:
+        create_field_pointer(*image, R, imageRegion_fields[field], strideR, runtime, ctx);
+        assert(strideR[0].offset == sizeof(FieldData));
+        break;
+      case 1:
+        create_field_pointer(*image, G, imageRegion_fields[field], strideG, runtime, ctx);
+        assert(strideG[0].offset == sizeof(FieldData));
+        break;
+      case 2:
+        create_field_pointer(*image, B, imageRegion_fields[field], strideB, runtime, ctx);
+        assert(strideB[0].offset == sizeof(FieldData));
+        break;
+      case 3:
+        create_field_pointer(*image, A, imageRegion_fields[field], strideA, runtime, ctx);
+        assert(strideA[0].offset == sizeof(FieldData));
+        break;
+      case 4:
+        create_field_pointer(*image, Z, imageRegion_fields[field], strideZ, runtime, ctx);
+        assert(strideZ[0].offset == sizeof(FieldData));
+        break;
+      case 5:
+        create_field_pointer(*image, UserData, imageRegion_fields[field], strideUserData, runtime, ctx);
+        assert(strideUserData[0].offset == sizeof(FieldData));
+        break;
+    }
+  }
+  
+  GLfloat* rgba = rgbaBuffer;
+  GLfloat* depth = depthBuffer;
+  unsigned pixelCounter = 0;
+  
+  for(int y = bounds.lo.x[1]; y <= bounds.hi.x[1]; ++y) {
+    for(int x = bounds.lo.x[0]; x <= bounds.hi.x[0]; ++x) {
+      *R = rgba[0];
+      *G = rgba[1];
+      *B = rgba[2];
+      *A = rgba[3];
+      rgba += 4;
+      *Z = depth[0];
+      depth++;
+      *UserData = 0.0;
+      R += strideR[0].offset / sizeof(*R);
+      G += strideG[0].offset / sizeof(*G);
+      B += strideB[0].offset / sizeof(*B);
+      A += strideA[0].offset / sizeof(*A);
+      Z += strideZ[0].offset / sizeof(*Z);
+      UserData += strideUserData[0].offset / sizeof(*UserData);
+      pixelCounter++;
+    }
+  }
+  std::cout << "pushed " << pixelCounter << " rendered pixels to image region" << std::endl;
+  
+}
+
 #endif
 
 
@@ -800,6 +891,7 @@ void cxx_render(legion_runtime_t runtime_,
                 int znum)
 #endif
 {
+  _T
   
 #ifndef STANDALONE
   
@@ -867,7 +959,7 @@ void cxx_render(legion_runtime_t runtime_,
 #endif
   
   
-  
+  _T
   
   /* Create an RGBA-mode context */
 #if OSMESA_MAJOR_VERSION * 100 + OSMESA_MINOR_VERSION >= 305
@@ -885,6 +977,8 @@ void cxx_render(legion_runtime_t runtime_,
   GLfloat* depthBuffer = NULL;
   const int width = 3840;
   const int height = 2160;
+  
+  _T
   
 #ifdef STANDALONE
   
@@ -907,6 +1001,7 @@ void cxx_render(legion_runtime_t runtime_,
   
 #endif
   
+  _T
   
   FILE* depthFile = fopen(depthFileName.c_str(), "w");
   assert(depthFile != NULL);
@@ -914,6 +1009,14 @@ void cxx_render(legion_runtime_t runtime_,
   fwrite(depthBuffer, sizeof(GLfloat), width * height, depthFile);
   fclose(depthFile);
   std::cout << "wrote " << depthFileName << std::endl;
+  
+  _T
+  
+#ifndef STANDALONE
+  
+  writeImageToImageRegion(rgbaBuffer, depthBuffer, runtime, ctx, imageRegion, imageRegion_fields);
+  
+#endif
   
   /* free the image buffer */
   free(rgbaBuffer);

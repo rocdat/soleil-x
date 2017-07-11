@@ -479,6 +479,23 @@ void create_field_pointer(PhysicalRegion region,
 }
 
 
+static
+void create_field_pointer(PhysicalRegion region,
+                          float* &field,
+                          int fieldID,
+                          ByteOffset stride[3],
+                          Runtime* runtime,
+                          Context context) {
+  
+  Domain indexSpaceDomain = runtime->get_index_space_domain(context, region.get_logical_region().get_index_space());
+  Rect<3> bounds = indexSpaceDomain.get_rect<3>();
+  RegionAccessor<AccessorType::Generic, float> acc = region.get_field_accessor(fieldID).typeify<float>();
+  Rect<3> tempBounds;
+  field = acc.raw_rect_ptr<3>(bounds, tempBounds, stride);
+  assert(bounds == tempBounds);
+}
+
+
 
 
 
@@ -785,20 +802,18 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
                         legion_field_id_t *imageRegion_fields) {
   
   PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion[0]);
-  std::cout << "image is " << image << std::endl;
   std::vector<legion_field_id_t> fields;
   image->get_fields(fields);
   assert(fields.size() == 6);
   Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, image->get_logical_region().get_index_space());
   Rect<3> bounds = indexSpaceDomain.get_rect<3>();
-  std::cout << "image bounds " << bounds << std::endl;
   
-  FieldData* R = NULL;
-  FieldData* G = NULL;
-  FieldData* B = NULL;
-  FieldData* A = NULL;
-  FieldData* Z = NULL;
-  FieldData* UserData = NULL;
+  float* R = NULL;
+  float* G = NULL;
+  float* B = NULL;
+  float* A = NULL;
+  float* Z = NULL;
+  float* UserData = NULL;
   
   ByteOffset strideR[3];
   ByteOffset strideG[3];
@@ -813,27 +828,27 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
     switch(field) {
       case 0:
         create_field_pointer(*image, R, imageRegion_fields[field], strideR, runtime, ctx);
-        assert(strideR[0].offset == sizeof(FieldData));
+        assert(strideR[0].offset == sizeof(float));
         break;
       case 1:
         create_field_pointer(*image, G, imageRegion_fields[field], strideG, runtime, ctx);
-        assert(strideG[0].offset == sizeof(FieldData));
+        assert(strideG[0].offset == sizeof(float));
         break;
       case 2:
         create_field_pointer(*image, B, imageRegion_fields[field], strideB, runtime, ctx);
-        assert(strideB[0].offset == sizeof(FieldData));
+        assert(strideB[0].offset == sizeof(float));
         break;
       case 3:
         create_field_pointer(*image, A, imageRegion_fields[field], strideA, runtime, ctx);
-        assert(strideA[0].offset == sizeof(FieldData));
+        assert(strideA[0].offset == sizeof(float));
         break;
       case 4:
         create_field_pointer(*image, Z, imageRegion_fields[field], strideZ, runtime, ctx);
-        assert(strideZ[0].offset == sizeof(FieldData));
+        assert(strideZ[0].offset == sizeof(float));
         break;
       case 5:
         create_field_pointer(*image, UserData, imageRegion_fields[field], strideUserData, runtime, ctx);
-        assert(strideUserData[0].offset == sizeof(FieldData));
+        assert(strideUserData[0].offset == sizeof(float));
         break;
     }
   }
@@ -924,8 +939,6 @@ void cxx_render(legion_runtime_t runtime_,
   int zHi = (int)bounds.hi.x[2];
   int numCells[3] = { (xHi - xLo + 1), (yHi - yLo + 1), (zHi - zLo + 1) };
   totalCells = numCells[0] * numCells[1] * numCells[2];
-  std::cout << "cells bounds (" << xLo << "," << yLo << "," << zLo << "), ("
-  << xHi << "," << yHi << "," << zHi << ") totalCells = " << totalCells << std::endl;
   
   bool* __validBase = NULL;
   IndexSpace __validIS;

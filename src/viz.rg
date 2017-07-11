@@ -91,6 +91,11 @@ local fspace PixelFields {
 -- Local tasks
 -------------------------------------------------------------------------------
 
+
+--
+-- Render: produce an RGBA and DEPTH buffer image, write the pixels into the imageRegion
+--
+
 local task Render(cells : cellsType, particles : particlesType, imageRegion : region(ispace(int3d), PixelFields))
 where
   reads(cells.{centerCoordinates, velocity, temperature}),
@@ -98,16 +103,27 @@ where
   writes(imageRegion.{R, G, B, A, Z, UserData})
 do
   regentlib.c.printf('in task Render\n')
---  crender.cxx_render(__runtime(), __context(),
---                     __physical(cells), __fields(cells),
---                     __physical(particles), __fields(particles),
---                     __physical(imageRegion), __fields(imageRegion),
---                     xnum, ynum, znum)
+  crender.cxx_render(__runtime(), __context(),
+                     __physical(cells), __fields(cells),
+                     __physical(particles), __fields(particles),
+                     __physical(imageRegion), __fields(imageRegion),
+                     xnum, ynum, znum)
 end
+
+
+
+--
+-- Composite: reduce images to one
+--
 
 local task Composite()
 end
 
+
+
+--
+-- MakePartition: create a partition of imageRegion for one tree level
+--
 
 local task MakePartition(r : region(ispace(int3d), PixelFields),
   colors : ispace(int3d),
@@ -156,19 +172,26 @@ local task MakePartition(r : region(ispace(int3d), PixelFields),
 end
 
 
+
+--
+-- DepthPartition: partition the imageRegion by layers
+--
+
 local task DepthPartition(r : region(ispace(int3d), PixelFields),
   width : int,
   height : int)
 
   var coloring = regentlib.c.legion_domain_point_coloring_create()
-  var colors = ispace(int3d, int3d{1, 1, 1})
+  var colors = ispace(int3d, int3d{1, 1, numLayers})
 
+  var layer = 0
   for c in colors do
-    regentlib.c.printf("%f %f %f\n", c.x, c.y, c.z)
+    regentlib.c.printf("%f %f %f\n", c.x, c.y, c.z) -- why does c.z==0?
     var rect = rect3d {
-      lo = { 0, 0, c.z },
-      hi = { width - 1, height - 1, c.z }
+      lo = { 0, 0, layer },
+      hi = { width - 1, height - 1, layer }
     }
+    layer = layer + 1
     regentlib.c.legion_domain_point_coloring_color_domain(coloring, c, rect)
   end
   var p = partition(disjoint, r, coloring, colors)
@@ -188,40 +211,35 @@ exports.Initialize = rquote
 
   var indices = ispace(int3d, int3d{width, height, numLayers})
   var [imageRegion] = region(indices, PixelFields)
-  regentlib.c.printf("width %d height %d\n", width, height)
   var [partitionByDepth] = DepthPartition([imageRegion], width, height)
-  -- var fragmentsX = 1
-  -- var fragmentsY = 1
-  -- var colors = ispace(int3d, int3d{fragmentsX, fragmentsY, numLayers})
-  -- var [partitionLevel0] = MakePartition([imageRegion], colors, 0, 1)
-  -- var [partitionLevel1] = MakePartition([imageRegion], colors, 1, 2)
-  -- var [partitionLevel2] = MakePartition([imageRegion], colors, 2, 4)
-  -- var [partitionLevel3] = MakePartition([imageRegion], colors, 3, 8)
-  -- var [partitionLevel4] = MakePartition([imageRegion], colors, 4, 16)
-  -- var [partitionLevel5] = MakePartition([imageRegion], colors, 5, 32)
-  -- var [partitionLevel6] = MakePartition([imageRegion], colors, 6, 64)
-  -- var [partitionLevel7] = MakePartition([imageRegion], colors, 7, 128)
-  -- var [partitionLevel8] = MakePartition([imageRegion], colors, 8, 256)
-  -- var [partitionLevel9] = MakePartition([imageRegion], colors, 9, 512)
-  -- var [partitionLevel10] = MakePartition([imageRegion], colors, 10, 1024)
-  -- var [partitionLevel11] = MakePartition([imageRegion], colors, 11, 2048)
-  -- var [partitionLevel12] = MakePartition([imageRegion], colors, 12, 4096)
-  -- var [partitionLevel13] = MakePartition([imageRegion], colors, 13, 8192)
-  -- var [partitionLevel14] = MakePartition([imageRegion], colors, 14, 16384)
+  var fragmentsX = 1
+  var fragmentsY = 1
+  var colors = ispace(int3d, int3d{fragmentsX, fragmentsY, numLayers})
+  var [partitionLevel0] = MakePartition([imageRegion], colors, 0, 1)
+  var [partitionLevel1] = MakePartition([imageRegion], colors, 1, 2)
+  var [partitionLevel2] = MakePartition([imageRegion], colors, 2, 4)
+  var [partitionLevel3] = MakePartition([imageRegion], colors, 3, 8)
+  var [partitionLevel4] = MakePartition([imageRegion], colors, 4, 16)
+  var [partitionLevel5] = MakePartition([imageRegion], colors, 5, 32)
+  var [partitionLevel6] = MakePartition([imageRegion], colors, 6, 64)
+  var [partitionLevel7] = MakePartition([imageRegion], colors, 7, 128)
+  var [partitionLevel8] = MakePartition([imageRegion], colors, 8, 256)
+  var [partitionLevel9] = MakePartition([imageRegion], colors, 9, 512)
+  var [partitionLevel10] = MakePartition([imageRegion], colors, 10, 1024)
+  var [partitionLevel11] = MakePartition([imageRegion], colors, 11, 2048)
+  var [partitionLevel12] = MakePartition([imageRegion], colors, 12, 4096)
+  var [partitionLevel13] = MakePartition([imageRegion], colors, 13, 8192)
+  var [partitionLevel14] = MakePartition([imageRegion], colors, 14, 16384)
 end
 
 
 exports.Render = rquote
-  regentlib.c.printf('Render\n')
   var depthPartitionNumber = 0
   for tile in tiles do
-    regentlib.c.printf("tile %d %d %d\n", tile.x, tile.y, tile.z)
     var partitionID = int3d{ 0, 0, depthPartitionNumber }
     depthPartitionNumber = depthPartitionNumber + 1
-    regentlib.c.printf("partitionID %d %d %d\n", partitionID.x, partitionID.y, partitionID.z)
     Render(p_cells[tile], p_particles[tile], [partitionByDepth][partitionID])
   end
-  regentlib.c.printf('end Render\n')
 end
 
 

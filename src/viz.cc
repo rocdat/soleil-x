@@ -21,7 +21,7 @@
 
 #include "legion_c.h"
 #include "legion_c_util.h"
-#include "render.h"
+#include "viz.h"
 
 using namespace LegionRuntime::Arrays;
 using namespace Legion;
@@ -135,23 +135,23 @@ static void temperatureToColor(GLfloat temperature,
   
   // red
   if (temperature <= 6600)
-    R = 1.0f;
+  R = 1.0f;
   else
-    R = 0.0002889f * x5 - 0.01258f * x4 + 0.2148f * x3 - 1.776f * x2 + 6.907f * x - 8.723f;
+  R = 0.0002889f * x5 - 0.01258f * x4 + 0.2148f * x3 - 1.776f * x2 + 6.907f * x - 8.723f;
   
   // green
   if (temperature <= 6600)
-    G = -4.593e-05f * x5 + 0.001424f * x4 - 0.01489f * x3 + 0.0498f * x2 + 0.1669f * x - 0.1653f;
+  G = -4.593e-05f * x5 + 0.001424f * x4 - 0.01489f * x3 + 0.0498f * x2 + 0.1669f * x - 0.1653f;
   else
-    G = -1.308e-07f * x5 + 1.745e-05f * x4 - 0.0009116f * x3 + 0.02348f * x2 - 0.3048f * x + 2.159f;
+  G = -1.308e-07f * x5 + 1.745e-05f * x4 - 0.0009116f * x3 + 0.02348f * x2 - 0.3048f * x + 2.159f;
   
   // blue
   if (temperature <= 2000)
-    B = 0.0f;
+  B = 0.0f;
   else if (temperature < 6600)
-    B = 1.764e-05f * x5 + 0.0003575f * x4 - 0.01554f * x3 + 0.1549f * x2 - 0.3682f * x + 0.2386f;
+  B = 1.764e-05f * x5 + 0.0003575f * x4 - 0.01554f * x3 + 0.1549f * x2 - 0.3682f * x + 0.2386f;
   else
-    B = 1.0f;
+  B = 1.0f;
   
   color[0] = R;
   color[1] = G;
@@ -524,21 +524,21 @@ void accessCellData(legion_physical_region_t *cells,
     
     switch(field) {
       case 0:
-        create_field_pointer(*cell, velocity, cells_fields[field], strideVelocity, runtime, ctx);
-        assert(strideVelocity[0].offset == 3 * sizeof(FieldData));
-        break;
-        
+      create_field_pointer(*cell, velocity, cells_fields[field], strideVelocity, runtime, ctx);
+      assert(strideVelocity[0].offset == 3 * sizeof(FieldData));
+      break;
+      
       case 1:
-        create_field_pointer(*cell, centerCoordinates, cells_fields[field], strideCenter, runtime, ctx);
-        assert(strideCenter[0].offset == 3 * sizeof(FieldData));
-        break;
-        
+      create_field_pointer(*cell, centerCoordinates, cells_fields[field], strideCenter, runtime, ctx);
+      assert(strideCenter[0].offset == 3 * sizeof(FieldData));
+      break;
+      
       case 2:
-        create_field_pointer(*cell, temperature, cells_fields[field], strideTemperature, runtime, ctx);
-        assert(strideTemperature[0].offset == sizeof(FieldData));
-        break;
+      create_field_pointer(*cell, temperature, cells_fields[field], strideTemperature, runtime, ctx);
+      assert(strideTemperature[0].offset == sizeof(FieldData));
+      break;
       default:
-        std::cerr << "oops, field not found" << std::endl;
+      std::cerr << "oops, field not found" << std::endl;
     }
   }
 }
@@ -664,39 +664,39 @@ void accessParticleData(legion_physical_region_t *particles,
     
     switch(field) {
       case 0:
-        getBaseIndexSpaceInt(particle, particles_fields[field], cellX, cellXIS);
-        break;
-        
+      getBaseIndexSpaceInt(particle, particles_fields[field], cellX, cellXIS);
+      break;
+      
       case 1:
-        getBaseIndexSpaceInt(particle, particles_fields[field], cellY, cellYIS);
-        break;
-        
+      getBaseIndexSpaceInt(particle, particles_fields[field], cellY, cellYIS);
+      break;
+      
       case 2:
-        getBaseIndexSpaceInt(particle, particles_fields[field], cellZ, cellZIS);
-        break;
-        
+      getBaseIndexSpaceInt(particle, particles_fields[field], cellZ, cellZIS);
+      break;
+      
       case 3:
-        getBaseIndexSpaceFieldData3(particle, particles_fields[field], position, positionIS);
-        break;
-        
+      getBaseIndexSpaceFieldData3(particle, particles_fields[field], position, positionIS);
+      break;
+      
       case 4:
-        getBaseIndexSpaceFieldData(particle, particles_fields[field], density, densityIS);
-        break;
-        
+      getBaseIndexSpaceFieldData(particle, particles_fields[field], density, densityIS);
+      break;
+      
       case 5:
-        getBaseIndexSpaceFieldData(particle, particles_fields[field], particleTemperature, particleTemperatureIS);
-        break;
-        
+      getBaseIndexSpaceFieldData(particle, particles_fields[field], particleTemperature, particleTemperatureIS);
+      break;
+      
       case 6:
-        getBaseIndexSpaceBool(particle, particles_fields[field], tracking, trackingIS);
-        break;
-        
+      getBaseIndexSpaceBool(particle, particles_fields[field], tracking, trackingIS);
+      break;
+      
       case 7:
-        getBaseIndexSpaceBool(particle, particles_fields[field], __valid, __validIS);
-        break;
-        
+      getBaseIndexSpaceBool(particle, particles_fields[field], __valid, __validIS);
+      break;
+      
       default:
-        std::cerr << "oops, field not found" << std::endl;
+      std::cerr << "oops, field not found" << std::endl;
     }
   }
 }
@@ -828,29 +828,29 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
     PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion[field]);
     switch(field) {
       case 0:
-        create_field_pointer(*image, R, imageRegion_fields[field], strideR, runtime, ctx);
-        assert(strideR[0].offset == sizeof(float));
-        break;
+      create_field_pointer(*image, R, imageRegion_fields[field], strideR, runtime, ctx);
+      assert(strideR[0].offset == sizeof(float));
+      break;
       case 1:
-        create_field_pointer(*image, G, imageRegion_fields[field], strideG, runtime, ctx);
-        assert(strideG[0].offset == sizeof(float));
-        break;
+      create_field_pointer(*image, G, imageRegion_fields[field], strideG, runtime, ctx);
+      assert(strideG[0].offset == sizeof(float));
+      break;
       case 2:
-        create_field_pointer(*image, B, imageRegion_fields[field], strideB, runtime, ctx);
-        assert(strideB[0].offset == sizeof(float));
-        break;
+      create_field_pointer(*image, B, imageRegion_fields[field], strideB, runtime, ctx);
+      assert(strideB[0].offset == sizeof(float));
+      break;
       case 3:
-        create_field_pointer(*image, A, imageRegion_fields[field], strideA, runtime, ctx);
-        assert(strideA[0].offset == sizeof(float));
-        break;
+      create_field_pointer(*image, A, imageRegion_fields[field], strideA, runtime, ctx);
+      assert(strideA[0].offset == sizeof(float));
+      break;
       case 4:
-        create_field_pointer(*image, Z, imageRegion_fields[field], strideZ, runtime, ctx);
-        assert(strideZ[0].offset == sizeof(float));
-        break;
+      create_field_pointer(*image, Z, imageRegion_fields[field], strideZ, runtime, ctx);
+      assert(strideZ[0].offset == sizeof(float));
+      break;
       case 5:
-        create_field_pointer(*image, UserData, imageRegion_fields[field], strideUserData, runtime, ctx);
-        assert(strideUserData[0].offset == sizeof(float));
-        break;
+      create_field_pointer(*image, UserData, imageRegion_fields[field], strideUserData, runtime, ctx);
+      assert(strideUserData[0].offset == sizeof(float));
+      break;
     }
   }
   
@@ -1034,6 +1034,83 @@ void cxx_render(legion_runtime_t runtime_,
   timeStep++;
   
 }
+
+
+
+#ifndef STANDALONE
+
+void cxx_reduce(legion_runtime_t runtime_,
+                legion_context_t ctx_,
+                legion_physical_region_t *imageSubregion,
+                legion_field_id_t *imageSubregion_fields,
+                int treeLevel,
+                int offset) {
+  
+  Runtime *runtime = CObjectWrapper::unwrap(runtime_);
+  Context ctx = CObjectWrapper::unwrap(ctx_)->context();
+
+  PhysicalRegion* image = CObjectWrapper::unwrap(imageSubregion[0]);
+  std::vector<legion_field_id_t> fields;
+  image->get_fields(fields);
+  const int expectedNumFields = 6;
+  assert(fields.size() == expectedNumFields);
+  Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, image->get_logical_region().get_index_space());
+  Rect<3> bounds = indexSpaceDomain.get_rect<3>();
+  
+  std::cout << "subregion bounds " << bounds << std::endl;
+  
+  float* R = NULL;
+  float* G = NULL;
+  float* B = NULL;
+  float* A = NULL;
+  float* Z = NULL;
+  float* UserData = NULL;
+  
+  ByteOffset strideR[3];
+  ByteOffset strideG[3];
+  ByteOffset strideB[3];
+  ByteOffset strideA[3];
+  ByteOffset strideZ[3];
+  ByteOffset strideUserData[3];
+  
+  
+  for(unsigned field = 0; field < fields.size(); ++field) {
+    PhysicalRegion* image = CObjectWrapper::unwrap(imageSubregion[field]);
+    switch(field) {
+      case 0:
+      create_field_pointer(*image, R, imageSubregion_fields[field], strideR, runtime, ctx);
+      assert(strideR[0].offset == sizeof(float) * expectedNumFields);
+      break;
+      case 1:
+      create_field_pointer(*image, G, imageSubregion_fields[field], strideG, runtime, ctx);
+      assert(strideG[0].offset == sizeof(float) * expectedNumFields);
+      break;
+      case 2:
+      create_field_pointer(*image, B, imageSubregion_fields[field], strideB, runtime, ctx);
+      assert(strideB[0].offset == sizeof(float) * expectedNumFields);
+      break;
+      case 3:
+      create_field_pointer(*image, A, imageSubregion_fields[field], strideA, runtime, ctx);
+      assert(strideA[0].offset == sizeof(float) * expectedNumFields);
+      break;
+      case 4:
+      create_field_pointer(*image, Z, imageSubregion_fields[field], strideZ, runtime, ctx);
+      assert(strideZ[0].offset == sizeof(float) * expectedNumFields);
+      break;
+      case 5:
+      create_field_pointer(*image, UserData, imageSubregion_fields[field], strideUserData, runtime, ctx);
+      assert(strideUserData[0].offset == sizeof(float) * expectedNumFields);
+      break;
+    }
+  }
+  
+  // here call ImageReduction composite function
+}
+
+
+#endif
+
+
 
 
 #ifdef STANDALONE//offline development

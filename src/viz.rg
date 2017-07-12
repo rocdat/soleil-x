@@ -3,7 +3,7 @@ import 'regent'
 
 local A = require 'admiral'
 
-local crender
+local cviz
 local link_flags
 do
   local root_dir = arg[0]:match(".*/") or "./"
@@ -12,12 +12,12 @@ do
   local legion_dir = runtime_dir .. "legion/"
   local mapper_dir = runtime_dir .. "mappers/"
   local realm_dir = runtime_dir .. "realm/"
-  local render_cc = root_dir .. "render.cc"
+  local viz_cc = root_dir .. "viz.cc"
   if os.getenv('SAVEOBJ') == '1' then
-    render_so = root_dir .. "librender.so"
-    link_flags = terralib.newlist({"-L" .. root_dir, "-lrender"})
+    viz_so = root_dir .. "libviz.so"
+    link_flags = terralib.newlist({"-L" .. root_dir, "-lviz"})
   else
-    render_so = os.tmpname() .. ".so"
+    viz_so = os.tmpname() .. ".so"
   end
   local cxx = os.getenv('CXX') or 'c++'
 
@@ -32,13 +32,13 @@ do
 
   local cmd = (cxx .. " " .. cxx_flags .. " -I " .. runtime_dir .. " " ..
                  " -I " .. mapper_dir .. " " .. " -I " .. legion_dir .. " " ..
-                 " -I " .. realm_dir .. " " .. render_cc .. " -o " .. render_so)
+                 " -I " .. realm_dir .. " " .. viz_cc .. " -o " .. viz_so)
   if os.execute(cmd) ~= 0 then
-    print("Error: failed to compile " .. render_cc)
+    print("Error: failed to compile " .. viz_cc)
     assert(false)
   end
-  terralib.linklibrary(render_so)
-  crender = terralib.includec("render.h", {"-I", root_dir, "-I", runtime_dir,
+  terralib.linklibrary(viz_so)
+  cviz = terralib.includec("viz.h", {"-I", root_dir, "-I", runtime_dir,
                                                   "-I", mapper_dir, "-I", legion_dir,
                                                   "-I", realm_dir})
 end
@@ -98,7 +98,6 @@ local fspace PixelFields {
 
 
 
-
 --
 -- MakePartition: create a partition of imageRegion for one tree level
 --
@@ -151,6 +150,7 @@ end
 
 
 
+
 --
 -- DepthPartition: partition the imageRegion by layers
 --
@@ -179,6 +179,7 @@ end
 
 
 
+
 --
 -- Render: produce an RGBA and DEPTH buffer image, write the pixels into the imageRegion
 --
@@ -189,7 +190,7 @@ where
   reads(particles.{__valid, cell, position, density, particle_temperature, tracking}),
   writes(imageRegion.{R, G, B, A, Z, UserData})
 do
-  crender.cxx_render(__runtime(), __context(),
+  cviz.cxx_render(__runtime(), __context(),
     __physical(cells), __fields(cells),
     __physical(particles), __fields(particles),
     __physical(imageRegion), __fields(imageRegion),
@@ -198,45 +199,44 @@ end
 
 
 
+
 --
 -- Reduce: reduce images to one
 --
 
-local task Reduce(left : region(ispace(int3d), PixelFields),
-  right : region(ispace(int3d), PixelFields))
+local task Reduce(subregion : region(ispace(int3d), PixelFields),
+  treeLevel : int,
+  offset : int)
 where
-  reads(left), writes(left), reads(right)
+  reads(subregion), writes(subregion)
 do
-  regentlib.c.printf("in reduce]n")
+  regentlib.c.printf("in reduce treeLevel %d offset %d\n", treeLevel, offset)
+  cviz.cxx_reduce(__runtime(), __context(),
+    __physical(subregion), __fields(subregion),
+    treeLevel, offset)
 end
+
+
 
 
 --
 -- ReduceTreeLevel: launch reductions for one tree level
+--
 
 local task ReduceTreeLevel(treeLevel : int,
   offset : int,
-  imageRegion : region(ispace(int3d), PixelFields))
+  imageRegion : region(ispace(int3d), PixelFields),
+  imagePartition : partition(disjoint, imageRegion, ispace(int3d)),
+  colors : ispace(int3d)
+)
 where
   reads(imageRegion), writes(imageRegion)
 do
-  var x = 0
-  var y = 0
-  while y < height
+  regentlib.c.printf("ReduceTreeLevel %d\n", treeLevel)
+  for c in colors
   do
-    while x < width
-    do
-      var z = 0
-      while z < numLayers
-      do
-        var left = int3d{ x, y, z }
-        var right = int3d{ x, y, z + offset }
-        Reduce(imageRegion[left], imageRegion[right])
-        z = z + offset * 2
-      end
-      x = x + fragmentSizeX
-    end
-    y = y + fragmentSizeY
+    regentlib.c.printf("color = %d %d %d\n", c.x, c.y, c.z)
+    Reduce(imagePartition[c], treeLevel, offset)
   end
 end
 
@@ -284,15 +284,20 @@ end
 
 
 exports.Reduce = rquote
-  var numTreeLevels = log2(numLayers)
-  if numTreeLevels > 0 then
-    ReduceTreeLevel(0, 1, [partitionLevel0])
+  var colors = ispace(int3d, int3d{fragmentsX, fragmentsY, numLayers})
+  if numLayers > 1 then
+    ReduceTreeLevel(0, 1, [imageRegion], [partitionLevel0], colors)
   end
-  if numTreeLEvels > 1 then
-    ReduceTreeLevel(1, 2, [partitionLevel1])
+  if numLayers > 2 then
+    ReduceTreeLevel(1, 2, [imageRegion], [partitionLevel1], colors)
+  end
+  if numLayers > 4 then
+    ReduceTreeLevel(2, 4, [imageRegion], [partitionLevel2], colors)
   end
   -- etcetera up to tree level 14
 end
+
+
 
 -------------------------------------------------------------------------------
 -- Module exports

@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4168B6361F06C0DD00530CC9 /* render.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4168B6341F06C0DD00530CC9 /* render.cc */; };
+		4168B6361F06C0DD00530CC9 /* viz.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4168B6341F06C0DD00530CC9 /* viz.cc */; };
 		4168B6391F06C0EB00530CC9 /* soleil_mapper.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4168B6371F06C0EB00530CC9 /* soleil_mapper.cc */; };
 		4168C6B31F06C3AC00530CC9 /* binding.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4168B6471F06C3A000530CC9 /* binding.cc */; };
 		4168C6B41F06C3AC00530CC9 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 4168B65C1F06C3A000530CC9 /* Makefile */; };
@@ -1910,8 +1910,8 @@
 		4168B6311F06C0CF00530CC9 /* 770.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 770.txt; sourceTree = "<group>"; };
 		4168B6321F06C0CF00530CC9 /* 86.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 86.txt; sourceTree = "<group>"; };
 		4168B6331F06C0CF00530CC9 /* 974.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 974.txt; sourceTree = "<group>"; };
-		4168B6341F06C0DD00530CC9 /* render.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = render.cc; sourceTree = "<group>"; };
-		4168B6351F06C0DD00530CC9 /* render.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = render.h; sourceTree = "<group>"; };
+		4168B6341F06C0DD00530CC9 /* viz.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = viz.cc; sourceTree = "<group>"; };
+		4168B6351F06C0DD00530CC9 /* viz.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = viz.h; sourceTree = "<group>"; };
 		4168B6371F06C0EB00530CC9 /* soleil_mapper.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = soleil_mapper.cc; sourceTree = "<group>"; };
 		4168B6381F06C0EB00530CC9 /* soleil_mapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = soleil_mapper.h; sourceTree = "<group>"; };
 		4168B63A1F06C0F300530CC9 /* viz.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = viz.rg; sourceTree = "<group>"; };
@@ -13666,15 +13666,15 @@
 			isa = PBXGroup;
 			children = (
 				4168B63A1F06C0F300530CC9 /* viz.rg */,
+				4168B6341F06C0DD00530CC9 /* viz.cc */,
+				4168B6351F06C0DD00530CC9 /* viz.h */,
+				E9519EBC1BD70630000851BC /* soleil-x.t */,
 				4168B6371F06C0EB00530CC9 /* soleil_mapper.cc */,
 				4168B6381F06C0EB00530CC9 /* soleil_mapper.h */,
-				4168B6341F06C0DD00530CC9 /* render.cc */,
 				41500CC31F0D4C1D000C77C0 /* sample_traverse_unstructured_index_space.cpp */,
-				4168B6351F06C0DD00530CC9 /* render.h */,
 				4168B6131F06C0CF00530CC9 /* LMquads */,
 				4168B6121F06C0C700530CC9 /* particles_init_uniform.rg */,
 				4168B6111F06C0BE00530CC9 /* algebraic.rg */,
-				E9519EBC1BD70630000851BC /* soleil-x.t */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -14071,7 +14071,7 @@
 				4168CDA71F06C3AD00530CC9 /* attach_file_mini.cc in Sources */,
 				4168CC7E1F06C3AD00530CC9 /* lib_table.c in Sources */,
 				4168C6C71F06C3AC00530CC9 /* circuit_cpu.cc in Sources */,
-				4168B6361F06C0DD00530CC9 /* render.cc in Sources */,
+				4168B6361F06C0DD00530CC9 /* viz.cc in Sources */,
 				4168CCFD1F06C3AD00530CC9 /* lj_snap.c in Sources */,
 				4168CDCA1F06C3AE00530CC9 /* detect_loops.cc in Sources */,
 				4168CD9B1F06C3AD00530CC9 /* profiling.cc in Sources */,

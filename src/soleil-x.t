@@ -86,7 +86,7 @@ local rand_float = L.rand
 -----------------------------------------------------------------------------
 
 local SAVE_MAPPER_ONLY = os.getenv('SAVE_MAPPER_ONLY') == '1'
-local SAVE_RENDER_ONLY = os.getenv('SAVE_RENDER_ONLY') == '1'
+local SAVE_VIZ_ONLY = os.getenv('SAVE_VIZ_ONLY') == '1'
 local cmapper
 local link_flags
 do
@@ -97,14 +97,14 @@ do
   local mapper_dir = runtime_dir .. "mappers/"
   local realm_dir = runtime_dir .. "realm/"
   local mapper_cc = root_dir .. "soleil_mapper.cc"
-  local render_cc = root_dir .. "render.cc"
+  local viz_cc = root_dir .. "viz.cc"
   if os.getenv('SAVEOBJ') == '1' then
     mapper_so = root_dir .. "libsoleil_mapper.so"
-    render_so = root_dir .. "librender.so"
-    link_flags = terralib.newlist({"-L" .. root_dir, "-lsoleil_mapper", "-lrender"})
+    viz_so = root_dir .. "libviz.so"
+    link_flags = terralib.newlist({"-L" .. root_dir, "-lsoleil_mapper", "-lviz"})
   else
     mapper_so = os.tmpname() .. ".so"
-    render_so = os.tmpname() .. ".so"
+    viz_so = os.tmpname() .. ".so"
   end
 
   local cxx = os.getenv('CXX') or 'c++'
@@ -135,14 +135,14 @@ do
                  " -I " .. mapper_dir .. " " .. " -I " .. legion_dir .. " " ..
                  " -lOSMesa " .. " -lGLU " ..
                  " -I " .. realm_dir ..
-                 " " .. render_cc ..
-                 " -o " .. render_so)
+                 " " .. viz_cc ..
+                 " -o " .. viz_so)
   if os.execute(cmd2) ~= 0 then
-    print("Error: failed to compile " .. mapper_cc)
+    print("Error: failed to compile " .. viz_cc)
     assert(false)
   end
-  if SAVE_RENDER_ONLY then os.exit(0) end
-  terralib.linklibrary(render_so)
+  if SAVE_VIZ_ONLY then os.exit(0) end
+  terralib.linklibrary(viz_so)
 
 end
 

@@ -14,11 +14,12 @@
  */
 
 
-#ifndef __RENDER_H__
-#define __RENDER_H__
+#ifndef __VIZ_H__
+#define __VIZ_H__
 
 
 typedef double FieldData;
+typedef float PixelField;
 
 #include "legion_c.h"
 
@@ -45,6 +46,13 @@ extern "C" {
                   legion_field_id_t *imageRegion_fields,
                   int xnum, int ynum, int znum);
   
+  void cxx_reduce(legion_runtime_t runtime,
+                  legion_context_t context,
+                  legion_physical_region_t *imageSubregion,
+                  legion_field_id_t *imageSubregion_fields,
+                  int treeLevel,
+                  int offset);
+  
 
 #ifdef __cplusplus
 }
@@ -52,5 +60,5 @@ extern "C" {
 
 
 
-#endif // __RENDER_H__
+#endif // __VIZ_H__
 

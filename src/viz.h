@@ -48,8 +48,10 @@ extern "C" {
   
   void cxx_reduce(legion_runtime_t runtime,
                   legion_context_t context,
-                  legion_physical_region_t *imageSubregion,
-                  legion_field_id_t *imageSubregion_fields,
+                  legion_physical_region_t *leftSubregion,
+                  legion_field_id_t *leftSubregion_fields,
+                  legion_physical_region_t *rightSubregion,
+                  legion_field_id_t *rightSubregion_fields,
                   int treeLevel,
                   int offset);
   

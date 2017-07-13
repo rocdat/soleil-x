@@ -1862,6 +1862,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4127A7111F169C9D009A1F6A /* tree_reduction_lr.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = tree_reduction_lr.rg; path = ../tree_reduction_lr.rg; sourceTree = "<group>"; };
 		412C676F1F14155300962655 /* tree_reduction.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = tree_reduction.rg; path = ../tree_reduction.rg; sourceTree = "<group>"; };
 		412C67711F14733F00962655 /* taylor_green_vortex_1024_1024_1024.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_1024_1024_1024.lua; sourceTree = "<group>"; };
 		412C67721F14733F00962655 /* taylor_green_vortex_1024_1024_512.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_1024_1024_512.lua; sourceTree = "<group>"; };
@@ -13652,6 +13653,7 @@
 		E9519EA41BD705D2000851BC = {
 			isa = PBXGroup;
 			children = (
+				4127A7111F169C9D009A1F6A /* tree_reduction_lr.rg */,
 				412C676F1F14155300962655 /* tree_reduction.rg */,
 				4168B63B1F06C3A000530CC9 /* legion */,
 				E9519EB81BD70630000851BC /* params_template.lua */,

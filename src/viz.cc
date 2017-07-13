@@ -804,7 +804,8 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
   PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion[0]);
   std::vector<legion_field_id_t> fields;
   image->get_fields(fields);
-  assert(fields.size() == 6);
+  const int expectedNumFields = 6;
+  assert(fields.size() == expectedNumFields);
   Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, image->get_logical_region().get_index_space());
   Rect<3> bounds = indexSpaceDomain.get_rect<3>();
   std::cout << "image bounds " << bounds << std::endl;
@@ -829,27 +830,21 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
     switch(field) {
       case 0:
       create_field_pointer(*image, R, imageRegion_fields[field], strideR, runtime, ctx);
-      assert(strideR[0].offset == sizeof(float));
       break;
       case 1:
       create_field_pointer(*image, G, imageRegion_fields[field], strideG, runtime, ctx);
-      assert(strideG[0].offset == sizeof(float));
       break;
       case 2:
       create_field_pointer(*image, B, imageRegion_fields[field], strideB, runtime, ctx);
-      assert(strideB[0].offset == sizeof(float));
       break;
       case 3:
       create_field_pointer(*image, A, imageRegion_fields[field], strideA, runtime, ctx);
-      assert(strideA[0].offset == sizeof(float));
       break;
       case 4:
       create_field_pointer(*image, Z, imageRegion_fields[field], strideZ, runtime, ctx);
-      assert(strideZ[0].offset == sizeof(float));
       break;
       case 5:
       create_field_pointer(*image, UserData, imageRegion_fields[field], strideUserData, runtime, ctx);
-      assert(strideUserData[0].offset == sizeof(float));
       break;
     }
   }
@@ -1041,65 +1036,94 @@ void cxx_render(legion_runtime_t runtime_,
 
 void cxx_reduce(legion_runtime_t runtime_,
                 legion_context_t ctx_,
-                legion_physical_region_t *imageSubregion,
-                legion_field_id_t *imageSubregion_fields,
+                legion_physical_region_t *leftSubregion,
+                legion_field_id_t *leftSubregion_fields,
+                legion_physical_region_t *rightSubregion,
+                legion_field_id_t *rightSubregion_fields,
                 int treeLevel,
                 int offset) {
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
 
-  PhysicalRegion* image = CObjectWrapper::unwrap(imageSubregion[0]);
+  PhysicalRegion* leftImage = CObjectWrapper::unwrap(leftSubregion[0]);
   std::vector<legion_field_id_t> fields;
-  image->get_fields(fields);
+  leftImage->get_fields(fields);
   const int expectedNumFields = 6;
   assert(fields.size() == expectedNumFields);
-  Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, image->get_logical_region().get_index_space());
-  Rect<3> bounds = indexSpaceDomain.get_rect<3>();
+  Domain leftIndexSpaceDomain = runtime->get_index_space_domain(ctx, leftImage->get_logical_region().get_index_space());
+  Rect<3> leftBounds = leftIndexSpaceDomain.get_rect<3>();
   
-  std::cout << "subregion bounds " << bounds << std::endl;
+  PhysicalRegion* rightImage = CObjectWrapper::unwrap(rightSubregion[0]);
+  Domain rightIndexSpaceDomain = runtime->get_index_space_domain(ctx, rightImage->get_logical_region().get_index_space());
+  Rect<3> rightBounds = rightIndexSpaceDomain.get_rect<3>();
+  std::cout << "cxx_reduce subregion bounds " << leftBounds << "   " << rightBounds << std::endl;
   
-  float* R = NULL;
-  float* G = NULL;
-  float* B = NULL;
-  float* A = NULL;
-  float* Z = NULL;
-  float* UserData = NULL;
+  if(leftBounds.lo.x[0] > leftBounds.hi.x[0]) {
+    // this is an empty subregion, ignore it
+    return;
+  }
+  if(leftBounds.lo.x[2] == rightBounds.lo.x[2]) {
+    // another empty subrgion, ignore it
+    return;
+  }
   
-  ByteOffset strideR[3];
-  ByteOffset strideG[3];
-  ByteOffset strideB[3];
-  ByteOffset strideA[3];
-  ByteOffset strideZ[3];
-  ByteOffset strideUserData[3];
+  float* leftR = NULL;
+  float* leftG = NULL;
+  float* leftB = NULL;
+  float* leftA = NULL;
+  float* leftZ = NULL;
+  float* leftUserData = NULL;
+  
+  float* rightR = NULL;
+  float* rightG = NULL;
+  float* rightB = NULL;
+  float* rightA = NULL;
+  float* rightZ = NULL;
+  float* rightUserData = NULL;
+  
+  ByteOffset leftStrideR[3];
+  ByteOffset leftStrideG[3];
+  ByteOffset leftStrideB[3];
+  ByteOffset leftStrideA[3];
+  ByteOffset leftStrideZ[3];
+  ByteOffset leftStrideUserData[3];
+  
+  ByteOffset rightStrideR[3];
+  ByteOffset rightStrideG[3];
+  ByteOffset rightStrideB[3];
+  ByteOffset rightStrideA[3];
+  ByteOffset rightStrideZ[3];
+  ByteOffset rightStrideUserData[3];
   
   
   for(unsigned field = 0; field < fields.size(); ++field) {
-    PhysicalRegion* image = CObjectWrapper::unwrap(imageSubregion[field]);
+    PhysicalRegion* leftImage = CObjectWrapper::unwrap(leftSubregion[field]);
+    PhysicalRegion* rightImage = CObjectWrapper::unwrap(rightSubregion[field]);
     switch(field) {
       case 0:
-      create_field_pointer(*image, R, imageSubregion_fields[field], strideR, runtime, ctx);
-      assert(strideR[0].offset == sizeof(float) * expectedNumFields);
+      create_field_pointer(*leftImage, leftR, leftSubregion_fields[field], leftStrideR, runtime, ctx);
+      create_field_pointer(*rightImage, rightR, rightSubregion_fields[field], rightStrideR, runtime, ctx);
       break;
       case 1:
-      create_field_pointer(*image, G, imageSubregion_fields[field], strideG, runtime, ctx);
-      assert(strideG[0].offset == sizeof(float) * expectedNumFields);
+      create_field_pointer(*leftImage, leftG, leftSubregion_fields[field], leftStrideG, runtime, ctx);
+      create_field_pointer(*rightImage, rightG, rightSubregion_fields[field], rightStrideG, runtime, ctx);
       break;
       case 2:
-      create_field_pointer(*image, B, imageSubregion_fields[field], strideB, runtime, ctx);
-      assert(strideB[0].offset == sizeof(float) * expectedNumFields);
+      create_field_pointer(*leftImage, leftB, leftSubregion_fields[field], leftStrideB, runtime, ctx);
+      create_field_pointer(*rightImage, rightB, rightSubregion_fields[field], rightStrideB, runtime, ctx);
       break;
       case 3:
-      create_field_pointer(*image, A, imageSubregion_fields[field], strideA, runtime, ctx);
-      assert(strideA[0].offset == sizeof(float) * expectedNumFields);
+      create_field_pointer(*leftImage, leftA, leftSubregion_fields[field], leftStrideA, runtime, ctx);
+      create_field_pointer(*rightImage, rightA, rightSubregion_fields[field], rightStrideA, runtime, ctx);
       break;
       case 4:
-      create_field_pointer(*image, Z, imageSubregion_fields[field], strideZ, runtime, ctx);
-      assert(strideZ[0].offset == sizeof(float) * expectedNumFields);
+      create_field_pointer(*leftImage, leftZ, leftSubregion_fields[field], leftStrideZ, runtime, ctx);
+      create_field_pointer(*rightImage, rightZ, rightSubregion_fields[field], rightStrideZ, runtime, ctx);
       break;
       case 5:
-      create_field_pointer(*image, UserData, imageSubregion_fields[field], strideUserData, runtime, ctx);
-      assert(strideUserData[0].offset == sizeof(float) * expectedNumFields);
+      create_field_pointer(*leftImage, leftUserData, leftSubregion_fields[field], leftStrideUserData, runtime, ctx);
+      create_field_pointer(*rightImage, rightUserData, rightSubregion_fields[field], rightStrideUserData, runtime, ctx);
       break;
     }
   }

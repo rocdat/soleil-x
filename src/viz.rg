@@ -48,7 +48,7 @@ end
 -- Module parameters
 -------------------------------------------------------------------------------
 
-return function(cellsRel, particlesRel, xnum, ynum, znum, gridOrigin, gridWidth, imageRegion)
+return function(cellsRel, particlesRel, xnum, ynum, znum, gridOrigin, gridWidth)
 
 local p_cells   = cellsRel:primPartSymbol()
 local cellsType = cellsRel:regionType()
@@ -60,61 +60,91 @@ local width = 3840
 local height = 2160
 local numLayers = 4
 local fragmentsX = 1
-local fragmentsY = 1
+local fragmentsY = 2
 local fragmentsZ = numLayers
 local fragmentSizeX = (width / fragmentsX)
 local fragmentSizeY = (height / fragmentsY)
+local numTilesX = 2
+local numTilesY = 2
+local numTilesZ = 1
 
-local imageRegion = regentlib.newsymbol("imageRegion")
-local partitionByDepth = regentlib.newsymbol("partitionByDepth")
+-- numFragments imageFragments and depthPartitions
 
-local partitionLeftRight0 = regentlib.newsymbol("partitionLeftRight0")
-local partitionLeftRight1 = regentlib.newsymbol("partitionLeftRight1")
-local partitionLeftRight2 = regentlib.newsymbol("partitionLeftRight2")
-local partitionLeftRight3 = regentlib.newsymbol("partitionLeftRight3")
-local partitionLeftRight4 = regentlib.newsymbol("partitionLeftRight4")
-local partitionLeftRight5 = regentlib.newsymbol("partitionLeftRight5")
-local partitionLeftRight6 = regentlib.newsymbol("partitionLeftRight6")
-local partitionLeftRight7 = regentlib.newsymbol("partitionLeftRight7")
-local partitionLeftRight8 = regentlib.newsymbol("partitionLeftRight8")
-local partitionLeftRight9 = regentlib.newsymbol("partitionLeftRight9")
-local partitionLeftRight10 = regentlib.newsymbol("partitionLeftRight10")
-local partitionLeftRight11 = regentlib.newsymbol("partitionLeftRight11")
-local partitionLeftRight12 = regentlib.newsymbol("partitionLeftRight12")
-local partitionLeftRight13 = regentlib.newsymbol("partitionLeftRight13")
-local partitionLeftRight14 = regentlib.newsymbol("partitionLeftRight14")
+local imageFragment0 = regentlib.newsymbol("imageFragment0")
+local partition0ByDepth = regentlib.newsymbol("partition0ByDepth")
+local imageFragment1 = regentlib.newsymbol("imageFragment1")
+local partition1ByDepth = regentlib.newsymbol("partition1ByDepth")
+-- etc
 
-local partitionLeftChild0 = regentlib.newsymbol("partitionLeftChild0")
-local partitionLeftChild1 = regentlib.newsymbol("partitionLeftChild1")
-local partitionLeftChild2 = regentlib.newsymbol("partitionLeftChild2")
-local partitionLeftChild3 = regentlib.newsymbol("partitionLeftChild3")
-local partitionLeftChild4 = regentlib.newsymbol("partitionLeftChild4")
-local partitionLeftChild5 = regentlib.newsymbol("partitionLeftChild5")
-local partitionLeftChild6 = regentlib.newsymbol("partitionLeftChild6")
-local partitionLeftChild7 = regentlib.newsymbol("partitionLeftChild7")
-local partitionLeftChild8 = regentlib.newsymbol("partitionLeftChild8")
-local partitionLeftChild9 = regentlib.newsymbol("partitionLeftChild9")
-local partitionLeftChild10 = regentlib.newsymbol("partitionLeftChild10")
-local partitionLeftChild11 = regentlib.newsymbol("partitionLeftChild11")
-local partitionLeftChild12 = regentlib.newsymbol("partitionLeftChild12")
-local partitionLeftChild13 = regentlib.newsymbol("partitionLeftChild13")
-local partitionLeftChild14 = regentlib.newsymbol("partitionLeftChild14")
+-- partitions for fragment1
 
-local partitionRightChild0 = regentlib.newsymbol("partitionRightChild0")
-local partitionRightChild1 = regentlib.newsymbol("partitionRightChild1")
-local partitionRightChild2 = regentlib.newsymbol("partitionRightChild2")
-local partitionRightChild3 = regentlib.newsymbol("partitionRightChild3")
-local partitionRightChild4 = regentlib.newsymbol("partitionRightChild4")
-local partitionRightChild5 = regentlib.newsymbol("partitionRightChild5")
-local partitionRightChild6 = regentlib.newsymbol("partitionRightChild6")
-local partitionRightChild7 = regentlib.newsymbol("partitionRightChild7")
-local partitionRightChild8 = regentlib.newsymbol("partitionRightChild8")
-local partitionRightChild9 = regentlib.newsymbol("partitionRightChild9")
-local partitionRightChild10 = regentlib.newsymbol("partitionRightChild10")
-local partitionRightChild11 = regentlib.newsymbol("partitionRightChild11")
-local partitionRightChild12 = regentlib.newsymbol("partitionRightChild12")
-local partitionRightChild13 = regentlib.newsymbol("partitionRightChild13")
-local partitionRightChild14 = regentlib.newsymbol("partitionRightChild14")
+local partition0LeftChild0 = regentlib.newsymbol("partition0LeftChild0")
+local partition0LeftChild1 = regentlib.newsymbol("partition0LeftChild1")
+local partition0LeftChild2 = regentlib.newsymbol("partition0LeftChild2")
+local partition0LeftChild3 = regentlib.newsymbol("partition0LeftChild3")
+local partition0LeftChild4 = regentlib.newsymbol("partition0LeftChild4")
+local partition0LeftChild5 = regentlib.newsymbol("partition0LeftChild5")
+local partition0LeftChild6 = regentlib.newsymbol("partition0LeftChild6")
+local partition0LeftChild7 = regentlib.newsymbol("partition0LeftChild7")
+local partition0LeftChild8 = regentlib.newsymbol("partition0LeftChild8")
+local partition0LeftChild9 = regentlib.newsymbol("partition0LeftChild9")
+local partition0LeftChild10 = regentlib.newsymbol("partition0LeftChild10")
+local partition0LeftChild11 = regentlib.newsymbol("partition0LeftChild11")
+local partition0LeftChild12 = regentlib.newsymbol("partition0LeftChild12")
+local partition0LeftChild13 = regentlib.newsymbol("partition0LeftChild13")
+local partition0LeftChild14 = regentlib.newsymbol("partition0LeftChild14")
+
+local partition0RightChild0 = regentlib.newsymbol("partition0RightChild0")
+local partition0RightChild1 = regentlib.newsymbol("partition0RightChild1")
+local partition0RightChild2 = regentlib.newsymbol("partition0RightChild2")
+local partition0RightChild3 = regentlib.newsymbol("partition0RightChild3")
+local partition0RightChild4 = regentlib.newsymbol("partition0RightChild4")
+local partition0RightChild5 = regentlib.newsymbol("partition0RightChild5")
+local partition0RightChild6 = regentlib.newsymbol("partition0RightChild6")
+local partition0RightChild7 = regentlib.newsymbol("partition0RightChild7")
+local partition0RightChild8 = regentlib.newsymbol("partition0RightChild8")
+local partition0RightChild9 = regentlib.newsymbol("partition0RightChild9")
+local partition0RightChild10 = regentlib.newsymbol("partition0RightChild10")
+local partition0RightChild11 = regentlib.newsymbol("partition0RightChild11")
+local partition0RightChild12 = regentlib.newsymbol("partition0RightChild12")
+local partition0RightChild13 = regentlib.newsymbol("partition0RightChild13")
+local partition0RightChild14 = regentlib.newsymbol("partition0RightChild14")
+
+-- partitions for fragment1
+
+local partition1LeftChild0 = regentlib.newsymbol("partition1LeftChild0")
+local partition1LeftChild1 = regentlib.newsymbol("partition1LeftChild1")
+local partition1LeftChild2 = regentlib.newsymbol("partition1LeftChild2")
+local partition1LeftChild3 = regentlib.newsymbol("partition1LeftChild3")
+local partition1LeftChild4 = regentlib.newsymbol("partition1LeftChild4")
+local partition1LeftChild5 = regentlib.newsymbol("partition1LeftChild5")
+local partition1LeftChild6 = regentlib.newsymbol("partition1LeftChild6")
+local partition1LeftChild7 = regentlib.newsymbol("partition1LeftChild7")
+local partition1LeftChild8 = regentlib.newsymbol("partition1LeftChild8")
+local partition1LeftChild9 = regentlib.newsymbol("partition1LeftChild9")
+local partition1LeftChild10 = regentlib.newsymbol("partition1LeftChild10")
+local partition1LeftChild11 = regentlib.newsymbol("partition1LeftChild11")
+local partition1LeftChild12 = regentlib.newsymbol("partition1LeftChild12")
+local partition1LeftChild13 = regentlib.newsymbol("partition1LeftChild13")
+local partition1LeftChild14 = regentlib.newsymbol("partition1LeftChild14")
+
+local partition1RightChild0 = regentlib.newsymbol("partition1RightChild0")
+local partition1RightChild1 = regentlib.newsymbol("partition1RightChild1")
+local partition1RightChild2 = regentlib.newsymbol("partition1RightChild2")
+local partition1RightChild3 = regentlib.newsymbol("partition1RightChild3")
+local partition1RightChild4 = regentlib.newsymbol("partition1RightChild4")
+local partition1RightChild5 = regentlib.newsymbol("partition1RightChild5")
+local partition1RightChild6 = regentlib.newsymbol("partition1RightChild6")
+local partition1RightChild7 = regentlib.newsymbol("partition1RightChild7")
+local partition1RightChild8 = regentlib.newsymbol("partition1RightChild8")
+local partition1RightChild9 = regentlib.newsymbol("partition1RightChild9")
+local partition1RightChild10 = regentlib.newsymbol("partition1RightChild10")
+local partition1RightChild11 = regentlib.newsymbol("partition1RightChild11")
+local partition1RightChild12 = regentlib.newsymbol("partition1RightChild12")
+local partition1RightChild13 = regentlib.newsymbol("partition1RightChild13")
+local partition1RightChild14 = regentlib.newsymbol("partition1RightChild14")
+
+-- etc for more fragments
 
 local fspace PixelFields {
   R : float,
@@ -144,113 +174,39 @@ local fspace PixelFields {
 --          |\  |\  |\  |\
 -- lvl0     0 1 2 3 4 5 6 7
 
--- left-right split:
--- lvl2 |LLL|LLL|LLL|LLL|RRR|RRR|RRR|RRR|
--- lvl1 |LLL|LLL|RRR|RRR|LLL|LLL|RRR|RRR|
--- lvl0 |LLL|RRR|LLL|RRR|LLL|RRR|LLL|RRR|
-
--- left-child coloring (only L's from left-right split): z % (pow2Level * 2) == 0
--- lvl2 |000|___|___|___|___|___|___|___|
--- lvl1 |000|___|___|___|444|___|___|___|
--- lvl0 |000|___|222|___|444|___|666|___|
-
--- right-child coloring (only R's from left-right split): (z / pow2Level) % 2 == 1.0
--- lvl2 |___|___|___|___|444|___|___|___|  z == 4, 12, 20, 28, 36
--- lvl1 |___|___|222|___|___|___|666|___|  z == 2, 6, 10, 14, 18
--- lvl0 |___|111|___|333|___|555|___|777|  z == 1, 3, 5, 7, 9
-
--- right-child coloring (only R's from left-right split):
--- lvl2 |___|___|___|___|000|___|___|___|   z == 4, 12, 20, 28
--- lvl1 |___|___|000|___|___|___|444|___|   z == 2, 6, 10, 14
--- lvl0 |___|000|___|222|___|444|___|666|   z == 1, 3, 5, 7
-
 
 
 --
--- splitLeftRight: assign partition elements
+-- ChildPartition
 --
 
-local task splitLeftRight(r : region(ispace(int3d), PixelFields),
+local task ChildPartition(r : region(ispace(int3d), PixelFields),
   level : int,
-  pow2Level : int)
+  pow2Level : int,
+  offset : int,
+  tiles : ispace(int3d))
 
-  regentlib.c.printf('splitLeftRight level %d pow2Level %d\n', level, pow2Level)
-  var colors = ispace(int3d, int3d{ 2, 2, 2 }) -- 0 = left, 1 = right
-  var coloring = regentlib.c.legion_multi_domain_point_coloring_create()
+  regentlib.c.printf('partition level %d pow2Level %d offset %d region bounds hi %d %d %d\n',
+    level, pow2Level, offset, r.bounds.hi.x, r.bounds.hi.y, r.bounds.hi.z)
 
-  var elementsPerFragmentX = ([int](r.bounds.hi.x) + 1) / fragmentsX
-  var elementsPerFragmentY = ([int](r.bounds.hi.y) + 1) / fragmentsY
-  var elementsPerFragmentZ = ([int](r.bounds.hi.z) + 1) / fragmentsZ
-
-  for z = 0, fragmentsZ do
-    for y = 0, fragmentsY do
-      for x = 0, fragmentsX do
-
-        regentlib.c.printf("x y z  %d %d %d\n", x, y, z)
-        var rect = rect3d {
-          lo = int3d{ x * elementsPerFragmentX, y * elementsPerFragmentY, z * elementsPerFragmentZ },
-          hi = int3d{ (x + 1) * elementsPerFragmentX - 1, (y + 1) * elementsPerFragmentY - 1, (z + 1) * elementsPerFragmentZ - 1 }
-        }
-
-        if (z / pow2Level) % 2 == 0 then
-          regentlib.c.printf('  left: %d %d %d - %d %d %d\n',
-            rect.lo.x, rect.lo.y, rect.lo.z, rect.hi.x, rect.hi.y, rect.hi.z)
-          regentlib.c.legion_multi_domain_point_coloring_color_domain(coloring, int3d{ 0, 0, 0}, rect)
-        else
-          regentlib.c.printf('  right: %d %d %d - %d %d %d\n',
-            rect.lo.x, rect.lo.y, rect.lo.z, rect.hi.x, rect.hi.y, rect.hi.z)
-          regentlib.c.legion_multi_domain_point_coloring_color_domain(coloring, int3d{ 1, 1, 1}, rect)
-        end
-      end
-    end
-  end
-  var p = partition(disjoint, r, coloring, colors)
-  regentlib.c.legion_multi_domain_point_coloring_destroy(coloring)
-  return p
-end
-
-
-
---
--- leftChildPartition
---
-
-local task leftChildPartition(r : region(ispace(int3d), PixelFields),
-  level : int,
-  pow2Level : int)
-
-  var elementsPerFragmentX = ([int](r.bounds.hi.x) + 1) / fragmentsX
-  var elementsPerFragmentY = ([int](r.bounds.hi.y) + 1) / fragmentsY
-  var elementsPerFragmentZ = ([int](r.bounds.hi.z) + 1) / fragmentsZ
-
-  regentlib.c.printf('level %d left children:\n', level)
   var coloring = regentlib.c.legion_domain_point_coloring_create()
-  var colors = ispace(int3d, int3d{ fragmentsX, fragmentsY, numLayers })
 
-  for z = 0, fragmentsZ do
-    for y = 0, fragmentsY do
-      for x = 0, fragmentsX do
-        var rect = rect3d{ lo = int3d{ 0, 0, 0 }, hi = int3d{ 0, 0, 0 } }
-        if z % (2 * pow2Level) == 0 then
-          rect = rect3d {
-            lo = int3d{ x * elementsPerFragmentX, y * elementsPerFragmentY, z * elementsPerFragmentZ },
-            hi = int3d{ (x + 1) * elementsPerFragmentX - 1, (y + 1) * elementsPerFragmentY - 1, (z + 1) * elementsPerFragmentZ - 1 }
-          }
-        else
-          rect = rect3d {
-            lo = int3d{ 1, 1, 1 }, hi = int3d{ 0, 0, 0 }
-          }
-        end
-
-        regentlib.c.printf("x y z %d %d %d rect %d %d %d   %d %d %d\n",
-          x, y, z, rect.lo.x, rect.lo.y, rect.lo.z, rect.hi.x, rect.hi.y, rect.hi.z)
-
-        var color = int3d{ x, y, z }
-        regentlib.c.legion_domain_point_coloring_color_domain(coloring, color, rect)
-      end
+  for tile in tiles do
+    var layer = tile.x + (tile.y * numTilesX) + (tile.z * numTilesX * numTilesY)
+    var rect = rect3d{ lo = int3d{ 1, 1, 1 }, hi = int3d{ 0, 0, 0 } }
+    if layer % (2 * pow2Level) == 0 then
+      rect = rect3d {
+        lo = int3d{ 0, 0, layer + offset },
+        hi = int3d{ r.bounds.hi.x, r.bounds.hi.y, layer + offset }
+      }
     end
+
+    regentlib.c.printf("par level %d tile %d %d %d  rect %d %d %d   %d %d %d\n",
+      level, tile.x, tile.y, tile.z, rect.lo.x, rect.lo.y, rect.lo.z, rect.hi.x, rect.hi.y, rect.hi.z)
+
+    regentlib.c.legion_domain_point_coloring_color_domain(coloring, tile, rect)
   end
-  var p = partition(disjoint, r, coloring, colors)
+  var p = partition(disjoint, r, coloring, tiles)
   regentlib.c.legion_domain_point_coloring_destroy(coloring)
   return p
 end
@@ -258,72 +214,35 @@ end
 
 
 
---
--- rightChildPartition
---
-
-local task rightChildPartition(r : region(ispace(int3d), PixelFields),
-  level : int,
-  pow2Level : int)
-
-  var elementsPerFragmentX = ([int](r.bounds.hi.x) + 1) / fragmentsX
-  var elementsPerFragmentY = ([int](r.bounds.hi.y) + 1) / fragmentsY
-  var elementsPerFragmentZ = ([int](r.bounds.hi.z) + 1) / fragmentsZ
-
-  regentlib.c.printf('level %d right children:\n', level)
-  var coloring = regentlib.c.legion_domain_point_coloring_create()
-  var colors = ispace(int3d, int3d{ fragmentsX, fragmentsY, numLayers })
-
-  for z = 0, fragmentsZ do
-    for y = 0, fragmentsY do
-      for x = 0, fragmentsX do
-        var rect = rect3d{ lo = int3d{ 0, 0, 0 }, hi = int3d{ 0, 0, 0 } }
-        if z % (2 * pow2Level) == 0 then
-          rect = rect3d {
-            lo = int3d{ x * elementsPerFragmentX, y * elementsPerFragmentY, z * elementsPerFragmentZ },
-            hi = int3d{ (x + 1) * elementsPerFragmentX - 1, (y + 1) * elementsPerFragmentY - 1, (z + 1) * elementsPerFragmentZ - 1 }
-          }
-        else
-          rect = rect3d {
-            lo = int3d{ 1, 1, 1 }, hi = int3d{ 0, 0, 0 }
-          }
-        end
-
-        regentlib.c.printf("x y z %d %d %d rect %d %d %d   %d %d %d\n",
-          x, y, z, rect.lo.x, rect.lo.y, rect.lo.z, rect.hi.x, rect.hi.y, rect.hi.z)
-
-        var color = int3d{ x, y, z }
-        regentlib.c.legion_domain_point_coloring_color_domain(coloring, color, rect)
-      end
-    end
-  end
-  var p = partition(disjoint, r, coloring, colors)
-  regentlib.c.legion_domain_point_coloring_destroy(coloring)
-  return p
-end
-
-
-
 
 --
--- DepthPartition: partition the imageRegion by layers
+-- DepthPartition: partition the imageFragment by layers
 --
 
 local task DepthPartition(r : region(ispace(int3d), PixelFields),
   width : int,
-  height : int)
+  height : int,
+  tiles : ispace(int3d))
+
+  regentlib.c.printf('depth partition  region bounds hi %d %d %d\n',
+    r.bounds.hi.x, r.bounds.hi.y, r.bounds.hi.z)
 
   var coloring = regentlib.c.legion_domain_point_coloring_create()
-  var colors = ispace(int3d, int3d{1, 1, numLayers})
 
-  for c in colors do
+  for tile in tiles do
+    var layer = tile.x + (tile.y * numTilesX) + (tile.z * numTilesX * numTilesY)
     var rect = rect3d {
-      lo = { c.x, c.y, c.z },
-      hi = { c.x + width - 1, c.y + height - 1, c.z }
+      lo = { 0, 0, layer },
+      hi = { width - 1, height - 1, layer }
     }
-    regentlib.c.legion_domain_point_coloring_color_domain(coloring, c, rect)
+    regentlib.c.legion_domain_point_coloring_color_domain(coloring, tile, rect)
+
+    regentlib.c.printf("depth tile %d %d %d rect %d %d %d   %d %d %d\n",
+      tile.x, tile.y, tile.z, rect.lo.x, rect.lo.y, rect.lo.z, rect.hi.x, rect.hi.y, rect.hi.z)
+
   end
-  var p = partition(disjoint, r, coloring, colors)
+
+  var p = partition(disjoint, r, coloring, tiles)
   regentlib.c.legion_domain_point_coloring_destroy(coloring)
   return p
 end
@@ -332,19 +251,28 @@ end
 
 
 --
--- Render: produce an RGBA and DEPTH buffer image, write the pixels into the imageRegion
+-- Render: produce an RGBA and DEPTH buffer image, write the pixels into the imageFragment
 --
 
-local task Render(cells : cellsType, particles : particlesType, imageRegion : region(ispace(int3d), PixelFields))
+local task Render(cells : cellsType,
+  particles : particlesType,
+  imageFragment0 : region(ispace(int3d), PixelFields),
+  imageFragment1 : region(ispace(int3d), PixelFields)
+-- etc more fragments up to 1000
+  )
 where
   reads(cells.{centerCoordinates, velocity, temperature}),
   reads(particles.{__valid, cell, position, density, particle_temperature, tracking}),
-  writes(imageRegion.{R, G, B, A, Z, UserData})
+  writes(imageFragment0.{ R, G, B, A, Z, UserData }),
+  writes(imageFragment1.{ R, G, B, A, Z, UserData })
+-- etc more fragments here
 do
   cviz.cxx_render(__runtime(), __context(),
     __physical(cells), __fields(cells),
     __physical(particles), __fields(particles),
-    __physical(imageRegion), __fields(imageRegion),
+    __physical(imageFragment0), __fields(imageFragment0),
+    __physical(imageFragment1), __fields(imageFragment1),
+-- etc here for more fragments
     xnum, ynum, znum)
 end
 
@@ -357,6 +285,8 @@ end
 
 local task Reduce(treeLevel : int,
   offset : int,
+  imageRegion : region(ispace(int3d), PixelFields),
+  indices : ispace(int3d),
   leftSubregion : region(ispace(int3d), PixelFields),
   rightSubregion : region(ispace(int3d), PixelFields))
 where
@@ -385,96 +315,110 @@ local exports = {}
 
 exports.Initialize = rquote
 
-  var indices = ispace(int3d, int3d{ width, height, numLayers })
-  var [imageRegion] = region(indices, PixelFields)
-  var [partitionByDepth] = DepthPartition([imageRegion], width, height)
-  var zero = int3d{ 0, 0, 0 }
-  var one = int3d{ 0, 0, 1 }
+  var indices = ispace(int3d, int3d{ fragmentSizeX, fragmentSizeY, numLayers })
 
-  if numLayers > 1 then
-    var [partitionLeftRight0] = splitLeftRight([imageRegion], 0, 1)
-    var [partitionLeftChild0] = leftChildPartition([partitionLeftRight0][zero], 0, 1)
-    var [partitionRightChild0] = rightChildPartition([partitionLeftRight0][one], 0, 1)
-  end
-  if numLayers > 2 then
-    var [partitionLeftRight1] = splitLeftRight([imageRegion], 1, 2)
-    var [partitionLeftChild1] = leftChildPartition([partitionLeftRight1][zero], 1, 2)
-    var [partitionRightChild1] = rightChildPartition([partitionLeftRight1][one], 1, 2)
-  end
-  if numLayers > 4 then
-    var [partitionLeftRight2] = splitLeftRight([imageRegion], 2, 4)
-    var [partitionLeftChild2] = leftChildPartition([partitionLeftRight2][zero], 2, 4)
-    var [partitionRightChild2] = rightChildPartition([partitionLeftRight2][one], 2, 4)
-  end
-  if numLayers > 8 then
-    var [partitionLeftRight3] = splitLeftRight([imageRegion], 3, 8)
-    var [partitionLeftChild3] = leftChildPartition([partitionLeftRight3][zero], 3, 8)
-    var [partitionRightChild3] = rightChildPartition([partitionLeftRight3][one], 3, 8)
-  end
-  if numLayers > 16 then
-    var [partitionLeftRight4] = splitLeftRight([imageRegion], 4, 16)
-    var [partitionLeftChild4] = leftChildPartition([partitionLeftRight4][zero], 4, 16)
-    var [partitionRightChild4] = rightChildPartition([partitionLeftRight4][one], 4, 16)
-  end
-  if numLayers > 32 then
-    var [partitionLeftRight5] = splitLeftRight([imageRegion], 5, 32)
-    var [partitionLeftChild5] = leftChildPartition([partitionLeftRight5][zero], 5, 32)
-    var [partitionRightChild5] = rightChildPartition([partitionLeftRight5][one], 5, 32)
-  end
-  if numLayers > 64 then
-    var [partitionLeftRight6] = splitLeftRight([imageRegion], 6, 64)
-    var [partitionLeftChild6] = leftChildPartition([partitionLeftRight6][zero], 6, 64)
-    var [partitionRightChild6] = rightChildPartition([partitionLeftRight6][one], 6, 64)
-  end
-  if numLayers > 128 then
-    var [partitionLeftRight7] = splitLeftRight([imageRegion], 7, 128)
-    var [partitionLeftChild7] = leftChildPartition([partitionLeftRight7][zero], 7, 128)
-    var [partitionRightChild7] = rightChildPartition([partitionLeftRight7][one], 7, 128)
-  end
-  if numLayers > 256 then
-    var [partitionLeftRight8] = splitLeftRight([imageRegion], 8, 256)
-    var [partitionLeftChild8] = leftChildPartition([partitionLeftRight8][zero], 8, 256)
-    var [partitionRightChild8] = rightChildPartition([partitionLeftRight8][one], 8, 256)
-  end
-  if numLayers > 512 then
-    var [partitionLeftRight9] = splitLeftRight([imageRegion], 9, 512)
-    var [partitionLeftChild9] = leftChildPartition([partitionLeftRight9][zero], 9, 512)
-    var [partitionRightChild9] = rightChildPartition([partitionLeftRight9][one], 9, 512)
-  end
-  if numLayers > 1024 then
-    var [partitionLeftRight10] = splitLeftRight([imageRegion], 10, 1024)
-    var [partitionLeftChild10] = leftChildPartition([partitionLeftRight10][zero], 10, 1024)
-    var [partitionRightChild10] = rightChildPartition([partitionLeftRight10][one], 10, 1024)
-  end
+  -- declare image fragments, up to numFragments
 
+  var [imageFragment0] = region(indices, PixelFields)
+  var [partition0ByDepth] = DepthPartition([imageFragment0], fragmentSizeX, fragmentSizeY, tiles)
+  var [imageFragment1] = region(indices, PixelFields)
+  var [partition1ByDepth] = DepthPartition([imageFragment1], fragmentSizeX, fragmentSizeY, tiles)
+
+  -- fragment 0
+
+  var [partition0LeftChild0] = ChildPartition([imageFragment0], 0, 1, 0, tiles)
+  var [partition0RightChild0] = ChildPartition([imageFragment0], 0, 1, 1, tiles)
+  var [partition0LeftChild1] = ChildPartition([imageFragment0], 1, 2, 0, tiles)
+  var [partition0RightChild1] = ChildPartition([imageFragment0], 1, 2, 2, tiles)
+  var [partition0LeftChild2] = ChildPartition([imageFragment0], 2, 4, 0, tiles)
+  var [partition0RightChild2] = ChildPartition([imageFragment0], 2, 4, 4, tiles)
+  var [partition0LeftChild3] = ChildPartition([imageFragment0], 3, 8, 0, tiles)
+  var [partition0RightChild3] = ChildPartition([imageFragment0], 3, 8, 8, tiles)
+  var [partition0LeftChild4] = ChildPartition([imageFragment0], 4, 16, 0, tiles)
+  var [partition0RightChild4] = ChildPartition([imageFragment0], 4, 16, 16, tiles)
+  var [partition0LeftChild5] = ChildPartition([imageFragment0], 5, 32, 0, tiles)
+  var [partition0RightChild5] = ChildPartition([imageFragment0], 5, 32, 32, tiles)
+  var [partition0LeftChild6] = ChildPartition([imageFragment0], 6, 64, 0, tiles)
+  var [partition0RightChild6] = ChildPartition([imageFragment0], 6, 64, 64, tiles)
+  var [partition0LeftChild7] = ChildPartition([imageFragment0], 7, 128, 0, tiles)
+  var [partition0RightChild7] = ChildPartition([imageFragment0], 7, 128, 128, tiles)
+  var [partition0LeftChild8] = ChildPartition([imageFragment0], 8, 256, 0, tiles)
+  var [partition0RightChild8] = ChildPartition([imageFragment0], 8, 256, 256, tiles)
+  var [partition0LeftChild9] = ChildPartition([imageFragment0], 9, 512, 0, tiles)
+  var [partition0RightChild9] = ChildPartition([imageFragment0], 9, 512, 512, tiles)
+  var [partition0LeftChild10] = ChildPartition([imageFragment0], 10, 1024, 0, tiles)
+  var [partition0RightChild10] = ChildPartition([imageFragment0], 10, 1024, 1024, tiles)
+
+  -- fragment 1
+
+  var [partition1LeftChild0] = ChildPartition([imageFragment1], 0, 1, 0, tiles)
+  var [partition1RightChild0] = ChildPartition([imageFragment1], 0, 1, 1, tiles)
+  var [partition1LeftChild1] = ChildPartition([imageFragment1], 1, 2, 0, tiles)
+  var [partition1RightChild1] = ChildPartition([imageFragment1], 1, 2, 2, tiles)
+  var [partition1LeftChild2] = ChildPartition([imageFragment1], 2, 4, 0, tiles)
+  var [partition1RightChild2] = ChildPartition([imageFragment1], 2, 4, 4, tiles)
+  var [partition1LeftChild3] = ChildPartition([imageFragment1], 3, 8, 0, tiles)
+  var [partition1RightChild3] = ChildPartition([imageFragment1], 3, 8, 8, tiles)
+  var [partition1LeftChild4] = ChildPartition([imageFragment1], 4, 16, 0, tiles)
+  var [partition1RightChild4] = ChildPartition([imageFragment1], 4, 16, 16, tiles)
+  var [partition1LeftChild5] = ChildPartition([imageFragment1], 5, 32, 0, tiles)
+  var [partition1RightChild5] = ChildPartition([imageFragment1], 5, 32, 32, tiles)
+  var [partition1LeftChild6] = ChildPartition([imageFragment1], 6, 64, 0, tiles)
+  var [partition1RightChild6] = ChildPartition([imageFragment1], 6, 64, 64, tiles)
+  var [partition1LeftChild7] = ChildPartition([imageFragment1], 7, 128, 0, tiles)
+  var [partition1RightChild7] = ChildPartition([imageFragment1], 7, 128, 128, tiles)
+  var [partition1LeftChild8] = ChildPartition([imageFragment1], 8, 256, 0, tiles)
+  var [partition1RightChild8] = ChildPartition([imageFragment1], 8, 256, 256, tiles)
+  var [partition1LeftChild9] = ChildPartition([imageFragment1], 9, 512, 0, tiles)
+  var [partition1RightChild9] = ChildPartition([imageFragment1], 9, 512, 512, tiles)
+  var [partition1LeftChild10] = ChildPartition([imageFragment1], 10, 1024, 0, tiles)
+  var [partition1RightChild10] = ChildPartition([imageFragment1], 10, 1024, 1024, tiles)
+
+  -- fragment 2 ...
 
 end
 
 
 exports.Render = rquote
-  var depthPartitionNumber = 0
   for tile in tiles do
-    var partitionID = int3d{ 0, 0, depthPartitionNumber }
-    depthPartitionNumber = depthPartitionNumber + 1
-    Render(p_cells[tile], p_particles[tile], [partitionByDepth][partitionID])
+    Render(p_cells[tile], p_particles[tile],
+      [partition0ByDepth][tile],
+      [partition1ByDepth][tile]
+-- etc to partition1000ByDepth
+    )
   end
 end
 
 
 exports.Reduce = rquote
   regentlib.c.printf("Reduce\n")
+  var indices = ispace(int3d, int3d{ fragmentSizeX, fragmentSizeY, numLayers })
+
   if numLayers > 1 then
     __demand(__spmd) do
-      for z = 0, fragmentsZ do
-        for y = 0, fragmentsY do
-          for x = 0, fragmentsX do
-            var color = int3d{ x, y, z }
-            Reduce(0, 1, [partitionLeftChild0][color], [partitionRightChild0][color])
-          end
-        end
+      for tile in tiles do
+        -- Reduce(0, 1, [imageFragment0], indices, [partition0LeftChild0][tile], [partition0RightChild0][tile])
+        -- Reduce(0, 1, [partition0LeftChild1][tile], [partition0RightChild1][tile])
+--- etc for more fragments
       end
     end
   end
+
+  if numLayers > 2 then
+    __demand(__spmd) do
+      for tile in tiles do
+        -- Reduce(1, 2, [partition1LeftChild0][tile], [partition1RightChild0][tile])
+        -- Reduce(1, 2, [partition1LeftChild1][tile], [partition1RightChild1][tile])
+--- etc for more fragments
+      end
+    end
+  end
+
+  if numLayers > 4 then
+    regentlib.c.printf("need to implement higher levels of the tree\n");
+  end
+-- etc for more tree levels (numLayers > 2^k)
+
 end
 
 

@@ -798,10 +798,16 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
                         GLfloat* depthBuffer,
                         Runtime* runtime,
                         Context ctx,
-                        legion_physical_region_t *imageRegion,
-                        legion_field_id_t *imageRegion_fields) {
+                        legion_physical_region_t *imageRegion0,
+                        legion_field_id_t *imageRegion_fields0,
+                        legion_physical_region_t *imageRegion1,
+                        legion_field_id_t *imageRegion_fields1
+                        /****extend here for more regions****//////////////////////
+                        ) {
   
-  PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion[0]);
+                          //TODO make this a series of calls to an impl method
+                          
+  PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion0[0]);
   std::vector<legion_field_id_t> fields;
   image->get_fields(fields);
   const int expectedNumFields = 6;
@@ -826,25 +832,25 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
   
   
   for(unsigned field = 0; field < fields.size(); ++field) {
-    PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion[field]);
+    PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion0[field]);
     switch(field) {
       case 0:
-      create_field_pointer(*image, R, imageRegion_fields[field], strideR, runtime, ctx);
+      create_field_pointer(*image, R, imageRegion_fields0[field], strideR, runtime, ctx);
       break;
       case 1:
-      create_field_pointer(*image, G, imageRegion_fields[field], strideG, runtime, ctx);
+      create_field_pointer(*image, G, imageRegion_fields0[field], strideG, runtime, ctx);
       break;
       case 2:
-      create_field_pointer(*image, B, imageRegion_fields[field], strideB, runtime, ctx);
+      create_field_pointer(*image, B, imageRegion_fields0[field], strideB, runtime, ctx);
       break;
       case 3:
-      create_field_pointer(*image, A, imageRegion_fields[field], strideA, runtime, ctx);
+      create_field_pointer(*image, A, imageRegion_fields0[field], strideA, runtime, ctx);
       break;
       case 4:
-      create_field_pointer(*image, Z, imageRegion_fields[field], strideZ, runtime, ctx);
+      create_field_pointer(*image, Z, imageRegion_fields0[field], strideZ, runtime, ctx);
       break;
       case 5:
-      create_field_pointer(*image, UserData, imageRegion_fields[field], strideUserData, runtime, ctx);
+      create_field_pointer(*image, UserData, imageRegion_fields0[field], strideUserData, runtime, ctx);
       break;
     }
   }
@@ -895,8 +901,11 @@ void cxx_render(legion_runtime_t runtime_,
                 legion_field_id_t *cells_fields,
                 legion_physical_region_t *particles,
                 legion_field_id_t *particles_fields,
-                legion_physical_region_t *imageRegion,
-                legion_field_id_t *imageRegion_fields,
+                legion_physical_region_t *imageRegion0,
+                legion_field_id_t *imageRegion_fields0,
+                legion_physical_region_t *imageRegion1,
+                legion_field_id_t *imageRegion_fields1,
+                /***extend here for more regions***///////////////////
                 int xnum,
                 int ynum,
                 int znum)
@@ -1015,7 +1024,11 @@ void cxx_render(legion_runtime_t runtime_,
   
 #ifndef STANDALONE
   
-  writeImageToImageRegion(rgbaBuffer, depthBuffer, runtime, ctx, imageRegion, imageRegion_fields);
+  writeImageToImageRegion(rgbaBuffer, depthBuffer, runtime, ctx,
+                          imageRegion0, imageRegion_fields0,
+                          imageRegion1, imageRegion_fields1
+                          );
+  /***extend here for more regions****///////////////////////////
   
 #endif
   

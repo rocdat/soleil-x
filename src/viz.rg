@@ -337,8 +337,6 @@ end
 
 local exports = {}
 
--- remember that indices is as big as tiles, but in simple_reduction.rg it is half as big, need toexecute on half of the tiles and nop on the other half
-
 exports.Initialize = rquote
 
   var indices = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })

@@ -328,14 +328,14 @@ where
 do
   regentlib.c.printf("in local task Reduce %d with %d\n",
     leftSubregion.bounds.lo.z, rightSubregion.bounds.lo.z)
---  if leftSubregion.bounds.lo.x < leftSubregion.bounds.hi.x and
---    rightSubregion.bounds.lo.x < rightSubregion.bounds.hi.x then
---    cviz.cxx_reduce(__runtime(), __context(),
---      __physical(leftSubregion), __fields(leftSubregion),
---      __physical(rightSubregion), __fields(rightSubregion),
---      treeLevel, offset)
---    regentlib.c.printf("end Reduce %d with %d\n", leftSubregion.bounds.lo.z, rightSubregion.bounds.lo.z)
---  end
+  if leftSubregion.bounds.lo.x < leftSubregion.bounds.hi.x and
+    rightSubregion.bounds.lo.x < rightSubregion.bounds.hi.x then
+    cviz.cxx_reduce(__runtime(), __context(),
+      __physical(leftSubregion), __fields(leftSubregion),
+      __physical(rightSubregion), __fields(rightSubregion),
+      treeLevel, offset)
+  end
+  regentlib.c.printf("end Reduce %d with %d\n", leftSubregion.bounds.lo.z, rightSubregion.bounds.lo.z)
 end
 
 

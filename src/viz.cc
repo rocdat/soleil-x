@@ -792,7 +792,6 @@ static std::string imageFileName(std::string table, int timeStep, Rect<3> bounds
 #endif
 }
 
-#if 0
 
 static void
 writeImageToImageRegion(GLfloat* rgbaBuffer,
@@ -803,11 +802,14 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
                         legion_field_id_t *imageRegion_fields0,
                         legion_physical_region_t *imageRegion1,
                         legion_field_id_t *imageRegion_fields1
-                        /****extend here for more regions****//////////////////////
-                        ) {
+/****extend here for more regions****//////////////////////
+) {
   
-                          //TODO make this a series of calls to an impl method
-                          
+  //TODO make this a series of calls to an impl method
+  
+  
+  std::cout << "warning calling writeToImageRegion which has not been modified for multiple image regions -- expect memory corruption" << std::endl;
+  
   PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion0[0]);
   std::vector<legion_field_id_t> fields;
   image->get_fields(fields);
@@ -883,7 +885,6 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
   
 }
 
-#endif
 
 #endif
 
@@ -915,6 +916,7 @@ void cxx_render(legion_runtime_t runtime_,
 #endif
 {
   
+  std::cout << "early out from cxx_render" << std::endl; return;
   
 #ifndef STANDALONE
   
@@ -1027,12 +1029,10 @@ void cxx_render(legion_runtime_t runtime_,
   
 #ifndef STANDALONE
   
-#if 0
   writeImageToImageRegion(rgbaBuffer, depthBuffer, runtime, ctx,
                           imageRegion0, imageRegion_fields0,
                           imageRegion1, imageRegion_fields1
                           );
-#endif
   /***extend here for more regions****///////////////////////////
   
 #endif
@@ -1076,7 +1076,7 @@ void cxx_reduce(legion_runtime_t runtime_,
   Domain rightIndexSpaceDomain = runtime->get_index_space_domain(ctx, rightImage->get_logical_region().get_index_space());
   Rect<3> rightBounds = rightIndexSpaceDomain.get_rect<3>();
   std::cout << "cxx_reduce subregion bounds " << leftBounds << "   " << rightBounds << std::endl;
-    
+  
   float* leftR = NULL;
   float* leftG = NULL;
   float* leftB = NULL;

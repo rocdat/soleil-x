@@ -792,6 +792,7 @@ static std::string imageFileName(std::string table, int timeStep, Rect<3> bounds
 #endif
 }
 
+#if 0
 
 static void
 writeImageToImageRegion(GLfloat* rgbaBuffer,
@@ -881,6 +882,8 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
   std::cout << "pushed " << pixelCounter << " rendered pixels to image region" << std::endl;
   
 }
+
+#endif
 
 #endif
 
@@ -1024,10 +1027,12 @@ void cxx_render(legion_runtime_t runtime_,
   
 #ifndef STANDALONE
   
+#if 0
   writeImageToImageRegion(rgbaBuffer, depthBuffer, runtime, ctx,
                           imageRegion0, imageRegion_fields0,
                           imageRegion1, imageRegion_fields1
                           );
+#endif
   /***extend here for more regions****///////////////////////////
   
 #endif

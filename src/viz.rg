@@ -224,17 +224,25 @@ local task ChildPartition(r : region(ispace(int3d), PixelFields),
   offset : int,
   tiles : ispace(int3d))
 
+  -- regentlib.c.printf("ChildPartition level %d pow2Level %d offset %d\n",
+  --   level, pow2Level, offset)
+
   var coloring = regentlib.c.legion_domain_point_coloring_create()
 
   for tile in tiles do
     var rect = rect3d{ lo = one, hi = zero }
-    if tile.z < numLayers / 2 then
-      var layer = 2 * pow2Level * tile.z + offset
+    var z = tile.x + (tile.y * numTilesX) + (tile.z * numTilesX * numTilesY)
+    if z < numLayers / (2 * pow2Level) then
+      var layer = 2 * pow2Level * z + offset
       rect = rect3d{
         lo = int3d{ 0, 0, layer },
         hi = int3d{ fragmentWidth - 1, fragmentHeight - 1, layer }
       }
     end
+
+    -- regentlib.c.printf("tile %d %d %d   rect %d %d %d  %d %d %d\n",
+    --   tile.x, tile.y, tile.z, rect.lo.x, rect.lo.y, rect.lo.z, rect.hi.x, rect.hi.y, rect.hi.z)
+
     regentlib.c.legion_domain_point_coloring_color_domain(coloring, tile, rect)
   end
 
@@ -261,10 +269,10 @@ local task DepthPartition(r : region(ispace(int3d), PixelFields),
   var coloring = regentlib.c.legion_domain_point_coloring_create()
 
   for tile in tiles do
-    var layer = tile.x + (tile.y * numTilesX) + (tile.z * numTilesX * numTilesY)
+    var z = tile.x + (tile.y * numTilesX) + (tile.z * numTilesX * numTilesY)
     var rect = rect3d {
-      lo = { 0, 0, layer },
-      hi = { width - 1, height - 1, layer }
+      lo = { 0, 0, z },
+      hi = { width - 1, height - 1, z }
     }
     regentlib.c.legion_domain_point_coloring_color_domain(coloring, tile, rect)
   end
@@ -290,10 +298,11 @@ local task Render(cells : cellsType,
 where
   reads(cells.{centerCoordinates, velocity, temperature}),
   reads(particles.{__valid, cell, position, density, particle_temperature, tracking}),
-  writes(imageFragment0.{ R, G, B, A, Z, UserData }),
-  writes(imageFragment1.{ R, G, B, A, Z, UserData })
+  writes(imageFragment0),
+  writes(imageFragment1)
 -- etc more fragments here
 do
+  regentlib.c.printf("in local task Render\n")
   cviz.cxx_render(__runtime(), __context(),
     __physical(cells), __fields(cells),
     __physical(particles), __fields(particles),
@@ -316,14 +325,17 @@ local task Reduce(treeLevel : int,
   rightSubregion : region(ispace(int3d), PixelFields))
 where
    reads writes (leftSubregion), reads (rightSubregion)
---, leftSubregion * rightSubregion
 do
-  if leftSubregion.bounds.lo.x < leftSubregion.bounds.hi.x then
-    cviz.cxx_reduce(__runtime(), __context(),
-      __physical(leftSubregion), __fields(leftSubregion),
-      __physical(rightSubregion), __fields(rightSubregion),
-      treeLevel, offset)
-  end
+  regentlib.c.printf("in local task Reduce %d with %d\n",
+    leftSubregion.bounds.lo.z, rightSubregion.bounds.lo.z)
+--  if leftSubregion.bounds.lo.x < leftSubregion.bounds.hi.x and
+--    rightSubregion.bounds.lo.x < rightSubregion.bounds.hi.x then
+--    cviz.cxx_reduce(__runtime(), __context(),
+--      __physical(leftSubregion), __fields(leftSubregion),
+--      __physical(rightSubregion), __fields(rightSubregion),
+--      treeLevel, offset)
+--    regentlib.c.printf("end Reduce %d with %d\n", leftSubregion.bounds.lo.z, rightSubregion.bounds.lo.z)
+--  end
 end
 
 
@@ -351,8 +363,8 @@ exports.Initialize = rquote
   -- fragment 0
 
   var [partition0LeftRight] = SplitLeftRight([imageFragment0])
-var [partition0LeftChild0] = ChildPartition([partition0LeftRight][zero], 0, 1, 0, tiles)
-var [partition0RightChild0] = ChildPartition([partition0LeftRight][one], 0, 1, 1, tiles)
+  var [partition0LeftChild0] = ChildPartition([partition0LeftRight][zero], 0, 1, 0, tiles)
+  var [partition0RightChild0] = ChildPartition([partition0LeftRight][one], 0, 1, 1, tiles)
   var [partition0LeftChild1] = ChildPartition([partition0LeftRight][zero], 1, 2, 0, tiles)
   var [partition0RightChild1] = ChildPartition([partition0LeftRight][one], 1, 2, 2, tiles)
   var [partition0LeftChild2] = ChildPartition([partition0LeftRight][zero], 2, 4, 0, tiles)
@@ -423,12 +435,17 @@ exports.Reduce = rquote
   if numLayers > 1 then
     __demand(__spmd) do
       for tile in tiles do
+        regentlib.c.printf("calling reduce for tile %d %d %d\n", tile.x, tile.y, tile.z)
         Reduce(0, 1, [partition0LeftChild0][tile], [partition0RightChild0][tile])
-        Reduce(0, 1, [partition1LeftChild0][tile], [partition1RightChild0][tile])
+        -- Reduce(0, 1, [partition1LeftChild0][tile], [partition1RightChild0][tile])
 --- etc for more fragments
       end
     end
   end
+
+end
+
+exports.FUBAR = rquote -- debugging only
 
   if numLayers > 2 then
     __demand(__spmd) do

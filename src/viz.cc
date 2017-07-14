@@ -1058,7 +1058,7 @@ void cxx_reduce(legion_runtime_t runtime_,
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
-
+  
   PhysicalRegion* leftImage = CObjectWrapper::unwrap(leftSubregion[0]);
   std::vector<legion_field_id_t> fields;
   leftImage->get_fields(fields);
@@ -1071,16 +1071,7 @@ void cxx_reduce(legion_runtime_t runtime_,
   Domain rightIndexSpaceDomain = runtime->get_index_space_domain(ctx, rightImage->get_logical_region().get_index_space());
   Rect<3> rightBounds = rightIndexSpaceDomain.get_rect<3>();
   std::cout << "cxx_reduce subregion bounds " << leftBounds << "   " << rightBounds << std::endl;
-  
-  if(leftBounds.lo.x[0] > leftBounds.hi.x[0]) {
-    // this is an empty subregion, ignore it
-    return;
-  }
-  if(leftBounds.lo.x[2] == rightBounds.lo.x[2]) {
-    // another empty subrgion, ignore it
-    return;
-  }
-  
+    
   float* leftR = NULL;
   float* leftG = NULL;
   float* leftB = NULL;

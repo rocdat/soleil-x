@@ -39,8 +39,8 @@ do
   end
   terralib.linklibrary(viz_so)
   cviz = terralib.includec("viz.h", {"-I", root_dir, "-I", runtime_dir,
-                                                  "-I", mapper_dir, "-I", legion_dir,
-                                                  "-I", realm_dir})
+                            "-I", mapper_dir, "-I", legion_dir,
+                            "-I", realm_dir})
 end
 
 
@@ -67,6 +67,8 @@ local fragmentHeight = (height / fragmentsY)
 local numTilesX = 2
 local numTilesY = 2
 local numTilesZ = 1
+local zero = terralib.constant(`int3d { __ptr = regentlib.__int3d { 0, 0, 0 } })
+local one = terralib.constant(`int3d { __ptr = regentlib.__int3d { 1, 1, 1 } })
 
 -- numFragments imageFragments and depthPartitions
 
@@ -175,7 +177,6 @@ local fspace PixelFields {
 
 local task SplitLeftRight(r : region(ispace(int3d), PixelFields))
 
-  regentlib.c.printf('left-right split:\n')
   var colors = ispace(int3d, int3d{ 2, 2, 2 }) -- 0 = left, 1 = right
   var coloring = regentlib.c.legion_multi_domain_point_coloring_create()
 
@@ -183,9 +184,9 @@ local task SplitLeftRight(r : region(ispace(int3d), PixelFields))
     var rect = rect3d {
       lo = { 0, 0, i }, hi = { fragmentWidth - 1, fragmentHeight - 1, i }
     }
-    var color = int3d{ 0, 0, 0 }
+    var color = zero
     if i % 2 == 1 then
-      color = int3d{ 1, 1, 1 }
+      color = one
     end
     regentlib.c.legion_multi_domain_point_coloring_color_domain(coloring, color, rect)
   end
@@ -226,7 +227,7 @@ local task ChildPartition(r : region(ispace(int3d), PixelFields),
   var coloring = regentlib.c.legion_domain_point_coloring_create()
 
   for tile in tiles do
-    var rect = rect3d{ lo = int3d{ 1, 1, 1 }, hi = int3d{ 0, 0, 0 } }
+    var rect = rect3d{ lo = one, hi = zero }
     if tile.z < numLayers / 2 then
       var layer = 2 * pow2Level * tile.z + offset
       rect = rect3d{
@@ -314,10 +315,10 @@ local task Reduce(treeLevel : int,
   leftSubregion : region(ispace(int3d), PixelFields),
   rightSubregion : region(ispace(int3d), PixelFields))
 where
-   reads writes (leftSubregion), reads (rightSubregion), leftSubregion * rightSubregion
+   reads writes (leftSubregion), reads (rightSubregion)
+--, leftSubregion * rightSubregion
 do
   if leftSubregion.bounds.lo.x < leftSubregion.bounds.hi.x then
-    regentlib.c.printf("in reduce treeLevel %d offset %d\n", treeLevel, offset)
     cviz.cxx_reduce(__runtime(), __context(),
       __physical(leftSubregion), __fields(leftSubregion),
       __physical(rightSubregion), __fields(rightSubregion),
@@ -349,14 +350,11 @@ exports.Initialize = rquote
   var [imageFragment1] = region(indices, PixelFields)
   var [partition1ByDepth] = DepthPartition([imageFragment1], fragmentWidth, fragmentHeight, tiles)
 
-  var zero = int3d{ 0, 0, 0 }
-  var one = int3d{ 0, 0, 1 }
-
   -- fragment 0
 
   var [partition0LeftRight] = SplitLeftRight([imageFragment0])
-  var [partition0LeftChild0] = ChildPartition([partition0LeftRight][zero], 0, 1, 0, tiles)
-  var [partition0RightChild0] = ChildPartition([partition0LeftRight][one], 0, 1, 1, tiles)
+var [partition0LeftChild0] = ChildPartition([partition0LeftRight][zero], 0, 1, 0, tiles)
+var [partition0RightChild0] = ChildPartition([partition0LeftRight][one], 0, 1, 1, tiles)
   var [partition0LeftChild1] = ChildPartition([partition0LeftRight][zero], 1, 2, 0, tiles)
   var [partition0RightChild1] = ChildPartition([partition0LeftRight][one], 1, 2, 2, tiles)
   var [partition0LeftChild2] = ChildPartition([partition0LeftRight][zero], 2, 4, 0, tiles)

@@ -1864,6 +1864,20 @@
 /* Begin PBXFileReference section */
 		4127A7111F169C9D009A1F6A /* tree_reduction_lr.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = tree_reduction_lr.rg; path = ../tree_reduction_lr.rg; sourceTree = "<group>"; };
 		4127A7121F184D7D009A1F6A /* simple_reduction.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = simple_reduction.rg; path = ../simple_reduction.rg; sourceTree = "<group>"; };
+		4127A7141F1A8F86009A1F6A /* build_all.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = build_all.bash; sourceTree = "<group>"; };
+		4127A7151F1A8F86009A1F6A /* build_local.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = build_local.bash; sourceTree = "<group>"; };
+		4127A7161F1A8F86009A1F6A /* build_multinode.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = build_multinode.bash; sourceTree = "<group>"; };
+		4127A7171F1A8F86009A1F6A /* build_multinode_piz_daint.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = build_multinode_piz_daint.bash; sourceTree = "<group>"; };
+		4127A7181F1A8F86009A1F6A /* compile_video_4nodes.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = compile_video_4nodes.bash; sourceTree = "<group>"; };
+		4127A7191F1A8F86009A1F6A /* install_piz_daint.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = install_piz_daint.bash; sourceTree = "<group>"; };
+		4127A71B1F1A8F86009A1F6A /* piz_daint_local_job.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = piz_daint_local_job.bash; sourceTree = "<group>"; };
+		4127A71C1F1A8F86009A1F6A /* piz_daint_multinode_job.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = piz_daint_multinode_job.bash; sourceTree = "<group>"; };
+		4127A71D1F1A8F86009A1F6A /* prepare.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = prepare.bash; sourceTree = "<group>"; };
+		4127A71E1F1A8F86009A1F6A /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
+		4127A71F1F1A8F86009A1F6A /* run_4node_movie.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = run_4node_movie.bash; sourceTree = "<group>"; };
+		4127A7201F1A8F86009A1F6A /* run_local.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = run_local.bash; sourceTree = "<group>"; };
+		4127A7211F1A8F86009A1F6A /* run_multinode.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = run_multinode.bash; sourceTree = "<group>"; };
+		4127A7221F1A8F86009A1F6A /* setup.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = setup.bash; sourceTree = "<group>"; };
 		412C676F1F14155300962655 /* tree_reduction.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = tree_reduction.rg; path = ../tree_reduction.rg; sourceTree = "<group>"; };
 		412C67711F14733F00962655 /* taylor_green_vortex_1024_1024_1024.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_1024_1024_1024.lua; sourceTree = "<group>"; };
 		412C67721F14733F00962655 /* taylor_green_vortex_1024_1024_512.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_1024_1024_512.lua; sourceTree = "<group>"; };
@@ -7396,6 +7410,35 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4127A7131F1A8F86009A1F6A /* scripts */ = {
+			isa = PBXGroup;
+			children = (
+				4127A7141F1A8F86009A1F6A /* build_all.bash */,
+				4127A7151F1A8F86009A1F6A /* build_local.bash */,
+				4127A7161F1A8F86009A1F6A /* build_multinode.bash */,
+				4127A7171F1A8F86009A1F6A /* build_multinode_piz_daint.bash */,
+				4127A7181F1A8F86009A1F6A /* compile_video_4nodes.bash */,
+				4127A7191F1A8F86009A1F6A /* install_piz_daint.bash */,
+				4127A71A1F1A8F86009A1F6A /* out */,
+				4127A71B1F1A8F86009A1F6A /* piz_daint_local_job.bash */,
+				4127A71C1F1A8F86009A1F6A /* piz_daint_multinode_job.bash */,
+				4127A71D1F1A8F86009A1F6A /* prepare.bash */,
+				4127A71E1F1A8F86009A1F6A /* README.txt */,
+				4127A71F1F1A8F86009A1F6A /* run_4node_movie.bash */,
+				4127A7201F1A8F86009A1F6A /* run_local.bash */,
+				4127A7211F1A8F86009A1F6A /* run_multinode.bash */,
+				4127A7221F1A8F86009A1F6A /* setup.bash */,
+			);
+			path = scripts;
+			sourceTree = "<group>";
+		};
+		4127A71A1F1A8F86009A1F6A /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
 		412C67701F14733F00962655 /* taylor_with_smaller_particles */ = {
 			isa = PBXGroup;
 			children = (
@@ -13654,6 +13697,7 @@
 		E9519EA41BD705D2000851BC = {
 			isa = PBXGroup;
 			children = (
+				4127A7131F1A8F86009A1F6A /* scripts */,
 				4127A7121F184D7D009A1F6A /* simple_reduction.rg */,
 				4127A7111F169C9D009A1F6A /* tree_reduction_lr.rg */,
 				412C676F1F14155300962655 /* tree_reduction.rg */,

@@ -1,6 +1,7 @@
 #!/bin/bash
 if [[ -d $LEGION_PATH ]] ; then echo skipping legion.git ; else
-  git clone -b master https://github.com/StanfordLegion/legion.git $LEGION_PATH
+#  git clone -b master https://github.com/StanfordLegion/legion.git $LEGION_PATH
+  git clone -b soleil_viz https://github.com/StanfordLegion/legion.git $LEGION_PATH
 fi
 if [[ -d $LISZT_PATH ]] ; then echo skipping liszt-legion.git ; else
   git clone https://github.com/manopapad/liszt-legion.git $LISZT_PATH

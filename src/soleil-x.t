@@ -3355,7 +3355,7 @@ function Visualize.Initialize()
 end
 
 function Visualize.Render()
-  -- M.INLINE(viz.Render)
+  M.INLINE(viz.Render)
 end
 
 function Visualize.Reduce()

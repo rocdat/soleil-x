@@ -791,31 +791,15 @@ static std::string imageFileName(std::string table, int timeStep, Rect<3> bounds
 }
 
 
-static void
-writeImageToImageRegion(GLfloat* rgbaBuffer,
-                        GLfloat* depthBuffer,
-                        Runtime* runtime,
-                        Context ctx,
-                        legion_physical_region_t *imageRegion0,
-                        legion_field_id_t *imageRegion_fields0,
-                        legion_physical_region_t *imageRegion1,
-                        legion_field_id_t *imageRegion_fields1
-/****extend here for more regions****//////////////////////
-) {
-  
-  //TODO make this a series of calls to an impl method
-  
-  
-  std::cout << "warning calling writeToImageRegion which has not been modified for multiple image regions -- expect memory corruption" << std::endl;
-  
-  PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion0[0]);
-  std::vector<legion_field_id_t> fields;
-  image->get_fields(fields);
-  const int expectedNumFields = 6;
-  assert(fields.size() == expectedNumFields);
-  Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, image->get_logical_region().get_index_space());
-  Rect<3> bounds = indexSpaceDomain.get_rect<3>();
-  std::cout << "image bounds " << bounds << std::endl;
+
+static void writeImageToImageFragment(GLfloat* rgba,
+                                      GLfloat* depth,
+                                      Runtime* runtime,
+                                      Context ctx,
+                                      legion_physical_region_t* imageFragment,
+                                      legion_field_id_t* imageFragment_fields,
+                                      std::vector<legion_field_id_t> fields,
+                                      Rect<3> bounds) {
   
   float* R = NULL;
   float* G = NULL;
@@ -831,33 +815,30 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
   ByteOffset strideZ[3];
   ByteOffset strideUserData[3];
   
-  
   for(unsigned field = 0; field < fields.size(); ++field) {
-    PhysicalRegion* image = CObjectWrapper::unwrap(imageRegion0[field]);
+    PhysicalRegion* image = CObjectWrapper::unwrap(imageFragment[field]);
     switch(field) {
       case 0:
-      create_field_pointer(*image, R, imageRegion_fields0[field], strideR, runtime, ctx);
+      create_field_pointer(*image, R, imageFragment_fields[field], strideR, runtime, ctx);
       break;
       case 1:
-      create_field_pointer(*image, G, imageRegion_fields0[field], strideG, runtime, ctx);
+      create_field_pointer(*image, G, imageFragment_fields[field], strideG, runtime, ctx);
       break;
       case 2:
-      create_field_pointer(*image, B, imageRegion_fields0[field], strideB, runtime, ctx);
+      create_field_pointer(*image, B, imageFragment_fields[field], strideB, runtime, ctx);
       break;
       case 3:
-      create_field_pointer(*image, A, imageRegion_fields0[field], strideA, runtime, ctx);
+      create_field_pointer(*image, A, imageFragment_fields[field], strideA, runtime, ctx);
       break;
       case 4:
-      create_field_pointer(*image, Z, imageRegion_fields0[field], strideZ, runtime, ctx);
+      create_field_pointer(*image, Z, imageFragment_fields[field], strideZ, runtime, ctx);
       break;
       case 5:
-      create_field_pointer(*image, UserData, imageRegion_fields0[field], strideUserData, runtime, ctx);
+      create_field_pointer(*image, UserData, imageFragment_fields[field], strideUserData, runtime, ctx);
       break;
     }
   }
   
-  GLfloat* rgba = rgbaBuffer;
-  GLfloat* depth = depthBuffer;
   unsigned pixelCounter = 0;
   
   for(coord_t y = bounds.lo.x[1]; y <= bounds.hi.x[1]; ++y) {
@@ -879,17 +860,46 @@ writeImageToImageRegion(GLfloat* rgbaBuffer,
       pixelCounter++;
     }
   }
-  std::cout << "pushed " << pixelCounter << " rendered pixels to image region" << std::endl;
+  std::cout << "pushed " << pixelCounter << " rendered pixels to image fragment" << std::endl;
   
 }
+
+
+
+static void
+writeImageToImageFragments(GLfloat* rgbaBuffer,
+                           GLfloat* depthBuffer,
+                           Runtime* runtime,
+                           Context ctx,
+                           legion_physical_region_t* imageFragment[],
+                           legion_field_id_t* imageFragment_fields[],
+                           int width,
+                           int height) {
+  
+  PhysicalRegion* fragment = CObjectWrapper::unwrap(imageFragment[0][0]);
+  std::vector<legion_field_id_t> fields;
+  fragment->get_fields(fields);
+  const int expectedNumFields = 6;
+  assert(fields.size() == expectedNumFields);
+  Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, fragment->get_logical_region().get_index_space());
+  Rect<3> bounds = indexSpaceDomain.get_rect<3>();
+  int fragmentHeight = (int)(bounds.hi.x[1] - bounds.lo.x[1]);
+  assert(fragmentHeight > 0);
+  int numFragmentsPerImage = height / fragmentHeight;
+  
+  for(int i = 0; i < numFragmentsPerImage; ++i) {
+    GLfloat* rgba = rgbaBuffer + fragmentHeight * width * 4;
+    GLfloat* depth = depthBuffer + fragmentHeight * width;
+    writeImageToImageFragment(rgba, depth, runtime, ctx, imageFragment[i], imageFragment_fields[i], fields, bounds);
+  }
+}
+
 
 
 #endif
 
 
 
-
-// this is the entry point from regent
 
 #ifdef STANDALONE
 
@@ -914,9 +924,19 @@ void cxx_render(legion_runtime_t runtime_,
 #endif
 {
   
-  std::cout << "early out from cxx_render" << std::endl; return;
-  
 #ifndef STANDALONE
+  
+  legion_physical_region_t* imageRegion[] = {
+    imageRegion0,
+    imageRegion1
+    /***extend here for more regions***///////////////////
+  };
+  
+  legion_field_id_t* imageRegion_fields[] = {
+    imageRegion_fields0,
+    imageRegion_fields1
+    /***extend here for more regions***///////////////////
+  };
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
@@ -1013,28 +1033,24 @@ void cxx_render(legion_runtime_t runtime_,
                particleTemperatureBase, particleTemperatureIS,
                trackingBase, trackingIS,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, ctx);
-  write_ppm(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
-  std::string depthFileName = imageFileName("./out/depth", timeStep, bounds);
   
+  if(writeFiles) {
+    write_ppm(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
+    std::string depthFileName = imageFileName("./out/depth", timeStep, bounds);
+    FILE* depthFile = fopen(depthFileName.c_str(), "w");
+    assert(depthFile != NULL);
+    fprintf(depthFile, "%d %d\n", width, height);
+    fwrite(depthBuffer, sizeof(GLfloat), width * height, depthFile);
+    fclose(depthFile);
+    std::cout << "wrote " << depthFileName << std::endl;
+  }
+  
+  writeImageToImageFragments(rgbaBuffer, depthBuffer, runtime, ctx,
+                             imageRegion, imageRegion_fields, width, height);
+
 #endif
   
-  FILE* depthFile = fopen(depthFileName.c_str(), "w");
-  assert(depthFile != NULL);
-  fprintf(depthFile, "%d %d\n", width, height);
-  fwrite(depthBuffer, sizeof(GLfloat), width * height, depthFile);
-  fclose(depthFile);
-  std::cout << "wrote " << depthFileName << std::endl;
-  
-#ifndef STANDALONE
-  
-  writeImageToImageRegion(rgbaBuffer, depthBuffer, runtime, ctx,
-                          imageRegion0, imageRegion_fields0,
-                          imageRegion1, imageRegion_fields1
-  /***extend here for more regions****///////////////////////////
-                          );
-  
-#endif
-  
+
   /* free the image buffer */
   free(rgbaBuffer);
   free(depthBuffer);

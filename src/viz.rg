@@ -70,86 +70,112 @@ local numTilesZ = 1
 local zero = terralib.constant(`int3d { __ptr = regentlib.__int3d { 0, 0, 0 } })
 local one = terralib.constant(`int3d { __ptr = regentlib.__int3d { 1, 1, 1 } })
 
--- numFragments imageFragments and depthPartitions
+
+-- image fragments
 
 local imageFragment0 = regentlib.newsymbol("imageFragment0")
-local partition0ByDepth = regentlib.newsymbol("partition0ByDepth")
 local imageFragment1 = regentlib.newsymbol("imageFragment1")
-local partition1ByDepth = regentlib.newsymbol("partition1ByDepth")
+--etc
+
+-- depth partitions
+
+local partitionFragment0ByDepth = regentlib.newsymbol("partitionFragment0ByDepth")
+local partitionFragment1ByDepth = regentlib.newsymbol("partitionFragment1ByDepth")
 -- etc
 
 
 -- partitions for fragment0
 
-local partition0LeftRight = regentlib.newsymbol("partition0LeftRight")
+local partitionFragment0LeftRightLevel0 = regentlib.newsymbol("partitionFragment0LeftRightLevel0")
+local partitionFragment0LeftRightLevel1 = regentlib.newsymbol("partitionFragment0LeftRightLevel1")
+local partitionFragment0LeftRightLevel2 = regentlib.newsymbol("partitionFragment0LeftRightLevel2")
+local partitionFragment0LeftRightLevel3 = regentlib.newsymbol("partitionFragment0LeftRightLevel3")
+local partitionFragment0LeftRightLevel4 = regentlib.newsymbol("partitionFragment0LeftRightLevel4")
+local partitionFragment0LeftRightLevel5 = regentlib.newsymbol("partitionFragment0LeftRightLevel5")
+local partitionFragment0LeftRightLevel6 = regentlib.newsymbol("partitionFragment0LeftRightLevel6")
+local partitionFragment0LeftRightLevel7 = regentlib.newsymbol("partitionFragment0LeftRightLevel7")
+local partitionFragment0LeftRightLevel8 = regentlib.newsymbol("partitionFragment0LeftRightLevel8")
+local partitionFragment0LeftRightLevel9 = regentlib.newsymbol("partitionFragment0LeftRightLevel9")
+local partitionFragment0LeftRightLevel10 = regentlib.newsymbol("partitionFragment0LeftRightLevel10")
 
-local partition0LeftChild0 = regentlib.newsymbol("partition0LeftChild0")
-local partition0LeftChild1 = regentlib.newsymbol("partition0LeftChild1")
-local partition0LeftChild2 = regentlib.newsymbol("partition0LeftChild2")
-local partition0LeftChild3 = regentlib.newsymbol("partition0LeftChild3")
-local partition0LeftChild4 = regentlib.newsymbol("partition0LeftChild4")
-local partition0LeftChild5 = regentlib.newsymbol("partition0LeftChild5")
-local partition0LeftChild6 = regentlib.newsymbol("partition0LeftChild6")
-local partition0LeftChild7 = regentlib.newsymbol("partition0LeftChild7")
-local partition0LeftChild8 = regentlib.newsymbol("partition0LeftChild8")
-local partition0LeftChild9 = regentlib.newsymbol("partition0LeftChild9")
-local partition0LeftChild10 = regentlib.newsymbol("partition0LeftChild10")
-local partition0LeftChild11 = regentlib.newsymbol("partition0LeftChild11")
-local partition0LeftChild12 = regentlib.newsymbol("partition0LeftChild12")
-local partition0LeftChild13 = regentlib.newsymbol("partition0LeftChild13")
-local partition0LeftChild14 = regentlib.newsymbol("partition0LeftChild14")
+local partitionFragment0LeftChildLevel0 = regentlib.newsymbol("partitionFragment0LeftChildLevel0")
+local partitionFragment0LeftChildLevel1 = regentlib.newsymbol("partitionFragment0LeftChildLevel1")
+local partitionFragment0LeftChildLevel2 = regentlib.newsymbol("partitionFragment0LeftChildLevel2")
+local partitionFragment0LeftChildLevel3 = regentlib.newsymbol("partitionFragment0LeftChildLevel3")
+local partitionFragment0LeftChildLevel4 = regentlib.newsymbol("partitionFragment0LeftChildLevel4")
+local partitionFragment0LeftChildLevel5 = regentlib.newsymbol("partitionFragment0LeftChildLevel5")
+local partitionFragment0LeftChildLevel6 = regentlib.newsymbol("partitionFragment0LeftChildLevel6")
+local partitionFragment0LeftChildLevel7 = regentlib.newsymbol("partitionFragment0LeftChildLevel7")
+local partitionFragment0LeftChildLevel8 = regentlib.newsymbol("partitionFragment0LeftChildLevel8")
+local partitionFragment0LeftChildLevel9 = regentlib.newsymbol("partitionFragment0LeftChildLevel9")
+local partitionFragment0LeftChildLevel10 = regentlib.newsymbol("partitionFragment0LeftChildLevel10")
+local partitionFragment0LeftChildLevel11 = regentlib.newsymbol("partitionFragment0LeftChildLevel11")
+local partitionFragment0LeftChildLevel12 = regentlib.newsymbol("partitionFragment0LeftChildLevel12")
+local partitionFragment0LeftChildLevel13 = regentlib.newsymbol("partitionFragment0LeftChildLevel13")
+local partitionFragment0LeftChildLevel14 = regentlib.newsymbol("partitionFragment0LeftChildLevel14")
 
-local partition0RightChild0 = regentlib.newsymbol("partition0RightChild0")
-local partition0RightChild1 = regentlib.newsymbol("partition0RightChild1")
-local partition0RightChild2 = regentlib.newsymbol("partition0RightChild2")
-local partition0RightChild3 = regentlib.newsymbol("partition0RightChild3")
-local partition0RightChild4 = regentlib.newsymbol("partition0RightChild4")
-local partition0RightChild5 = regentlib.newsymbol("partition0RightChild5")
-local partition0RightChild6 = regentlib.newsymbol("partition0RightChild6")
-local partition0RightChild7 = regentlib.newsymbol("partition0RightChild7")
-local partition0RightChild8 = regentlib.newsymbol("partition0RightChild8")
-local partition0RightChild9 = regentlib.newsymbol("partition0RightChild9")
-local partition0RightChild10 = regentlib.newsymbol("partition0RightChild10")
-local partition0RightChild11 = regentlib.newsymbol("partition0RightChild11")
-local partition0RightChild12 = regentlib.newsymbol("partition0RightChild12")
-local partition0RightChild13 = regentlib.newsymbol("partition0RightChild13")
-local partition0RightChild14 = regentlib.newsymbol("partition0RightChild14")
+local partitionFragment0RightChildLevel0 = regentlib.newsymbol("partitionFragment0RightChildLevel0")
+local partitionFragment0RightChildLevel1 = regentlib.newsymbol("partitionFragment0RightChildLevel1")
+local partitionFragment0RightChildLevel2 = regentlib.newsymbol("partitionFragment0RightChildLevel2")
+local partitionFragment0RightChildLevel3 = regentlib.newsymbol("partitionFragment0RightChildLevel3")
+local partitionFragment0RightChildLevel4 = regentlib.newsymbol("partitionFragment0RightChildLevel4")
+local partitionFragment0RightChildLevel5 = regentlib.newsymbol("partitionFragment0RightChildLevel5")
+local partitionFragment0RightChildLevel6 = regentlib.newsymbol("partitionFragment0RightChildLevel6")
+local partitionFragment0RightChildLevel7 = regentlib.newsymbol("partitionFragment0RightChildLevel7")
+local partitionFragment0RightChildLevel8 = regentlib.newsymbol("partitionFragment0RightChildLevel8")
+local partitionFragment0RightChildLevel9 = regentlib.newsymbol("partitionFragment0RightChildLevel9")
+local partitionFragment0RightChildLevel10 = regentlib.newsymbol("partitionFragment0RightChildLevel10")
+local partitionFragment0RightChildLevel11 = regentlib.newsymbol("partitionFragment0RightChildLevel11")
+local partitionFragment0RightChildLevel12 = regentlib.newsymbol("partitionFragment0RightChildLevel12")
+local partitionFragment0RightChildLevel13 = regentlib.newsymbol("partitionFragment0RightChildLevel13")
+local partitionFragment0RightChildLevel14 = regentlib.newsymbol("partitionFragment0RightChildLevel14")
+
 
 -- partitions for fragment1
 
-local partition1LeftRight = regentlib.newsymbol("partition1LeftRight")
+local partitionFragment1LeftRightLevel0 = regentlib.newsymbol("partitionFragment1LeftRightLevel0")
+local partitionFragment1LeftRightLevel1 = regentlib.newsymbol("partitionFragment1LeftRightLevel1")
+local partitionFragment1LeftRightLevel2 = regentlib.newsymbol("partitionFragment1LeftRightLevel2")
+local partitionFragment1LeftRightLevel3 = regentlib.newsymbol("partitionFragment1LeftRightLevel3")
+local partitionFragment1LeftRightLevel4 = regentlib.newsymbol("partitionFragment1LeftRightLevel4")
+local partitionFragment1LeftRightLevel5 = regentlib.newsymbol("partitionFragment1LeftRightLevel5")
+local partitionFragment1LeftRightLevel6 = regentlib.newsymbol("partitionFragment1LeftRightLevel6")
+local partitionFragment1LeftRightLevel7 = regentlib.newsymbol("partitionFragment1LeftRightLevel7")
+local partitionFragment1LeftRightLevel8 = regentlib.newsymbol("partitionFragment1LeftRightLevel8")
+local partitionFragment1LeftRightLevel9 = regentlib.newsymbol("partitionFragment1LeftRightLevel9")
+local partitionFragment1LeftRightLevel10 = regentlib.newsymbol("partitionFragment1LeftRightLevel10")
 
-local partition1LeftChild0 = regentlib.newsymbol("partition1LeftChild0")
-local partition1LeftChild1 = regentlib.newsymbol("partition1LeftChild1")
-local partition1LeftChild2 = regentlib.newsymbol("partition1LeftChild2")
-local partition1LeftChild3 = regentlib.newsymbol("partition1LeftChild3")
-local partition1LeftChild4 = regentlib.newsymbol("partition1LeftChild4")
-local partition1LeftChild5 = regentlib.newsymbol("partition1LeftChild5")
-local partition1LeftChild6 = regentlib.newsymbol("partition1LeftChild6")
-local partition1LeftChild7 = regentlib.newsymbol("partition1LeftChild7")
-local partition1LeftChild8 = regentlib.newsymbol("partition1LeftChild8")
-local partition1LeftChild9 = regentlib.newsymbol("partition1LeftChild9")
-local partition1LeftChild10 = regentlib.newsymbol("partition1LeftChild10")
-local partition1LeftChild11 = regentlib.newsymbol("partition1LeftChild11")
-local partition1LeftChild12 = regentlib.newsymbol("partition1LeftChild12")
-local partition1LeftChild13 = regentlib.newsymbol("partition1LeftChild13")
-local partition1LeftChild14 = regentlib.newsymbol("partition1LeftChild14")
+local partitionFragment1LeftChildLevel0 = regentlib.newsymbol("partitionFragment1LeftChildLevel0")
+local partitionFragment1LeftChildLevel1 = regentlib.newsymbol("partitionFragment1LeftChildLevel1")
+local partitionFragment1LeftChildLevel2 = regentlib.newsymbol("partitionFragment1LeftChildLevel2")
+local partitionFragment1LeftChildLevel3 = regentlib.newsymbol("partitionFragment1LeftChildLevel3")
+local partitionFragment1LeftChildLevel4 = regentlib.newsymbol("partitionFragment1LeftChildLevel4")
+local partitionFragment1LeftChildLevel5 = regentlib.newsymbol("partitionFragment1LeftChildLevel5")
+local partitionFragment1LeftChildLevel6 = regentlib.newsymbol("partitionFragment1LeftChildLevel6")
+local partitionFragment1LeftChildLevel7 = regentlib.newsymbol("partitionFragment1LeftChildLevel7")
+local partitionFragment1LeftChildLevel8 = regentlib.newsymbol("partitionFragment1LeftChildLevel8")
+local partitionFragment1LeftChildLevel9 = regentlib.newsymbol("partitionFragment1LeftChildLevel9")
+local partitionFragment1LeftChildLevel10 = regentlib.newsymbol("partitionFragment1LeftChildLevel10")
+local partitionFragment1LeftChildLevel11 = regentlib.newsymbol("partitionFragment1LeftChildLevel11")
+local partitionFragment1LeftChildLevel12 = regentlib.newsymbol("partitionFragment1LeftChildLevel12")
+local partitionFragment1LeftChildLevel13 = regentlib.newsymbol("partitionFragment1LeftChildLevel13")
+local partitionFragment1LeftChildLevel14 = regentlib.newsymbol("partitionFragment1LeftChildLevel14")
 
-local partition1RightChild0 = regentlib.newsymbol("partition1RightChild0")
-local partition1RightChild1 = regentlib.newsymbol("partition1RightChild1")
-local partition1RightChild2 = regentlib.newsymbol("partition1RightChild2")
-local partition1RightChild3 = regentlib.newsymbol("partition1RightChild3")
-local partition1RightChild4 = regentlib.newsymbol("partition1RightChild4")
-local partition1RightChild5 = regentlib.newsymbol("partition1RightChild5")
-local partition1RightChild6 = regentlib.newsymbol("partition1RightChild6")
-local partition1RightChild7 = regentlib.newsymbol("partition1RightChild7")
-local partition1RightChild8 = regentlib.newsymbol("partition1RightChild8")
-local partition1RightChild9 = regentlib.newsymbol("partition1RightChild9")
-local partition1RightChild10 = regentlib.newsymbol("partition1RightChild10")
-local partition1RightChild11 = regentlib.newsymbol("partition1RightChild11")
-local partition1RightChild12 = regentlib.newsymbol("partition1RightChild12")
-local partition1RightChild13 = regentlib.newsymbol("partition1RightChild13")
-local partition1RightChild14 = regentlib.newsymbol("partition1RightChild14")
+local partitionFragment1RightChildLevel0 = regentlib.newsymbol("partitionFragment1RightChildLevel0")
+local partitionFragment1RightChildLevel1 = regentlib.newsymbol("partitionFragment1RightChildLevel1")
+local partitionFragment1RightChildLevel2 = regentlib.newsymbol("partitionFragment1RightChildLevel2")
+local partitionFragment1RightChildLevel3 = regentlib.newsymbol("partitionFragment1RightChildLevel3")
+local partitionFragment1RightChildLevel4 = regentlib.newsymbol("partitionFragment1RightChildLevel4")
+local partitionFragment1RightChildLevel5 = regentlib.newsymbol("partitionFragment1RightChildLevel5")
+local partitionFragment1RightChildLevel6 = regentlib.newsymbol("partitionFragment1RightChildLevel6")
+local partitionFragment1RightChildLevel7 = regentlib.newsymbol("partitionFragment1RightChildLevel7")
+local partitionFragment1RightChildLevel8 = regentlib.newsymbol("partitionFragment1RightChildLevel8")
+local partitionFragment1RightChildLevel9 = regentlib.newsymbol("partitionFragment1RightChildLevel9")
+local partitionFragment1RightChildLevel10 = regentlib.newsymbol("partitionFragment1RightChildLevel10")
+local partitionFragment1RightChildLevel11 = regentlib.newsymbol("partitionFragment1RightChildLevel11")
+local partitionFragment1RightChildLevel12 = regentlib.newsymbol("partitionFragment1RightChildLevel12")
+local partitionFragment1RightChildLevel13 = regentlib.newsymbol("partitionFragment1RightChildLevel13")
+local partitionFragment1RightChildLevel14 = regentlib.newsymbol("partitionFragment1RightChildLevel14")
 
 -- etc for more fragments
 
@@ -169,13 +195,13 @@ local fspace PixelFields {
 
 
 
-
-
 --
 -- SplitLeftRight:
 --
 
-local task SplitLeftRight(r : region(ispace(int3d), PixelFields))
+local task SplitLeftRight(r : region(ispace(int3d), PixelFields),
+  level : int,
+  pow2Level : int)
 
   var colors = ispace(int3d, int3d{ 2, 2, 2 }) -- 0 = left, 1 = right
   var coloring = regentlib.c.legion_multi_domain_point_coloring_create()
@@ -185,7 +211,7 @@ local task SplitLeftRight(r : region(ispace(int3d), PixelFields))
       lo = { 0, 0, i }, hi = { fragmentWidth - 1, fragmentHeight - 1, i }
     }
     var color = zero
-    if i % 2 == 1 then
+    if (i / pow2Level) % 2 == 1 then
       color = one
     end
     regentlib.c.legion_multi_domain_point_coloring_color_domain(coloring, color, rect)
@@ -224,9 +250,6 @@ local task ChildPartition(r : region(ispace(int3d), PixelFields),
   offset : int,
   tiles : ispace(int3d))
 
-  -- regentlib.c.printf("ChildPartition level %d pow2Level %d offset %d\n",
-  --   level, pow2Level, offset)
-
   var coloring = regentlib.c.legion_domain_point_coloring_create()
 
   for tile in tiles do
@@ -239,10 +262,6 @@ local task ChildPartition(r : region(ispace(int3d), PixelFields),
         hi = int3d{ fragmentWidth - 1, fragmentHeight - 1, layer }
       }
     end
-
-    -- regentlib.c.printf("tile %d %d %d   rect %d %d %d  %d %d %d\n",
-    --   tile.x, tile.y, tile.z, rect.lo.x, rect.lo.y, rect.lo.z, rect.hi.x, rect.hi.y, rect.hi.z)
-
     regentlib.c.legion_domain_point_coloring_color_domain(coloring, tile, rect)
   end
 
@@ -326,8 +345,6 @@ local task Reduce(treeLevel : int,
 where
    reads writes (leftSubregion), reads (rightSubregion)
 do
-  regentlib.c.printf("in local task Reduce %d with %d\n",
-    leftSubregion.bounds.lo.z, rightSubregion.bounds.lo.z)
   if leftSubregion.bounds.lo.x < leftSubregion.bounds.hi.x and
     rightSubregion.bounds.lo.x < rightSubregion.bounds.hi.x then
     cviz.cxx_reduce(__runtime(), __context(),
@@ -335,7 +352,6 @@ do
       __physical(rightSubregion), __fields(rightSubregion),
       treeLevel, offset)
   end
-  regentlib.c.printf("end Reduce %d with %d\n", leftSubregion.bounds.lo.z, rightSubregion.bounds.lo.z)
 end
 
 
@@ -349,109 +365,131 @@ end
 
 local exports = {}
 
-exports.Initialize = rquote
+exports.InitializeFragment0 = rquote
 
   var indices = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })
 
-  -- declare image fragments, up to numFragments
-
   var [imageFragment0] = region(indices, PixelFields)
-  var [partition0ByDepth] = DepthPartition([imageFragment0], fragmentWidth, fragmentHeight, tiles)
-  var [imageFragment1] = region(indices, PixelFields)
-  var [partition1ByDepth] = DepthPartition([imageFragment1], fragmentWidth, fragmentHeight, tiles)
+  var [partitionFragment0ByDepth] = DepthPartition([imageFragment0], fragmentWidth, fragmentHeight, tiles)
 
-  -- fragment 0
+  var [partitionFragment0LeftRightLevel0] = SplitLeftRight([imageFragment0], 0, 1)
+  var [partitionFragment0LeftRightLevel1] = SplitLeftRight([imageFragment0], 1, 2)
+  var [partitionFragment0LeftRightLevel2] = SplitLeftRight([imageFragment0], 2, 4)
+  var [partitionFragment0LeftRightLevel3] = SplitLeftRight([imageFragment0], 3, 8)
+  var [partitionFragment0LeftRightLevel4] = SplitLeftRight([imageFragment0], 4, 16)
+  var [partitionFragment0LeftRightLevel5] = SplitLeftRight([imageFragment0], 5, 32)
+  var [partitionFragment0LeftRightLevel6] = SplitLeftRight([imageFragment0], 6, 64)
+  var [partitionFragment0LeftRightLevel7] = SplitLeftRight([imageFragment0], 7, 128)
+  var [partitionFragment0LeftRightLevel8] = SplitLeftRight([imageFragment0], 8, 256)
+  var [partitionFragment0LeftRightLevel9] = SplitLeftRight([imageFragment0], 9, 512)
+  var [partitionFragment0LeftRightLevel10] = SplitLeftRight([imageFragment0], 10, 1024)
 
-  var [partition0LeftRight] = SplitLeftRight([imageFragment0])
-  var [partition0LeftChild0] = ChildPartition([partition0LeftRight][zero], 0, 1, 0, tiles)
-  var [partition0RightChild0] = ChildPartition([partition0LeftRight][one], 0, 1, 1, tiles)
-  var [partition0LeftChild1] = ChildPartition([partition0LeftRight][zero], 1, 2, 0, tiles)
-  var [partition0RightChild1] = ChildPartition([partition0LeftRight][one], 1, 2, 2, tiles)
-  var [partition0LeftChild2] = ChildPartition([partition0LeftRight][zero], 2, 4, 0, tiles)
-  var [partition0RightChild2] = ChildPartition([partition0LeftRight][one], 2, 4, 4, tiles)
-  var [partition0LeftChild3] = ChildPartition([partition0LeftRight][zero], 3, 8, 0, tiles)
-  var [partition0RightChild3] = ChildPartition([partition0LeftRight][one], 3, 8, 8, tiles)
-  var [partition0LeftChild4] = ChildPartition([partition0LeftRight][zero], 4, 16, 0, tiles)
-  var [partition0RightChild4] = ChildPartition([partition0LeftRight][one], 4, 16, 16, tiles)
-  var [partition0LeftChild5] = ChildPartition([partition0LeftRight][zero], 5, 32, 0, tiles)
-  var [partition0RightChild5] = ChildPartition([partition0LeftRight][one], 5, 32, 32, tiles)
-  var [partition0LeftChild6] = ChildPartition([partition0LeftRight][zero], 6, 64, 0, tiles)
-  var [partition0RightChild6] = ChildPartition([partition0LeftRight][one], 6, 64, 64, tiles)
-  var [partition0LeftChild7] = ChildPartition([partition0LeftRight][zero], 7, 128, 0, tiles)
-  var [partition0RightChild7] = ChildPartition([partition0LeftRight][one], 7, 128, 128, tiles)
-  var [partition0LeftChild8] = ChildPartition([partition0LeftRight][zero], 8, 256, 0, tiles)
-  var [partition0RightChild8] = ChildPartition([partition0LeftRight][one], 8, 256, 256, tiles)
-  var [partition0LeftChild9] = ChildPartition([partition0LeftRight][zero], 9, 512, 0, tiles)
-  var [partition0RightChild9] = ChildPartition([partition0LeftRight][one], 9, 512, 512, tiles)
-  var [partition0LeftChild10] = ChildPartition([partition0LeftRight][zero], 10, 1024, 0, tiles)
-  var [partition0RightChild10] = ChildPartition([partition0LeftRight][one], 10, 1024, 1024, tiles)
-
-  -- fragment 1
-
-  var [partition1LeftRight] = SplitLeftRight([imageFragment1])
-  var [partition1LeftChild0] = ChildPartition([partition1LeftRight][zero], 0, 1, 0, tiles)
-  var [partition1RightChild0] = ChildPartition([partition1LeftRight][one], 0, 1, 1, tiles)
-  var [partition1LeftChild1] = ChildPartition([partition1LeftRight][zero], 1, 2, 0, tiles)
-  var [partition1RightChild1] = ChildPartition([partition1LeftRight][one], 1, 2, 2, tiles)
-  var [partition1LeftChild2] = ChildPartition([partition1LeftRight][zero], 2, 4, 0, tiles)
-  var [partition1RightChild2] = ChildPartition([partition1LeftRight][one], 2, 4, 4, tiles)
-  var [partition1LeftChild3] = ChildPartition([partition1LeftRight][zero], 3, 8, 0, tiles)
-  var [partition1RightChild3] = ChildPartition([partition1LeftRight][one], 3, 8, 8, tiles)
-  var [partition1LeftChild4] = ChildPartition([partition1LeftRight][zero], 4, 16, 0, tiles)
-  var [partition1RightChild4] = ChildPartition([partition1LeftRight][one], 4, 16, 16, tiles)
-  var [partition1LeftChild5] = ChildPartition([partition1LeftRight][zero], 5, 32, 0, tiles)
-  var [partition1RightChild5] = ChildPartition([partition1LeftRight][one], 5, 32, 32, tiles)
-  var [partition1LeftChild6] = ChildPartition([partition1LeftRight][zero], 6, 64, 0, tiles)
-  var [partition1RightChild6] = ChildPartition([partition1LeftRight][one], 6, 64, 64, tiles)
-  var [partition1LeftChild7] = ChildPartition([partition1LeftRight][zero], 7, 128, 0, tiles)
-  var [partition1RightChild7] = ChildPartition([partition1LeftRight][one], 7, 128, 128, tiles)
-  var [partition1LeftChild8] = ChildPartition([partition1LeftRight][zero], 8, 256, 0, tiles)
-  var [partition1RightChild8] = ChildPartition([partition1LeftRight][one], 8, 256, 256, tiles)
-  var [partition1LeftChild9] = ChildPartition([partition1LeftRight][zero], 9, 512, 0, tiles)
-  var [partition1RightChild9] = ChildPartition([partition1LeftRight][one], 9, 512, 512, tiles)
-  var [partition1LeftChild10] = ChildPartition([partition1LeftRight][zero], 10, 1024, 0, tiles)
-  var [partition1RightChild10] = ChildPartition([partition1LeftRight][one], 10, 1024, 1024, tiles)
-
-  -- fragment 2 ...
+  var [partitionFragment0LeftChildLevel0] = ChildPartition([partitionFragment0LeftRightLevel0][zero], 0, 1, 0, tiles)
+  var [partitionFragment0RightChildLevel0] = ChildPartition([partitionFragment0LeftRightLevel0][one], 0, 1, 1, tiles)
+  var [partitionFragment0LeftChildLevel1] = ChildPartition([partitionFragment0LeftRightLevel1][zero], 1, 2, 0, tiles)
+  var [partitionFragment0RightChildLevel1] = ChildPartition([partitionFragment0LeftRightLevel1][one], 1, 2, 2, tiles)
+  var [partitionFragment0LeftChildLevel2] = ChildPartition([partitionFragment0LeftRightLevel2][zero], 2, 4, 0, tiles)
+  var [partitionFragment0RightChildLevel2] = ChildPartition([partitionFragment0LeftRightLevel2][one], 2, 4, 4, tiles)
+  var [partitionFragment0LeftChildLevel3] = ChildPartition([partitionFragment0LeftRightLevel3][zero], 3, 8, 0, tiles)
+  var [partitionFragment0RightChildLevel3] = ChildPartition([partitionFragment0LeftRightLevel3][one], 3, 8, 8, tiles)
+  var [partitionFragment0LeftChildLevel4] = ChildPartition([partitionFragment0LeftRightLevel4][zero], 4, 16, 0, tiles)
+  var [partitionFragment0RightChildLevel4] = ChildPartition([partitionFragment0LeftRightLevel4][one], 4, 16, 16, tiles)
+  var [partitionFragment0LeftChildLevel5] = ChildPartition([partitionFragment0LeftRightLevel5][zero], 5, 32, 0, tiles)
+  var [partitionFragment0RightChildLevel5] = ChildPartition([partitionFragment0LeftRightLevel5][one], 5, 32, 32, tiles)
+  var [partitionFragment0LeftChildLevel6] = ChildPartition([partitionFragment0LeftRightLevel6][zero], 6, 64, 0, tiles)
+  var [partitionFragment0RightChildLevel6] = ChildPartition([partitionFragment0LeftRightLevel6][one], 6, 64, 64, tiles)
+  var [partitionFragment0LeftChildLevel7] = ChildPartition([partitionFragment0LeftRightLevel7][zero], 7, 128, 0, tiles)
+  var [partitionFragment0RightChildLevel7] = ChildPartition([partitionFragment0LeftRightLevel7][one], 7, 128, 128, tiles)
+  var [partitionFragment0LeftChildLevel8] = ChildPartition([partitionFragment0LeftRightLevel8][zero], 8, 256, 0, tiles)
+  var [partitionFragment0RightChildLevel8] = ChildPartition([partitionFragment0LeftRightLevel8][one], 8, 256, 256, tiles)
+  var [partitionFragment0LeftChildLevel9] = ChildPartition([partitionFragment0LeftRightLevel9][zero], 9, 512, 0, tiles)
+  var [partitionFragment0RightChildLevel9] = ChildPartition([partitionFragment0LeftRightLevel9][one], 9, 512, 512, tiles)
+  var [partitionFragment0LeftChildLevel10] = ChildPartition([partitionFragment0LeftRightLevel10][zero], 10, 1024, 0, tiles)
+  var [partitionFragment0RightChildLevel10] = ChildPartition([partitionFragment0LeftRightLevel10][one], 10, 1024, 1024, tiles)
 
 end
+
+
+exports.InitializeFragment1 = rquote
+
+  var indices = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })
+
+  var [imageFragment1] = region(indices, PixelFields)
+  var [partitionFragment1ByDepth] = DepthPartition([imageFragment1], fragmentWidth, fragmentHeight, tiles)
+
+  var [partitionFragment1LeftRightLevel0] = SplitLeftRight([imageFragment1], 0, 1)
+  var [partitionFragment1LeftRightLevel1] = SplitLeftRight([imageFragment1], 1, 2)
+  var [partitionFragment1LeftRightLevel2] = SplitLeftRight([imageFragment1], 2, 4)
+  var [partitionFragment1LeftRightLevel3] = SplitLeftRight([imageFragment1], 3, 8)
+  var [partitionFragment1LeftRightLevel4] = SplitLeftRight([imageFragment1], 4, 16)
+  var [partitionFragment1LeftRightLevel5] = SplitLeftRight([imageFragment1], 5, 32)
+  var [partitionFragment1LeftRightLevel6] = SplitLeftRight([imageFragment1], 6, 64)
+  var [partitionFragment1LeftRightLevel7] = SplitLeftRight([imageFragment1], 7, 128)
+  var [partitionFragment1LeftRightLevel8] = SplitLeftRight([imageFragment1], 8, 256)
+  var [partitionFragment1LeftRightLevel9] = SplitLeftRight([imageFragment1], 9, 512)
+  var [partitionFragment1LeftRightLevel10] = SplitLeftRight([imageFragment1], 10, 1024)
+
+  var [partitionFragment1LeftChildLevel0] = ChildPartition([partitionFragment1LeftRightLevel0][zero], 0, 1, 0, tiles)
+  var [partitionFragment1RightChildLevel0] = ChildPartition([partitionFragment1LeftRightLevel0][one], 0, 1, 1, tiles)
+  var [partitionFragment1LeftChildLevel1] = ChildPartition([partitionFragment1LeftRightLevel1][zero], 1, 2, 0, tiles)
+  var [partitionFragment1RightChildLevel1] = ChildPartition([partitionFragment1LeftRightLevel1][one], 1, 2, 2, tiles)
+  var [partitionFragment1LeftChildLevel2] = ChildPartition([partitionFragment1LeftRightLevel2][zero], 2, 4, 0, tiles)
+  var [partitionFragment1RightChildLevel2] = ChildPartition([partitionFragment1LeftRightLevel2][one], 2, 4, 4, tiles)
+  var [partitionFragment1LeftChildLevel3] = ChildPartition([partitionFragment1LeftRightLevel3][zero], 3, 8, 0, tiles)
+  var [partitionFragment1RightChildLevel3] = ChildPartition([partitionFragment1LeftRightLevel3][one], 3, 8, 8, tiles)
+  var [partitionFragment1LeftChildLevel4] = ChildPartition([partitionFragment1LeftRightLevel4][zero], 4, 16, 0, tiles)
+  var [partitionFragment1RightChildLevel4] = ChildPartition([partitionFragment1LeftRightLevel4][one], 4, 16, 16, tiles)
+  var [partitionFragment1LeftChildLevel5] = ChildPartition([partitionFragment1LeftRightLevel5][zero], 5, 32, 0, tiles)
+  var [partitionFragment1RightChildLevel5] = ChildPartition([partitionFragment1LeftRightLevel5][one], 5, 32, 32, tiles)
+  var [partitionFragment1LeftChildLevel6] = ChildPartition([partitionFragment1LeftRightLevel6][zero], 6, 64, 0, tiles)
+  var [partitionFragment1RightChildLevel6] = ChildPartition([partitionFragment1LeftRightLevel6][one], 6, 64, 64, tiles)
+  var [partitionFragment1LeftChildLevel7] = ChildPartition([partitionFragment1LeftRightLevel7][zero], 7, 128, 0, tiles)
+  var [partitionFragment1RightChildLevel7] = ChildPartition([partitionFragment1LeftRightLevel7][one], 7, 128, 128, tiles)
+  var [partitionFragment1LeftChildLevel8] = ChildPartition([partitionFragment1LeftRightLevel8][zero], 8, 256, 0, tiles)
+  var [partitionFragment1RightChildLevel8] = ChildPartition([partitionFragment1LeftRightLevel8][one], 8, 256, 256, tiles)
+  var [partitionFragment1LeftChildLevel9] = ChildPartition([partitionFragment1LeftRightLevel9][zero], 9, 512, 0, tiles)
+  var [partitionFragment1RightChildLevel9] = ChildPartition([partitionFragment1LeftRightLevel9][one], 9, 512, 512, tiles)
+  var [partitionFragment1LeftChildLevel10] = ChildPartition([partitionFragment1LeftRightLevel10][zero], 10, 1024, 0, tiles)
+  var [partitionFragment1RightChildLevel10] = ChildPartition([partitionFragment1LeftRightLevel10][one], 10, 1024, 1024, tiles)
+
+end
+
+-- fragment 2 ...
+
+
 
 
 exports.Render = rquote
   for tile in tiles do
     Render(p_cells[tile], p_particles[tile],
-      [partition0ByDepth][tile],
-      [partition1ByDepth][tile]
--- etc to partition1000ByDepth
+      [partitionFragment0ByDepth][tile],
+      [partitionFragment1ByDepth][tile]
     )
+-- etc for more fragments
   end
 end
 
 
+
+
 exports.Reduce = rquote
-  regentlib.c.printf("Reduce\n")
   var indices = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })
 
   if numLayers > 1 then
     __demand(__spmd) do
       for tile in tiles do
-        regentlib.c.printf("calling reduce for tile %d %d %d\n", tile.x, tile.y, tile.z)
-        Reduce(0, 1, [partition0LeftChild0][tile], [partition0RightChild0][tile])
-        -- Reduce(0, 1, [partition1LeftChild0][tile], [partition1RightChild0][tile])
+        Reduce(0, 1, [partitionFragment0LeftChildLevel0][tile], [partitionFragment0RightChildLevel0][tile])
+        Reduce(0, 1, [partitionFragment1LeftChildLevel0][tile], [partitionFragment1RightChildLevel0][tile])
 --- etc for more fragments
       end
     end
   end
 
-end
-
-exports.FUBAR = rquote -- debugging only
-
   if numLayers > 2 then
     __demand(__spmd) do
       for tile in tiles do
-        Reduce(1, 2, [partition0LeftChild1][tile], [partition0RightChild1][tile])
-        Reduce(1, 2, [partition1LeftChild1][tile], [partition1RightChild1][tile])
+        Reduce(1, 2, [partitionFragment0LeftChildLevel1][tile], [partitionFragment0RightChildLevel1][tile])
+        Reduce(1, 2, [partitionFragment1LeftChildLevel1][tile], [partitionFragment1RightChildLevel1][tile])
 --- etc for more fragments
       end
     end
@@ -460,8 +498,8 @@ exports.FUBAR = rquote -- debugging only
   if numLayers > 4 then
     __demand(__spmd) do
       for tile in tiles do
-        Reduce(2, 4, [partition0LeftChild2][tile], [partition0RightChild2][tile])
-        Reduce(2, 4, [partition1LeftChild2][tile], [partition1RightChild2][tile])
+        Reduce(2, 4, [partitionFragment0LeftChildLevel2][tile], [partitionFragment0RightChildLevel2][tile])
+        Reduce(2, 4, [partitionFragment1LeftChildLevel2][tile], [partitionFragment1RightChildLevel2][tile])
 --- etc for more fragments
       end
     end

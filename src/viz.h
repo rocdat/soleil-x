@@ -42,11 +42,14 @@ extern "C" {
                   legion_field_id_t *cells_fields,
                   legion_physical_region_t *particles,
                   legion_field_id_t *particles_fields,
+                  
                   legion_physical_region_t *imageRegion0,
                   legion_field_id_t *imageRegion_fields0,
                   legion_physical_region_t *imageRegion1,
                   legion_field_id_t *imageRegion_fields1,
+                  
                   int xnum, int ynum, int znum);
+  
   
   void cxx_reduce(legion_runtime_t runtime,
                   legion_context_t context,

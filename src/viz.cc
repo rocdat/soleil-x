@@ -450,8 +450,6 @@ void render_image(int width,
   
   gluDeleteQuadric(qobj);
   
-  
-  
   int size = width * height * sizeof(GLfloat);
   *depthBuffer = (GLfloat*)calloc(1, size);
   glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, *depthBuffer);
@@ -1032,8 +1030,8 @@ void cxx_render(legion_runtime_t runtime_,
   writeImageToImageRegion(rgbaBuffer, depthBuffer, runtime, ctx,
                           imageRegion0, imageRegion_fields0,
                           imageRegion1, imageRegion_fields1
-                          );
   /***extend here for more regions****///////////////////////////
+                          );
   
 #endif
   

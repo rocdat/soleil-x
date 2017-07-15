@@ -3349,15 +3349,16 @@ end
 ------------
 
 function Visualize.Initialize()
-  M.INLINE(viz.Initialize)
+  M.INLINE(viz.InitializeFragment0)
+  M.INLINE(viz.InitializeFragment1)
+-- etc for more fragments
 end
 
 function Visualize.Render()
-  M.INLINE(viz.Render)
+  -- M.INLINE(viz.Render)
 end
 
 function Visualize.Reduce()
-  -- Launch an image reduction
   M.INLINE(viz.Reduce)
 end
 

@@ -1251,19 +1251,15 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
       row++;
     }
     
-    static unsigned fileSerialID = 0;
-    char buffer[256];
-    sprintf(buffer, "./out/image.%05d.ppm", fileSerialID++);
-    write_ppm(buffer, rgbaBuffer, width, height);
-    
-    free(rgbaBuffer);
-    
     fragmentID++;
   }
-  
 
+  static unsigned fileSerialID = 0;
+  char buffer[256];
+  sprintf(buffer, "./out/image.%05d.ppm", fileSerialID++);
+  write_ppm(buffer, rgbaBuffer, width, height);
   
-  
+  free(rgbaBuffer);
 }
 
 

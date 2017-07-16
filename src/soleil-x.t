@@ -175,7 +175,6 @@ local function printUsageAndExit()
   os.exit(1)
 end
 
--- default values for options
 local configFileName = nil
 
 do
@@ -220,12 +219,12 @@ local twoPi = 2.0*pi
 --[[                            NAMESPACES                               ]]--
 -----------------------------------------------------------------------------
 
-local Flow = {};
-local Particles = {};
-local TimeIntegrator = {};
-local Statistics = {};
-local IO = {};
-local Visualize = {};
+local Flow = {}
+local Particles = {}
+local TimeIntegrator = {}
+local Statistics = {}
+local IO = {}
+local Visualize = {}
 
 -----------------------------------------------------------------------------
 --[[                   INITIALIZE OPTIONS FROM CONFIG                    ]]--
@@ -622,13 +621,10 @@ local zBw = grid_options.zWidth/grid_options.znum * zBnum
 local gridOriginInteriorX = grid_options.origin[1]
 local gridOriginInteriorY = grid_options.origin[2]
 local gridOriginInteriorZ = grid_options.origin[3]
-local gridWidthX = grid_options.xWidth
-local gridWidthY = grid_options.yWidth
-local gridWidthZ = grid_options.zWidth
 
-local grid = Grid.NewGrid3d{
+local fluidGrid = Grid.NewGrid{
   name              = 'Fluid',
-  size              = {grid_options.xnum + 2*xBnum,
+  dims              = {grid_options.xnum + 2*xBnum,
                        grid_options.ynum + 2*yBnum,
                        grid_options.znum + 2*zBnum},
   origin            = {grid_options.origin[1] - xBw,
@@ -638,84 +634,84 @@ local grid = Grid.NewGrid3d{
                        grid_options.yWidth + 2*yBw,
                        grid_options.zWidth + 2*zBw},
   boundary_depth    = {xBnum, yBnum, zBnum},
-  periodic_boundary = {xBCPeriodic, yBCPeriodic, zBCPeriodic}
+  periodic          = {xBCPeriodic, yBCPeriodic, zBCPeriodic}
 }
 
 -- Define uniform grid spacing
 -- WARNING: These are used for uniform grids and should be replaced by different
 -- metrics for non-uniform ones (see other WARNINGS throughout the code)
-local grid_originX = L.Constant(L.double, grid:xOrigin())
-local grid_originY = L.Constant(L.double, grid:yOrigin())
-local grid_originZ = L.Constant(L.double, grid:zOrigin())
-local grid_widthX  = L.Constant(L.double, grid:xWidth())
-local grid_widthY  = L.Constant(L.double, grid:yWidth())
-local grid_widthZ  = L.Constant(L.double, grid:zWidth())
-local grid_dx      = L.Constant(L.double, grid:xCellWidth())
-local grid_dy      = L.Constant(L.double, grid:yCellWidth())
-local grid_dz      = L.Constant(L.double, grid:zCellWidth())
+local grid_originX = L.Constant(L.double, fluidGrid:Origin()[1])
+local grid_originY = L.Constant(L.double, fluidGrid:Origin()[2])
+local grid_originZ = L.Constant(L.double, fluidGrid:Origin()[3])
+local grid_widthX  = L.Constant(L.double, fluidGrid:Width()[1])
+local grid_widthY  = L.Constant(L.double, fluidGrid:Width()[2])
+local grid_widthZ  = L.Constant(L.double, fluidGrid:Width()[3])
+local grid_dx      = L.Constant(L.double, fluidGrid:CellWidth()[1])
+local grid_dy      = L.Constant(L.double, fluidGrid:CellWidth()[2])
+local grid_dz      = L.Constant(L.double, fluidGrid:CellWidth()[3])
 
 -- Primitive variables
-grid.cells:NewField('rho', L.double)
-grid.cells:NewField('pressure', L.double)
-grid.cells:NewField('velocity', L.vec3d)
+fluidGrid:NewField('rho', L.double)
+fluidGrid:NewField('pressure', L.double)
+fluidGrid:NewField('velocity', L.vec3d)
 
 -- Remaining primitive variables
-grid.cells:NewField('centerCoordinates', L.vec3d)
-grid.cells:NewField('velocityGradientX', L.vec3d)
-grid.cells:NewField('velocityGradientY', L.vec3d)
-grid.cells:NewField('velocityGradientZ', L.vec3d)
-grid.cells:NewField('temperature', L.double)
-grid.cells:NewField('rhoEnthalpy', L.double)
-grid.cells:NewField('kineticEnergy', L.double)
-grid.cells:NewField('sgsEnergy', L.double)
-grid.cells:NewField('sgsEddyViscosity', L.double)
-grid.cells:NewField('sgsEddyKappa', L.double)
-grid.cells:NewField('convectiveSpectralRadius', L.double)
-grid.cells:NewField('viscousSpectralRadius', L.double)
-grid.cells:NewField('heatConductionSpectralRadius', L.double)
+fluidGrid:NewField('centerCoordinates', L.vec3d)
+fluidGrid:NewField('velocityGradientX', L.vec3d)
+fluidGrid:NewField('velocityGradientY', L.vec3d)
+fluidGrid:NewField('velocityGradientZ', L.vec3d)
+fluidGrid:NewField('temperature', L.double)
+fluidGrid:NewField('rhoEnthalpy', L.double)
+fluidGrid:NewField('kineticEnergy', L.double)
+fluidGrid:NewField('sgsEnergy', L.double)
+fluidGrid:NewField('sgsEddyViscosity', L.double)
+fluidGrid:NewField('sgsEddyKappa', L.double)
+fluidGrid:NewField('convectiveSpectralRadius', L.double)
+fluidGrid:NewField('viscousSpectralRadius', L.double)
+fluidGrid:NewField('heatConductionSpectralRadius', L.double)
 
 -- Conserved variables
-grid.cells:NewField('rhoVelocity', L.vec3d)
-grid.cells:NewField('rhoEnergy', L.double)
+fluidGrid:NewField('rhoVelocity', L.vec3d)
+fluidGrid:NewField('rhoEnergy', L.double)
 
 -- Fields for boundary treatment
-grid.cells:NewField('rhoBoundary', L.double)
-grid.cells:NewField('rhoVelocityBoundary', L.vec3d)
-grid.cells:NewField('rhoEnergyBoundary', L.double)
-grid.cells:NewField('velocityBoundary', L.vec3d)
-grid.cells:NewField('pressureBoundary', L.double)
-grid.cells:NewField('temperatureBoundary', L.double)
-grid.cells:NewField('velocityGradientXBoundary', L.vec3d)
-grid.cells:NewField('velocityGradientYBoundary', L.vec3d)
-grid.cells:NewField('velocityGradientZBoundary', L.vec3d)
+fluidGrid:NewField('rhoBoundary', L.double)
+fluidGrid:NewField('rhoVelocityBoundary', L.vec3d)
+fluidGrid:NewField('rhoEnergyBoundary', L.double)
+fluidGrid:NewField('velocityBoundary', L.vec3d)
+fluidGrid:NewField('pressureBoundary', L.double)
+fluidGrid:NewField('temperatureBoundary', L.double)
+fluidGrid:NewField('velocityGradientXBoundary', L.vec3d)
+fluidGrid:NewField('velocityGradientYBoundary', L.vec3d)
+fluidGrid:NewField('velocityGradientZBoundary', L.vec3d)
 
 -- scratch (temporary) fields
 -- intermediate value and copies
-grid.cells:NewField('rho_old', L.double)
-grid.cells:NewField('rhoVelocity_old', L.vec3d)
-grid.cells:NewField('rhoEnergy_old', L.double)
-grid.cells:NewField('rho_new', L.double)
-grid.cells:NewField('rhoVelocity_new', L.vec3d)
-grid.cells:NewField('rhoEnergy_new', L.double)
+fluidGrid:NewField('rho_old', L.double)
+fluidGrid:NewField('rhoVelocity_old', L.vec3d)
+fluidGrid:NewField('rhoEnergy_old', L.double)
+fluidGrid:NewField('rho_new', L.double)
+fluidGrid:NewField('rhoVelocity_new', L.vec3d)
+fluidGrid:NewField('rhoEnergy_new', L.double)
 -- time derivatives
-grid.cells:NewField('rho_t', L.double)
-grid.cells:NewField('rhoVelocity_t', L.vec3d)
-grid.cells:NewField('rhoEnergy_t', L.double)
+fluidGrid:NewField('rho_t', L.double)
+fluidGrid:NewField('rhoVelocity_t', L.vec3d)
+fluidGrid:NewField('rhoEnergy_t', L.double)
 -- fluxes
-grid.cells:NewField('rhoFluxX', L.double)
-grid.cells:NewField('rhoVelocityFluxX', L.vec3d)
-grid.cells:NewField('rhoEnergyFluxX', L.double)
-grid.cells:NewField('rhoFluxY', L.double)
-grid.cells:NewField('rhoVelocityFluxY', L.vec3d)
-grid.cells:NewField('rhoEnergyFluxY', L.double)
-grid.cells:NewField('rhoFluxZ', L.double)
-grid.cells:NewField('rhoVelocityFluxZ', L.vec3d)
-grid.cells:NewField('rhoEnergyFluxZ', L.double)
+fluidGrid:NewField('rhoFluxX', L.double)
+fluidGrid:NewField('rhoVelocityFluxX', L.vec3d)
+fluidGrid:NewField('rhoEnergyFluxX', L.double)
+fluidGrid:NewField('rhoFluxY', L.double)
+fluidGrid:NewField('rhoVelocityFluxY', L.vec3d)
+fluidGrid:NewField('rhoEnergyFluxY', L.double)
+fluidGrid:NewField('rhoFluxZ', L.double)
+fluidGrid:NewField('rhoVelocityFluxZ', L.vec3d)
+fluidGrid:NewField('rhoEnergyFluxZ', L.double)
 
 -- Right hand side of the kinetic energy equation
-grid.cells:NewField('PD', L.double)
-grid.cells:NewField('dissipation', L.double)
-grid.cells:NewField('dissipationFlux', L.double)
+fluidGrid:NewField('PD', L.double)
+fluidGrid:NewField('dissipation', L.double)
+fluidGrid:NewField('dissipationFlux', L.double)
 
 -----------------------------------------------------------------------------
 --[[                       PARTICLE PREPROCESSING                        ]]--
@@ -734,7 +730,9 @@ if particles_options.modeParticles then
 
   particles = L.NewRelation {
     name = 'particles',
-    mode = 'FLEXIBLE',
+    mode = 'COUPLED',
+    coupled_with = fluidGrid,
+    coupling_field = 'cell',
     size = particles_options.maximum_num,
     max_skew = 1.5,
     max_xfer_num = 1000,
@@ -749,8 +747,6 @@ if particles_options.modeParticles then
                     {-1,-1, 0}, {-1,-1, 1}, {-1,-1,-1}}
   }
 
-  particles:NewField('cell', grid.cells)
-  particles.cell:AutoPartitionByPreimage()
   particles:NewField('position', L.vec3d)
   particles:NewField('particle_velocity', L.vec3d)
   particles:NewField('density', L.double)
@@ -822,22 +818,23 @@ Flow.averageK           = L.Global('Flow.averageK', L.double, 0.0)
 local particles_init_uniform
 if particles_options.modeParticles then
   particles_init_uniform =
-    (require 'particles_init_uniform')(particles, grid.cells)
+    (require 'particles_init_uniform')(particles, fluidGrid)
 end
 
 local radiation
 if radiation_options.radiationType == RadiationType.Algebraic then
   radiation = (require 'algebraic')(particles)
 elseif radiation_options.radiationType == RadiationType.DOM then
-  radiation = (require 'dom')(grid.cells, particles)
+  error('DOM not supported yet')
 elseif radiation_options.radiationType == RadiationType.MCRT then
-  radiation = (require 'mcrt')(particles)
+  error('MCRT not supported yet')
 elseif radiation_options.radiationType == RadiationType.OFF then
   -- do nothing
 else assert(false) end
 
-
-local viz = (require 'viz')(grid.cells, particles, config.xnum, config.ynum, config.znum, grid.origin, grid.width)
+local viz = (require 'viz')(fluidGrid, particles,
+                            config.xnum, config.ynum, config.znum,
+                            fluidGrid.origin, fluidGrid.width)
 
 -----------------------------------------------------------------------------
 --[[                       LOAD DATA FOR RESTART                         ]]--
@@ -911,12 +908,12 @@ end
 -- WARNING: update cellVolume computation for non-uniform grids
 local cellVolume = L.Constant(L.double,
                               grid_dx:get() * grid_dy:get() * grid_dz:get())
-local ebb numberOfInteriorCells ( c : grid.cells )
+local ebb numberOfInteriorCells ( c : fluidGrid )
   if c.in_interior then
     Flow.numberOfInteriorCells += L.int64(1)
   end
 end
-local ebb areaInterior ( c : grid.cells )
+local ebb areaInterior ( c : fluidGrid )
   if c.in_interior then
     Flow.areaInterior += cellVolume
   end
@@ -1250,7 +1247,7 @@ end
 -- FLOW
 -------
 
-ebb Flow.InitializeCell (c : grid.cells)
+ebb Flow.InitializeCell (c : fluidGrid)
   c.rho = 0.0
   c.pressure = 0.0
   c.velocity = L.vec3d({0.0, 0.0, 0.0})
@@ -1306,12 +1303,12 @@ end
 -- Here, we use a field for convenience when outputting to file, but this is
 -- to be removed after grid outputing is well defined from within the grid.t
 -- module. Similar story with the vertex coordinates (output only).
-ebb Flow.InitializeCenterCoordinates (c : grid.cells)
+ebb Flow.InitializeCenterCoordinates (c : fluidGrid)
   var xy = c.center
   c.centerCoordinates = L.vec3d({L.double(xy[0]), L.double(xy[1]), L.double((xy[2]))})
 end
 
-ebb Flow.InitializeUniform (c : grid.cells)
+ebb Flow.InitializeUniform (c : fluidGrid)
   c.rho         = flow_options.initParams[0]
   c.pressure    = flow_options.initParams[1]
   c.velocity[0] = flow_options.initParams[2]
@@ -1319,7 +1316,7 @@ ebb Flow.InitializeUniform (c : grid.cells)
   c.velocity[2] = flow_options.initParams[4]
 end
 
-ebb Flow.InitializeTaylorGreen2D (c : grid.cells)
+ebb Flow.InitializeTaylorGreen2D (c : fluidGrid)
   -- Define Taylor Green Vortex
   var taylorGreenDensity  = flow_options.initParams[0]
   var taylorGreenPressure = flow_options.initParams[1]
@@ -1341,7 +1338,7 @@ ebb Flow.InitializeTaylorGreen2D (c : grid.cells)
     factorA * factorB
 end
 
-ebb Flow.InitializeTaylorGreen3D (c : grid.cells)
+ebb Flow.InitializeTaylorGreen3D (c : fluidGrid)
   -- Define Taylor Green Vortex
   var taylorGreenDensity  = flow_options.initParams[0]
   var taylorGreenPressure = flow_options.initParams[1]
@@ -1362,7 +1359,7 @@ ebb Flow.InitializeTaylorGreen3D (c : grid.cells)
     factorA * factorB
 end
 
-ebb Flow.InitializePerturbed (c : grid.cells)
+ebb Flow.InitializePerturbed (c : fluidGrid)
   -- This initialization imposes a small random perturbation in
   -- the velocity field used to start up forced turbulence cases
   c.rho         = flow_options.initParams[0]
@@ -1372,7 +1369,7 @@ ebb Flow.InitializePerturbed (c : grid.cells)
   c.velocity[2] = flow_options.initParams[4] + ((rand_float()-0.5)*10.0)
 end
 
-ebb Flow.UpdateConservedFromPrimitive (c : grid.cells)
+ebb Flow.UpdateConservedFromPrimitive (c : fluidGrid)
   if c.in_interior then
     -- Equation of state: T = p / ( R * rho )
     var tmpTemperature = c.pressure / (fluid_options.gasConstant * c.rho)
@@ -1388,7 +1385,7 @@ ebb Flow.UpdateConservedFromPrimitive (c : grid.cells)
 end
 
 -- Initialize temporaries
-ebb Flow.InitializeTemporaries (c : grid.cells)
+ebb Flow.InitializeTemporaries (c : fluidGrid)
   c.rho_old         = c.rho
   c.rhoVelocity_old = c.rhoVelocity
   c.rhoEnergy_old   = c.rhoEnergy
@@ -1398,7 +1395,7 @@ ebb Flow.InitializeTemporaries (c : grid.cells)
 end
 
 -- Initialize derivatives
-ebb Flow.InitializeTimeDerivatives (c : grid.cells)
+ebb Flow.InitializeTimeDerivatives (c : fluidGrid)
   c.rho_t         = L.double(0.0)
   c.rhoVelocity_t = L.vec3d({0.0, 0.0, 0.0})
   c.rhoEnergy_t   = L.double(0.0)
@@ -1442,7 +1439,7 @@ end
 --------------------------------------------------------------
 
 if radiation_options.zeroAvgHeatSource then
-  ebb Flow.AdjustHeatSource (c : grid.cells)
+  ebb Flow.AdjustHeatSource (c : fluidGrid)
 
     -- Remove a constant heat flux in all cells to balance with radiation.
     -- Note that this has been pre-computed before reaching this kernel (above).
@@ -1455,7 +1452,7 @@ end
 -- Body Forces
 --------------
 
-ebb Flow.AddBodyForces (c : grid.cells)
+ebb Flow.AddBodyForces (c : fluidGrid)
   if c.in_interior then
     -- Add body forces (accelerations) to the momentum
     c.rhoVelocity_t += c.rho * flow_options.bodyForce
@@ -1470,7 +1467,7 @@ ebb Flow.AddBodyForces (c : grid.cells)
 end
 
 
-ebb Flow.UpdatePD (c : grid.cells)
+ebb Flow.UpdatePD (c : fluidGrid)
   var divU = L.double(0.0)
 
   -- compute the divergence of the velocity (trace of the velocity gradient)
@@ -1483,7 +1480,7 @@ end
 
 
 -- Compute viscous fluxes in X direction
-ebb Flow.ComputeDissipationX (c : grid.cells)
+ebb Flow.ComputeDissipationX (c : fluidGrid)
   if c.in_interior or c.xneg_depth == 1 then
     -- Consider first boundary element (c.xneg_depth == 1) to define left flux
     -- on first interior cell
@@ -1539,7 +1536,7 @@ ebb Flow.ComputeDissipationX (c : grid.cells)
 end
 
 -- Compute viscous fluxes in Y direction
-ebb Flow.ComputeDissipationY (c : grid.cells)
+ebb Flow.ComputeDissipationY (c : fluidGrid)
   if c.in_interior or c.yneg_depth == 1 then
     -- Consider first boundary element (c.yneg_depth == 1) to define down flux
     -- on first interior cell
@@ -1595,7 +1592,7 @@ ebb Flow.ComputeDissipationY (c : grid.cells)
 end
 
 -- Compute viscous fluxes in Z direction
-ebb Flow.ComputeDissipationZ (c : grid.cells)
+ebb Flow.ComputeDissipationZ (c : fluidGrid)
   if c.in_interior or c.zneg_depth == 1 then
     -- Consider first boundary element (c.zneg_depth == 1) to define down flux
     -- on first interior cell
@@ -1650,44 +1647,44 @@ ebb Flow.ComputeDissipationZ (c : grid.cells)
   end
 end
 
-ebb Flow.UpdateDissipationX (c : grid.cells)
+ebb Flow.UpdateDissipationX (c : fluidGrid)
   c.dissipation += (c( 0,0,0).dissipationFlux -
                     c(-1,0,0).dissipationFlux)/grid_dx
 end
 
-ebb Flow.UpdateDissipationY (c : grid.cells)
+ebb Flow.UpdateDissipationY (c : fluidGrid)
   c.dissipation += (c(0, 0,0).dissipationFlux -
                     c(0,-1,0).dissipationFlux)/grid_dy
 end
 
-ebb Flow.UpdateDissipationZ (c : grid.cells)
+ebb Flow.UpdateDissipationZ (c : fluidGrid)
     c.dissipation += (c(0,0, 0).dissipationFlux -
                       c(0,0,-1).dissipationFlux)/grid_dz
 end
 
-ebb Flow.ResetDissipation (c : grid.cells)
+ebb Flow.ResetDissipation (c : fluidGrid)
   c.dissipation = 0.0
 end
 
 function Flow.UpdateDissipation (cells)
-  grid.cells:foreach(Flow.ResetDissipation)
-  grid.cells:foreach(Flow.ComputeDissipationX)
-  grid.cells.interior:foreach(Flow.UpdateDissipationX)
-  grid.cells:foreach(Flow.ComputeDissipationY)
-  grid.cells.interior:foreach(Flow.UpdateDissipationY)
-  grid.cells:foreach(Flow.ComputeDissipationZ)
-  grid.cells.interior:foreach(Flow.UpdateDissipationZ)
+  fluidGrid:foreach(Flow.ResetDissipation)
+  fluidGrid:foreach(Flow.ComputeDissipationX)
+  fluidGrid.interior:foreach(Flow.UpdateDissipationX)
+  fluidGrid:foreach(Flow.ComputeDissipationY)
+  fluidGrid.interior:foreach(Flow.UpdateDissipationY)
+  fluidGrid:foreach(Flow.ComputeDissipationZ)
+  fluidGrid.interior:foreach(Flow.UpdateDissipationZ)
 end
 
 
 -- WARNING: uniform grid assumption
-local ebb averagePD ( c : grid.cells )
+local ebb averagePD ( c : fluidGrid )
   Flow.averagePD += c.PD * cellVolume
 end
-local ebb averageDissipation ( c : grid.cells )
+local ebb averageDissipation ( c : fluidGrid )
   Flow.averageDissipation += c.dissipation * cellVolume
 end
-local ebb averageK ( c : grid.cells )
+local ebb averageK ( c : fluidGrid )
   Flow.averageK += 0.5 * c.rho * L.dot(c.velocity,c.velocity) * cellVolume
 end
 function Flow.UpdateTurbulentAverages(cells)
@@ -1708,7 +1705,7 @@ function Flow.UpdateTurbulentAverages(cells)
       Flow.areaInterior:get())
 end
 
-ebb Flow.AddTurbulentSource (c : grid.cells)
+ebb Flow.AddTurbulentSource (c : fluidGrid)
 
   var W   = L.double(0.0)
   var A   = L.double(0.0)
@@ -1745,7 +1742,7 @@ ebb Flow.AddTurbulentSource (c : grid.cells)
 
 end
 
-ebb Flow.AdjustTurbulentSource (c : grid.cells)
+ebb Flow.AdjustTurbulentSource (c : fluidGrid)
 
   -- Remove the average of the forcing term that has been added to the energy
   -- equation so that the flow can reach a statistical steady state.
@@ -1765,7 +1762,7 @@ function Flow.AddTurbulentForcing (cells)
   Flow.averageFe:set(0.0)
   Flow.averageK:set(0.0)
 
-  grid.cells.interior:foreach(Flow.UpdatePD)
+  fluidGrid.interior:foreach(Flow.UpdatePD)
   Flow.UpdateDissipation(cells)
 
   -- average PD and EPS
@@ -1773,13 +1770,13 @@ function Flow.AddTurbulentForcing (cells)
 
   -- Compute A & force, f_i
   -- Add rho * A * u_i to momentum, f_i*u_i to energy, accumulate f_i*u_i for average
-  grid.cells.interior:foreach(Flow.AddTurbulentSource)
+  fluidGrid.interior:foreach(Flow.AddTurbulentSource)
 
   -- Update average of the energy source
   Flow.averageFe:set(Flow.averageFe:get()/Flow.areaInterior:get())
 
   -- Subtract <f_e> from energy
-  grid.cells.interior:foreach(Flow.AdjustTurbulentSource)
+  fluidGrid.interior:foreach(Flow.AdjustTurbulentSource)
 
 end
 
@@ -1789,7 +1786,7 @@ end
 
 -- Update flow variables using derivatives
 -- Assumes 4th-order Runge-Kutta
-ebb Flow.UpdateVars(c : grid.cells)
+ebb Flow.UpdateVars(c : fluidGrid)
   var deltaTime = TimeIntegrator.deltaTime
   if TimeIntegrator.stage == 1 then
     c.rho_new += (1.0/6.0) * deltaTime * c.rho_t
@@ -1819,7 +1816,7 @@ ebb Flow.UpdateVars(c : grid.cells)
   end
 end
 
-ebb Flow.UpdateAuxiliaryVelocity (c : grid.cells)
+ebb Flow.UpdateAuxiliaryVelocity (c : fluidGrid)
   if c.in_interior then
     var velocity = c.rhoVelocity / c.rho
     c.velocity = velocity
@@ -1862,7 +1859,7 @@ local ebb UpdateGhostFieldsHelper(c_bnd, c_int, sign, bnd_velocity, bnd_temperat
   c_bnd.temperatureBoundary =  temperature
 end
 
-ebb Flow.UpdateGhostFieldsStep1 (c : grid.cells)
+ebb Flow.UpdateGhostFieldsStep1 (c : fluidGrid)
   if c.xneg_depth > 0 then
     UpdateGhostFieldsHelper(c, c( 1,0,0), x_sign, xneg_velocity, xneg_temperature)
   end
@@ -1883,7 +1880,7 @@ ebb Flow.UpdateGhostFieldsStep1 (c : grid.cells)
   end
 end
 
-ebb Flow.UpdateGhostFieldsStep2 (c : grid.cells)
+ebb Flow.UpdateGhostFieldsStep2 (c : fluidGrid)
   if c.in_boundary then
     c.rho         = c.rhoBoundary
     c.rhoVelocity = c.rhoVelocityBoundary
@@ -1893,8 +1890,8 @@ ebb Flow.UpdateGhostFieldsStep2 (c : grid.cells)
   end
 end
 function Flow.UpdateGhost()
-  grid.cells:foreach(Flow.UpdateGhostFieldsStep1)
-  grid.cells:foreach(Flow.UpdateGhostFieldsStep2)
+  fluidGrid:foreach(Flow.UpdateGhostFieldsStep1)
+  fluidGrid:foreach(Flow.UpdateGhostFieldsStep2)
 end
 
 -- Helper function for updating the ghost fields to minimize repeated code
@@ -1915,7 +1912,7 @@ local ebb UpdateGhostThermodynamicsHelper (c_bnd, c_int, bnd_temperature)
   c_bnd.temperatureBoundary = temperature
 end
 
-ebb Flow.UpdateGhostThermodynamicsStep1 (c : grid.cells)
+ebb Flow.UpdateGhostThermodynamicsStep1 (c : fluidGrid)
   if c.xneg_depth > 0 then
     UpdateGhostThermodynamicsHelper(c, c( 1,0,0), xneg_temperature)
   end
@@ -1936,7 +1933,7 @@ ebb Flow.UpdateGhostThermodynamicsStep1 (c : grid.cells)
   end
 end
 
-ebb Flow.UpdateGhostThermodynamicsStep2 (c : grid.cells)
+ebb Flow.UpdateGhostThermodynamicsStep2 (c : fluidGrid)
   if c.in_boundary then
     c.pressure    = c.pressureBoundary
     c.temperature = c.temperatureBoundary
@@ -1944,8 +1941,8 @@ ebb Flow.UpdateGhostThermodynamicsStep2 (c : grid.cells)
 end
 
 function Flow.UpdateGhostThermodynamics()
-  grid.cells:foreach(Flow.UpdateGhostThermodynamicsStep1)
-  grid.cells:foreach(Flow.UpdateGhostThermodynamicsStep2)
+  fluidGrid:foreach(Flow.UpdateGhostThermodynamicsStep1)
+  fluidGrid:foreach(Flow.UpdateGhostThermodynamicsStep2)
 end
 
 -- Helper function for updating the ghost fields to minimize repeated code
@@ -1955,7 +1952,7 @@ local ebb UpdateGhostVelocityHelper (c_bnd, c_int, sign, bnd_velocity)
   c_bnd.velocityBoundary = L.times(c_int.velocity, sign) + bnd_velocity
 
 end
-ebb Flow.UpdateGhostVelocityStep1 (c : grid.cells)
+ebb Flow.UpdateGhostVelocityStep1 (c : fluidGrid)
   if c.xneg_depth > 0 then
     UpdateGhostVelocityHelper(c, c( 1,0,0), x_sign, xneg_velocity)
   end
@@ -1976,15 +1973,15 @@ ebb Flow.UpdateGhostVelocityStep1 (c : grid.cells)
   end
 end
 
-ebb Flow.UpdateGhostVelocityStep2 (c : grid.cells)
+ebb Flow.UpdateGhostVelocityStep2 (c : fluidGrid)
   if c.in_boundary then
     c.velocity = c.velocityBoundary
   end
 end
 
 function Flow.UpdateGhostVelocity()
-  grid.cells:foreach(Flow.UpdateGhostVelocityStep1)
-  grid.cells:foreach(Flow.UpdateGhostVelocityStep2)
+  fluidGrid:foreach(Flow.UpdateGhostVelocityStep1)
+  fluidGrid:foreach(Flow.UpdateGhostVelocityStep2)
 end
 
 -- Helper function for updating the conservatives to minimize repeated code
@@ -2022,7 +2019,7 @@ local ebb UpdateGhostConservedHelper (c_bnd, c_int, sign, bnd_velocity,
                                      0.5*L.dot(velocity,velocity))
 
 end
-ebb Flow.UpdateGhostConservedStep1 (c : grid.cells)
+ebb Flow.UpdateGhostConservedStep1 (c : fluidGrid)
   if c.xneg_depth > 0 then
     UpdateGhostConservedHelper(c, c( 1,0,0), x_sign, xneg_velocity, xneg_temperature)
   end
@@ -2043,7 +2040,7 @@ ebb Flow.UpdateGhostConservedStep1 (c : grid.cells)
   end
 end
 
-ebb Flow.UpdateGhostConservedStep2 (c : grid.cells)
+ebb Flow.UpdateGhostConservedStep2 (c : fluidGrid)
   if c.in_boundary then
     c.rho         = c.rhoBoundary
     c.rhoVelocity = c.rhoVelocityBoundary
@@ -2052,11 +2049,11 @@ ebb Flow.UpdateGhostConservedStep2 (c : grid.cells)
 end
 
 function Flow.UpdateGhostConserved()
-  grid.cells:foreach(Flow.UpdateGhostConservedStep1)
-  grid.cells:foreach(Flow.UpdateGhostConservedStep2)
+  fluidGrid:foreach(Flow.UpdateGhostConservedStep1)
+  fluidGrid:foreach(Flow.UpdateGhostConservedStep2)
 end
 
-ebb Flow.UpdateAuxiliaryThermodynamics (c : grid.cells)
+ebb Flow.UpdateAuxiliaryThermodynamics (c : fluidGrid)
   if c.in_interior then
     var kineticEnergy = 0.5 * c.rho * L.dot(c.velocity,c.velocity)
     var pressure  = (fluid_options.gamma - 1.0) *( c.rhoEnergy - kineticEnergy )
@@ -2070,7 +2067,7 @@ end
 ---------------------
 
 -- WARNING: non-uniform grid assumption
-ebb Flow.ComputeVelocityGradientAll (c : grid.cells)
+ebb Flow.ComputeVelocityGradientAll (c : fluidGrid)
   if c.in_interior then
     c.velocityGradientX = 0.5*(c(1,0,0).velocity - c(-1,0,0).velocity)/grid_dx
     c.velocityGradientY = 0.5*(c(0,1,0).velocity - c(0,-1,0).velocity)/grid_dy
@@ -2086,7 +2083,7 @@ local ebb UpdateGhostVelocityGradientHelper (c_bnd, c_int, sign)
   c_bnd.velocityGradientZBoundary = L.times(sign, c_int.velocityGradientZ)
 end
 
-ebb Flow.UpdateGhostVelocityGradientStep1 (c : grid.cells)
+ebb Flow.UpdateGhostVelocityGradientStep1 (c : fluidGrid)
   if c.xneg_depth > 0 then
     UpdateGhostVelocityGradientHelper(c, c( 1,0,0), x_sign)
   end
@@ -2107,7 +2104,7 @@ ebb Flow.UpdateGhostVelocityGradientStep1 (c : grid.cells)
   end
 end
 
-ebb Flow.UpdateGhostVelocityGradientStep2 (c : grid.cells)
+ebb Flow.UpdateGhostVelocityGradientStep2 (c : fluidGrid)
   if c.in_boundary then
     c.velocityGradientX = c.velocityGradientXBoundary
     c.velocityGradientY = c.velocityGradientYBoundary
@@ -2125,7 +2122,7 @@ local dXYZInverseSquare = L.Constant(L.double,
                                      1.0/grid_dx:get() * 1.0/grid_dx:get() +
                                      1.0/grid_dy:get() * 1.0/grid_dy:get() +
                                      1.0/grid_dz:get() * 1.0/grid_dz:get())
-local ebb calculateConvectiveSpectralRadius     ( c : grid.cells )
+local ebb calculateConvectiveSpectralRadius     ( c : fluidGrid )
   -- Convective spectral radii
   -- WARNING: uniform grid assumption
   c.convectiveSpectralRadius =
@@ -2136,7 +2133,7 @@ local ebb calculateConvectiveSpectralRadius     ( c : grid.cells )
 
   maxConvectiveSpectralRadius max= c.convectiveSpectralRadius
 end
-local ebb calculateViscousSpectralRadius        ( c : grid.cells )
+local ebb calculateViscousSpectralRadius        ( c : fluidGrid )
   -- Viscous spectral radii (including sgs model component)
   var dynamicViscosity = GetDynamicViscosity(c.temperature)
   var eddyViscosity = c.sgsEddyViscosity
@@ -2146,7 +2143,7 @@ local ebb calculateViscousSpectralRadius        ( c : grid.cells )
 
   maxViscousSpectralRadius max= c.viscousSpectralRadius
 end
-local ebb calculateHeatConductionSpectralRadius ( c : grid.cells )
+local ebb calculateHeatConductionSpectralRadius ( c : fluidGrid )
   var dynamicViscosity  = GetDynamicViscosity(c.temperature)
 
   -- Heat conduction spectral radii (including sgs model component)
@@ -2169,27 +2166,27 @@ end
 -- Statistics
 -------------
 
-local ebb averagePressure       ( c : grid.cells )
+local ebb averagePressure       ( c : fluidGrid )
   if c.in_interior then
     Flow.averagePressure          += c.pressure * cellVolume
   end
 end
-local ebb averageTemperature    ( c : grid.cells )
+local ebb averageTemperature    ( c : fluidGrid )
   if c.in_interior then
     Flow.averageTemperature       += c.temperature * cellVolume
   end
 end
-local ebb averageKineticEnergy  ( c : grid.cells )
+local ebb averageKineticEnergy  ( c : fluidGrid )
   if c.in_interior then
     Flow.averageKineticEnergy     += c.kineticEnergy * cellVolume
   end
 end
-local ebb minTemperature        ( c : grid.cells )
+local ebb minTemperature        ( c : fluidGrid )
   if c.in_interior then
     Flow.minTemperature         min= c.temperature
   end
 end
-local ebb maxTemperature        ( c : grid.cells )
+local ebb maxTemperature        ( c : fluidGrid )
   if c.in_interior then
     Flow.maxTemperature         max= c.temperature
   end
@@ -2212,7 +2209,7 @@ end
 if particles_options.modeParticles then
 
   ebb Particles.LocateInCells( p : particles )
-    p.cell = grid.cells.locate(p.position)
+    p.cell = fluidGrid.locate(p.position)
   end
 
   -- Locate particles in cells
@@ -2562,7 +2559,7 @@ if particles_options.modeParticles then
 
   -- Insert one particle on each cell, with a small probability.
   -- TODO: Inserting exactly at the center, to avoid the need for stencils.
-  ebb Flow.InsertParticlesAtRandom(c : grid.cells)
+  ebb Flow.InsertParticlesAtRandom(c : fluidGrid)
     if c.in_interior and
        Flow.InteriorCellNumber(c) < Particles.limit and
        rand_float() < 0.01 then
@@ -2582,7 +2579,7 @@ if particles_options.modeParticles then
   function Particles.Feed()
     -- For now, insert at random just for testing.
     Particles.limit:set(particles_options.maximum_num - Particles.number:get())
-    grid.cells:foreach(Flow.InsertParticlesAtRandom)
+    fluidGrid:foreach(Flow.InsertParticlesAtRandom)
   end
 
   ebb Particles.DeleteEscapingParticles(p: particles)
@@ -2631,23 +2628,23 @@ end
 
 function Flow.InitializePrimitives()
   if flow_options.initCase == InitCase.Uniform then
-    grid.cells:foreach(Flow.InitializeUniform)
+    fluidGrid:foreach(Flow.InitializeUniform)
   elseif flow_options.initCase == InitCase.TaylorGreen2DVortex then
-    grid.cells:foreach(Flow.InitializeTaylorGreen2D)
+    fluidGrid:foreach(Flow.InitializeTaylorGreen2D)
   elseif flow_options.initCase == InitCase.TaylorGreen3DVortex then
-    grid.cells:foreach(Flow.InitializeTaylorGreen3D)
+    fluidGrid:foreach(Flow.InitializeTaylorGreen3D)
   elseif flow_options.initCase == InitCase.Perturbed then
-    grid.cells:foreach(Flow.InitializePerturbed)
+    fluidGrid:foreach(Flow.InitializePerturbed)
   elseif flow_options.initCase == InitCase.Restart then
-    grid.cells:Load({'rho','pressure','velocity'},
+    fluidGrid:Load({'rho','pressure','velocity'},
                     io_options.outputFileNamePrefix .. 'restart_' ..
                       time_options.restartIter .. '.hdf')
   else assert(false) end
 end
 
 function Flow.UpdateGhostVelocityGradient()
-  grid.cells:foreach(Flow.UpdateGhostVelocityGradientStep1)
-  grid.cells:foreach(Flow.UpdateGhostVelocityGradientStep2)
+  fluidGrid:foreach(Flow.UpdateGhostVelocityGradientStep1)
+  fluidGrid:foreach(Flow.UpdateGhostVelocityGradientStep2)
 end
 
 -- Routine that computes the inviscid flux through the face of
@@ -2719,7 +2716,7 @@ Flow.CenteredInviscidFluxY = mkCenteredInviscidFlux(1)
 Flow.CenteredInviscidFluxZ = mkCenteredInviscidFlux(2)
 
 -- Compute inviscid and viscous fluxes in all directions.
-ebb Flow.AddGetFlux (c : grid.cells)
+ebb Flow.AddGetFlux (c : fluidGrid)
   if c.in_interior or c.xneg_depth == 1 then
     ------------
     --- Inviscid
@@ -2957,7 +2954,7 @@ ebb Flow.AddGetFlux (c : grid.cells)
   end
 end
 
-ebb Flow.AddUpdateUsingFlux(c : grid.cells)
+ebb Flow.AddUpdateUsingFlux(c : fluidGrid)
   --if c.in_interior or c.xneg_depth == 1 then
   if c.in_interior then --or c.xneg_depth == 1 then
     c.rho_t += -(c( 0,0,0).rhoFluxX -
@@ -2986,16 +2983,16 @@ ebb Flow.AddUpdateUsingFlux(c : grid.cells)
 end
 
 function Flow.AddFluxes()
-  grid.cells:foreach(Flow.AddGetFlux)
-  grid.cells:foreach(Flow.AddUpdateUsingFlux)
+  fluidGrid:foreach(Flow.AddGetFlux)
+  fluidGrid:foreach(Flow.AddUpdateUsingFlux)
 end
 
 function Flow.ComputeVelocityGradients()
-  grid.cells:foreach(Flow.ComputeVelocityGradientAll)
+  fluidGrid:foreach(Flow.ComputeVelocityGradientAll)
 end
 
 function Flow.UpdateAuxiliaryVelocityConservedAndGradients()
-  grid.cells:foreach(Flow.UpdateAuxiliaryVelocity)
+  fluidGrid:foreach(Flow.UpdateAuxiliaryVelocity)
   Flow.UpdateGhostConserved()
   Flow.UpdateGhostVelocity()
   Flow.ComputeVelocityGradients()
@@ -3003,7 +3000,7 @@ end
 
 function Flow.UpdateAuxiliary()
   Flow.UpdateAuxiliaryVelocityConservedAndGradients()
-  grid.cells:foreach(Flow.UpdateAuxiliaryThermodynamics)
+  fluidGrid:foreach(Flow.UpdateAuxiliaryThermodynamics)
   Flow.UpdateGhostThermodynamics()
 end
 
@@ -3018,7 +3015,7 @@ if particles_options.modeParticles then
 
   -- Insert one particle at the center of each cell (plus a tiny offset to help
   -- the interpolation verification checks).
-  ebb Flow.InsertParticlesUniform(c : grid.cells)
+  ebb Flow.InsertParticlesUniform(c : fluidGrid)
     if c.in_interior then
       var cellId = Flow.InteriorCellNumber(c)
       var numCells = L.int64(grid_options.xnum) *
@@ -3068,7 +3065,7 @@ end -- particles_options.modeParticles
 ------------------
 
 function TimeIntegrator.SetupTimeStep()
-  grid.cells:foreach(Flow.InitializeTemporaries)
+  fluidGrid:foreach(Flow.InitializeTemporaries)
   if particles_options.modeParticles then
     -- Particles.Feed()
     particles:foreach(Particles.InitializeTemporaries)
@@ -3082,7 +3079,7 @@ function TimeIntegrator.ConcludeTimeStep()
 end
 
 function TimeIntegrator.InitializeTimeDerivatives()
-  grid.cells:foreach(Flow.InitializeTimeDerivatives)
+  fluidGrid:foreach(Flow.InitializeTimeDerivatives)
   if particles_options.modeParticles then
     particles:foreach(Particles.InitializeTimeDerivatives)
   end
@@ -3108,14 +3105,14 @@ end
 
 function TimeIntegrator.InitializeVariables()
 
-  grid.cells:foreach(Flow.InitializeCell)
+  fluidGrid:foreach(Flow.InitializeCell)
 
   -- Initialize several grid related entitities
-  grid.cells:foreach(Flow.InitializeCenterCoordinates)
+  fluidGrid:foreach(Flow.InitializeCenterCoordinates)
 
   -- Set initial condition for the flow and all auxiliary flow variables
   Flow.InitializePrimitives()
-  grid.cells:foreach(Flow.UpdateConservedFromPrimitive)
+  fluidGrid:foreach(Flow.UpdateConservedFromPrimitive)
   Flow.UpdateAuxiliary()
   Flow.UpdateGhost()
 
@@ -3134,11 +3131,11 @@ function TimeIntegrator.ComputeDFunctionDt()
   if radiation_options.zeroAvgHeatSource then
     Flow.averageHeatSource:set(0.0)
   end
-  grid.cells:foreach(Flow.AddBodyForces)
+  fluidGrid:foreach(Flow.AddBodyForces)
 
   -- FIXME: turbulent-related tasks should be revised
   if flow_options.turbForcing then
-    Flow.AddTurbulentForcing(grid.cells.interior)
+    Flow.AddTurbulentForcing(fluidGrid.interior)
   end
 
   -- Compute residuals for the particles (locate all particles first)
@@ -3168,13 +3165,13 @@ function TimeIntegrator.ComputeDFunctionDt()
   if radiation_options.zeroAvgHeatSource then
     Flow.averageHeatSource:set(Flow.averageHeatSource:get()/
                                  Flow.numberOfInteriorCells:get())
-    grid.cells.interior:foreach(Flow.AdjustHeatSource)
+    fluidGrid.interior:foreach(Flow.AdjustHeatSource)
   end
 
 end
 
 function TimeIntegrator.UpdateSolution()
-  grid.cells:foreach(Flow.UpdateVars)
+  fluidGrid:foreach(Flow.UpdateVars)
   if particles_options.modeParticles then
     particles:foreach(Particles.UpdateVars)
   end
@@ -3214,7 +3211,7 @@ function TimeIntegrator.CalculateDeltaTime()
   else
 
     -- Calculate the convective, viscous, and heat spectral radii
-    Flow.CalculateSpectralRadii(grid.cells)
+    Flow.CalculateSpectralRadii(fluidGrid)
 
     local maxV = maxViscousSpectralRadius:get()
     local maxH = maxHeatConductionSpectralRadius:get()
@@ -3268,11 +3265,11 @@ end
 
 function Statistics.ComputeSpatialAverages()
   Statistics.ResetSpatialAverages()
-  Flow.IntegrateQuantities(grid.cells)
+  Flow.IntegrateQuantities(fluidGrid)
   if particles_options.modeParticles then
     particles:foreach(Particles.IntegrateQuantities)
   end
-  Statistics.UpdateSpatialAverages(grid, particles)
+  Statistics.UpdateSpatialAverages(fluidGrid, particles)
 end
 
 
@@ -3309,9 +3306,9 @@ function IO.WriteFlowRestart()
   -- Check if it is time to output a flow restart file
   M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.restartEveryTimeSteps, 0))
     -- Write the restart files for density, pressure, and velocity
-    grid.cells:Dump({'rho','pressure','velocity'},
-                    io_options.outputFileNamePrefix .. "restart_%d.hdf",
-                    TimeIntegrator.timeStep:get())
+    fluidGrid:Dump({'rho','pressure','velocity'},
+                   io_options.outputFileNamePrefix .. "restart_%d.hdf",
+                   TimeIntegrator.timeStep:get())
   M.END()
 end
 
@@ -3369,7 +3366,7 @@ end
 -- Initialize all variables
 
 TimeIntegrator.InitializeVariables()
-Flow.IntegrateGeometricQuantities(grid.cells)
+Flow.IntegrateGeometricQuantities(fluidGrid)
 Statistics.ComputeSpatialAverages()
 if radiation_options.radiationType ~= RadiationType.OFF then
   M.INLINE(radiation.InitRadiation)

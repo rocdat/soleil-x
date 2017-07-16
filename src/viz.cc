@@ -1169,6 +1169,8 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
                         legion_field_id_t *imageFragment1_fields)
                         // etc for more fragments
 {
+  _T return;
+  
   legion_physical_region_t* imageFragment[] = {
     imageFragment0,
     imageFragment1

@@ -45,6 +45,7 @@ const int NUM_NODES = 4;//TODO eliminate this when timeStep is passed in
 
 const int trackedParticlesPerNode = 128;
 
+static const bool writeFiles = false;//write out text files with data
 
 
 #ifdef STANDALONE
@@ -72,7 +73,6 @@ FieldData max[3];
 
 
 
-static const bool writeFiles = false;//write out text files with data
 
 
 
@@ -913,10 +913,10 @@ void cxx_render(legion_runtime_t runtime_,
                 legion_field_id_t *cells_fields,
                 legion_physical_region_t *particles,
                 legion_field_id_t *particles_fields,
-                legion_physical_region_t *imageRegion0,
-                legion_field_id_t *imageRegion_fields0,
-                legion_physical_region_t *imageRegion1,
-                legion_field_id_t *imageRegion_fields1,
+                legion_physical_region_t *imageFragment0,
+                legion_field_id_t *imageFragment0_fields,
+                legion_physical_region_t *imageFragment1,
+                legion_field_id_t *imageFragment1_fields,
                 /***extend here for more regions***///////////////////
                 int xnum,
                 int ynum,
@@ -926,15 +926,15 @@ void cxx_render(legion_runtime_t runtime_,
   
 #ifndef STANDALONE
   
-  legion_physical_region_t* imageRegion[] = {
-    imageRegion0,
-    imageRegion1
+  legion_physical_region_t* imageFragment[] = {
+    imageFragment0,
+    imageFragment1
     /***extend here for more regions***///////////////////
   };
   
-  legion_field_id_t* imageRegion_fields[] = {
-    imageRegion_fields0,
-    imageRegion_fields1
+  legion_field_id_t* imageFragment_fields[] = {
+    imageFragment0_fields,
+    imageFragment1_fields
     /***extend here for more regions***///////////////////
   };
   
@@ -1046,7 +1046,7 @@ void cxx_render(legion_runtime_t runtime_,
   }
   
   writeImageToImageFragments(rgbaBuffer, depthBuffer, runtime, ctx,
-                             imageRegion, imageRegion_fields, width, height);
+                             imageFragment, imageFragment_fields, width, height);
 
 #endif
   
@@ -1153,6 +1153,120 @@ void cxx_reduce(legion_runtime_t runtime_,
   
   // here call ImageReduction composite function
 }
+
+
+
+
+
+void cxx_saveImageToPPM(legion_runtime_t runtime_,
+                        legion_context_t ctx_,
+                        int width,
+                        int height,
+                        
+                        legion_physical_region_t *imageFragment0,
+                        legion_field_id_t *imageFragment0_fields,
+                        legion_physical_region_t *imageFragment1,
+                        legion_field_id_t *imageFragment1_fields)
+                        // etc for more fragments
+{
+  legion_physical_region_t* imageFragment[] = {
+    imageFragment0,
+    imageFragment1
+    /***extend here for more regions***///////////////////
+  };
+  
+  legion_field_id_t* imageFragment_fields[] = {
+    imageFragment0_fields,
+    imageFragment1_fields
+    /***extend here for more regions***///////////////////
+  };
+
+  Runtime *runtime = CObjectWrapper::unwrap(runtime_);
+  Context ctx = CObjectWrapper::unwrap(ctx_)->context();
+  
+  PhysicalRegion* fragment = CObjectWrapper::unwrap(imageFragment0[0]);
+  std::vector<legion_field_id_t> fields;
+  fragment->get_fields(fields);
+  const int expectedNumFields = 6;
+  assert(fields.size() == expectedNumFields);
+  Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, fragment->get_logical_region().get_index_space());
+  Rect<3> bounds = indexSpaceDomain.get_rect<3>();
+
+  GLfloat* rgbaBuffer = (GLfloat*)calloc(width * height * expectedNumFields, sizeof(GLfloat));
+  GLfloat* rgba = rgbaBuffer;
+  
+  float* R = NULL;
+  float* G = NULL;
+  float* B = NULL;
+  float* A = NULL;
+  float* Z = NULL;
+  float* UserData = NULL;
+  
+  ByteOffset strideR[3];
+  ByteOffset strideG[3];
+  ByteOffset strideB[3];
+  ByteOffset strideA[3];
+  ByteOffset strideZ[3];
+  ByteOffset strideUserData[3];
+  
+  unsigned row = 0;
+  unsigned fragmentID = 0;
+  while(row < (unsigned)height) {
+    PhysicalRegion* fragment = CObjectWrapper::unwrap(imageFragment[fragmentID][0]);
+    for(unsigned field = 0; field < fields.size(); ++field) {
+      switch(field) {
+        case 0:
+        create_field_pointer(*fragment, R, imageFragment_fields[fragmentID][field], strideR, runtime, ctx);
+        break;
+        case 1:
+        create_field_pointer(*fragment, G, imageFragment_fields[fragmentID][field], strideG, runtime, ctx);
+        break;
+        case 2:
+        create_field_pointer(*fragment, B, imageFragment_fields[fragmentID][field], strideB, runtime, ctx);
+        break;
+        case 3:
+        create_field_pointer(*fragment, A, imageFragment_fields[fragmentID][field], strideA, runtime, ctx);
+        break;
+        case 4:
+        create_field_pointer(*fragment, Z, imageFragment_fields[fragmentID][field], strideZ, runtime, ctx);
+        break;
+        case 5:
+        create_field_pointer(*fragment, UserData, imageFragment_fields[fragmentID][field], strideUserData, runtime, ctx);
+        break;
+      }
+    }
+    
+    for(unsigned y = (unsigned)bounds.lo.x[1]; y < bounds.hi.x[1]; ++y) {
+      for(unsigned x = (unsigned)bounds.lo.x[0]; x < bounds.hi.x[0]; ++x) {
+        rgba[0] = *R;
+        rgba[1] = *G;
+        rgba[2] = *B;
+        rgba[3] = *A;
+        rgba += 4;
+        R += strideR[0].offset;
+        G += strideG[0].offset;
+        B += strideB[0].offset;
+        A += strideA[0].offset;
+      }
+      row++;
+    }
+    
+    static unsigned fileSerialID = 0;
+    char buffer[256];
+    sprintf(buffer, "./out/image.%05d.ppm", fileSerialID++);
+    write_ppm(buffer, rgbaBuffer, width, height);
+    
+    free(rgbaBuffer);
+    
+    fragmentID++;
+  }
+  
+
+  
+  
+}
+
+
 
 
 #endif

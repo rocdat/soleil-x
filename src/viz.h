@@ -43,11 +43,12 @@ extern "C" {
                   legion_physical_region_t *particles,
                   legion_field_id_t *particles_fields,
                   
-                  legion_physical_region_t *imageRegion0,
-                  legion_field_id_t *imageRegion_fields0,
-                  legion_physical_region_t *imageRegion1,
-                  legion_field_id_t *imageRegion_fields1,
-                  
+                  legion_physical_region_t *imageFragment0,
+                  legion_field_id_t *imageFragment0_fields,
+                  legion_physical_region_t *imageFragment1,
+                  legion_field_id_t *imageFragment1_fields,
+                  // etc for more fragments
+
                   int xnum, int ynum, int znum);
   
   
@@ -60,7 +61,19 @@ extern "C" {
                   int treeLevel,
                   int offset);
   
+  
+  void cxx_saveImageToPPM(legion_runtime_t runtime,
+                          legion_context_t context,
+                          int width,
+                          int height,
+                          
+                          legion_physical_region_t *imageFragment0,
+                          legion_field_id_t *imageFragment0_fields,
+                          legion_physical_region_t *imageFragment1,
+                          legion_field_id_t *imageFragment1_fields);
+  // etc for more fragments
 
+  
 #ifdef __cplusplus
 }
 #endif

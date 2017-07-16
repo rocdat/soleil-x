@@ -356,6 +356,29 @@ end
 
 
 
+--
+-- SaveImageToPPM
+--
+
+local task SaveImageToPPM(
+  imageFragment0 : region(ispace(int3d), PixelFields),
+  imageFragment1 : region(ispace(int3d), PixelFields)
+)
+-- etc for more fragments
+where
+  reads(imageFragment0),
+  reads(imageFragment1)
+-- etc for more fragments
+do
+  cviz.cxx_saveImageToPPM(__runtime(), __context(),
+    width, height,
+    __physical(imageFragment0), __fields(imageFragment0),
+    __physical(imageFragment1), __fields(imageFragment1)
+  )
+-- etc for more fragments
+end
+
+
 
 
 
@@ -506,6 +529,12 @@ exports.Reduce = rquote
   end
 
 -- etc for more tree levels (numLayers > 2^k)
+
+  SaveImageToPPM(
+    partitionFragment0ByDepth[zero],
+    partitionFragment1ByDepth[zero]
+)
+-- etc for more fragments
 
 end
 

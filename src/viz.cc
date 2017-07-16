@@ -1241,8 +1241,8 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
       }
     }
     
-    for(unsigned y = (unsigned)bounds.lo.x[1]; y < bounds.hi.x[1]; ++y) {
-      for(unsigned x = (unsigned)bounds.lo.x[0]; x < bounds.hi.x[0]; ++x) {
+    for(unsigned y = (unsigned)bounds.lo.x[1]; y <= bounds.hi.x[1]; ++y) {
+      for(unsigned x = (unsigned)bounds.lo.x[0]; x <= bounds.hi.x[0]; ++x) {
         rgba[0] = *R;
         rgba[1] = *G;
         rgba[2] = *B;

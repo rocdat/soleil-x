@@ -3,6 +3,8 @@ rm -f ~/soleil.exec ~/librender.so ~/libsoleil_mapper.so
 ln -s $SOLEIL_PATH/src/soleil.exec ~
 ln -s $SOLEIL_PATH/src/librender.so ~
 ln -s $SOLEIL_PATH/src/libsoleil_mapper.so ~
+mkdir =p ~/out
+rm -rf ~/out/*
 
 GASNET_BACKTRACE=1 LD_LIBRARY_PATH=.:$LEGION_PATH/bindings/terra/:/usr/lib/x86_64-linux-gnu/ \
 	mpirun \

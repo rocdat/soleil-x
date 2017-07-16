@@ -1047,10 +1047,10 @@ void cxx_render(legion_runtime_t runtime_,
   
   writeImageToImageFragments(rgbaBuffer, depthBuffer, runtime, ctx,
                              imageFragment, imageFragment_fields, width, height);
-
+  
 #endif
   
-
+  
   /* free the image buffer */
   free(rgbaBuffer);
   free(depthBuffer);
@@ -1065,6 +1065,58 @@ void cxx_render(legion_runtime_t runtime_,
 
 
 #ifndef STANDALONE
+
+static inline void increment(GLfloat *&r,
+                             GLfloat *&g,
+                             GLfloat *&b,
+                             GLfloat *&a,
+                             GLfloat *&z,
+                             GLfloat *&userdata,
+                             ByteOffset stride[3]) {
+  r += stride[0].offset;
+  g += stride[0].offset;
+  b += stride[0].offset;
+  a += stride[0].offset;
+  z += stride[0].offset;
+  userdata += stride[0].offset;
+}
+
+
+
+inline void compositePixelsLess(GLfloat *r0,
+                                GLfloat *g0,
+                                GLfloat *b0,
+                                GLfloat *a0,
+                                GLfloat *z0,
+                                GLfloat *userdata0,
+                                GLfloat *r1,
+                                GLfloat *g1,
+                                GLfloat *b1,
+                                GLfloat *a1,
+                                GLfloat *z1,
+                                GLfloat *userdata1,
+                                GLfloat *rOut,
+                                GLfloat *gOut,
+                                GLfloat *bOut,
+                                GLfloat *aOut,
+                                GLfloat *zOut,
+                                GLfloat *userdataOut,
+                                int numPixels,
+                                ByteOffset stride[3]){
+  
+  for(int i = 0; i < numPixels; ++i) {
+    if(*z0 < *z1) {
+      *rOut = *r0; *gOut = *g0; *bOut = *b0; *aOut = *a0; *zOut = *z0; *userdataOut = *userdata0;
+    } else {
+      *rOut = *r1; *gOut = *g1; *bOut = *b1; *aOut = *a1; *zOut = *z1; *userdataOut = *userdata1;
+    }
+    increment(r0, g0, b0, a0, z0, userdata0, stride);
+    increment(r1, g1, b1, a1, z1, userdata1, stride);
+    increment(rOut, gOut, bOut, aOut, zOut, userdataOut, stride);
+  }
+  
+}
+
 
 void cxx_reduce(legion_runtime_t runtime_,
                 legion_context_t ctx_,
@@ -1150,8 +1202,8 @@ void cxx_reduce(legion_runtime_t runtime_,
       break;
     }
   }
-  
-  // here call ImageReduction composite function
+
+  compositePixelsLess(leftR, leftG, leftB, leftA, leftZ, leftUserData, rightR, rightG, rightB, rightA, rightZ, rightUserData, leftR, leftG, leftB, leftA, leftZ, leftUserData, (int)leftBounds.volume(), leftStrideR);
 }
 
 
@@ -1167,7 +1219,7 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
                         legion_field_id_t *imageFragment0_fields,
                         legion_physical_region_t *imageFragment1,
                         legion_field_id_t *imageFragment1_fields)
-                        // etc for more fragments
+// etc for more fragments
 {
   
   legion_physical_region_t* imageFragment[] = {
@@ -1181,7 +1233,7 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
     imageFragment1_fields
     /***extend here for more regions***///////////////////
   };
-
+  
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
   
@@ -1192,7 +1244,7 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
   assert(fields.size() == expectedNumFields);
   Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, fragment->get_logical_region().get_index_space());
   Rect<3> bounds = indexSpaceDomain.get_rect<3>();
-
+  
   size_t numElements = width * height * expectedNumFields;
   GLfloat* rgbaBuffer = (GLfloat*)calloc(numElements, sizeof(GLfloat));
   GLfloat* rgba = rgbaBuffer;
@@ -1241,8 +1293,8 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
       }
     }
     
-    for(unsigned y = (unsigned)bounds.lo.x[1]; y < bounds.hi.x[1]; ++y) {
-      for(unsigned x = (unsigned)bounds.lo.x[0]; x < bounds.hi.x[0]; ++x) {
+    for(unsigned y = (unsigned)bounds.lo.x[1]; y <= bounds.hi.x[1]; ++y) {
+      for(unsigned x = (unsigned)bounds.lo.x[0]; x <= bounds.hi.x[0]; ++x) {
         rgba[0] = *R;
         rgba[1] = *G;
         rgba[2] = *B;
@@ -1258,7 +1310,7 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
     
     fragmentID++;
   }
-
+  
   static unsigned fileSerialID = 0;
   char buffer[256];
   sprintf(buffer, "./out/image.%05d.ppm", fileSerialID++);

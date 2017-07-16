@@ -1169,7 +1169,6 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
                         legion_field_id_t *imageFragment1_fields)
                         // etc for more fragments
 {
-  _T return;
   
   legion_physical_region_t* imageFragment[] = {
     imageFragment0,
@@ -1194,7 +1193,8 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
   Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, fragment->get_logical_region().get_index_space());
   Rect<3> bounds = indexSpaceDomain.get_rect<3>();
 
-  GLfloat* rgbaBuffer = (GLfloat*)calloc(width * height * expectedNumFields, sizeof(GLfloat));
+  size_t numElements = width * height * expectedNumFields;
+  GLfloat* rgbaBuffer = (GLfloat*)calloc(numElements, sizeof(GLfloat));
   GLfloat* rgba = rgbaBuffer;
   
   float* R = NULL;
@@ -1214,6 +1214,9 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
   unsigned row = 0;
   unsigned fragmentID = 0;
   while(row < (unsigned)height) {
+    
+    _T std::cout<<"row, fragmentID, rgba  "<<row<<" "<<fragmentID<<" "<<rgba<<std::endl;
+    
     PhysicalRegion* fragment = CObjectWrapper::unwrap(imageFragment[fragmentID][0]);
     for(unsigned field = 0; field < fields.size(); ++field) {
       switch(field) {

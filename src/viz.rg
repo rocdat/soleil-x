@@ -496,28 +496,30 @@ end
 
 exports.Reduce = rquote
 
-  
-      for tile in tiles do
-        Reduce(0, 1, [partitionFragment0LeftChildLevel0][tile], [partitionFragment0RightChildLevel0][tile])
-        Reduce(0, 1, [partitionFragment1LeftChildLevel0][tile], [partitionFragment1RightChildLevel0][tile])
+  -- tree level 0
+  for tile in tiles do
+    Reduce(0, 1, [partitionFragment0LeftChildLevel0][tile], [partitionFragment0RightChildLevel0][tile])
+    Reduce(0, 1, [partitionFragment1LeftChildLevel0][tile], [partitionFragment1RightChildLevel0][tile])
 --- etc for more fragments
-      end
+  end
 
-      for tile in tiles do
-        Reduce(1, 2, [partitionFragment0LeftChildLevel1][tile], [partitionFragment0RightChildLevel1][tile])
-        Reduce(1, 2, [partitionFragment1LeftChildLevel1][tile], [partitionFragment1RightChildLevel1][tile])
+  -- tree level 1
+  for tile in tiles do
+    Reduce(1, 2, [partitionFragment0LeftChildLevel1][tile], [partitionFragment0RightChildLevel1][tile])
+    Reduce(1, 2, [partitionFragment1LeftChildLevel1][tile], [partitionFragment1RightChildLevel1][tile])
 --- etc for more fragments
-      end
-
--- etc for more tree levels (numLayers > 2^k)
+  end
 
 
-    for tile in tiles do
-      SaveImage(tile,
-        partitionFragment0ByDepth[zero],
-        partitionFragment1ByDepth[zero])
+
+  -- save result to disk
+  for tile in tiles do
+    SaveImage(tile,
+      partitionFragment0ByDepth[zero],
+      partitionFragment1ByDepth[zero])
 -- etc for more fragments
-    end
+  end
+
 end
 
 

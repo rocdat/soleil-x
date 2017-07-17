@@ -69,11 +69,11 @@ local numTilesY = 2
 local numTilesZ = 1
 local zero = terralib.constant(`int3d { __ptr = regentlib.__int3d { 0, 0, 0 } })
 local one = terralib.constant(`int3d { __ptr = regentlib.__int3d { 1, 1, 1 } })
-local indices = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })
 
 
 -- image fragments
 
+local indices = regentlib.newsymbol("indices")
 local imageFragment0 = regentlib.newsymbol("imageFragment0")
 local imageFragment1 = regentlib.newsymbol("imageFragment1")
 --etc
@@ -392,8 +392,8 @@ end
 local exports = {}
 
 exports.InitializeFragment0 = rquote
-
-  var [imageFragment0] = region(indices, PixelFields)
+  var [indices] = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })
+  var [imageFragment0] = region([indices], PixelFields)
   var [partitionFragment0ByDepth] = DepthPartition([imageFragment0], fragmentWidth, fragmentHeight, tiles)
 
   var [partitionFragment0LeftRightLevel0] = SplitLeftRight([imageFragment0], 0, 1)
@@ -436,9 +436,7 @@ end
 
 exports.InitializeFragment1 = rquote
 
-  var indices = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })
-
-  var [imageFragment1] = region(indices, PixelFields)
+  var [imageFragment1] = region([indices], PixelFields)
   var [partitionFragment1ByDepth] = DepthPartition([imageFragment1], fragmentWidth, fragmentHeight, tiles)
 
   var [partitionFragment1LeftRightLevel0] = SplitLeftRight([imageFragment1], 0, 1)
@@ -498,36 +496,28 @@ end
 
 exports.Reduce = rquote
 
-    __demand(__spmd) do
+  
       for tile in tiles do
         Reduce(0, 1, [partitionFragment0LeftChildLevel0][tile], [partitionFragment0RightChildLevel0][tile])
         Reduce(0, 1, [partitionFragment1LeftChildLevel0][tile], [partitionFragment1RightChildLevel0][tile])
 --- etc for more fragments
       end
-    end
 
-    __demand(__spmd) do
       for tile in tiles do
         Reduce(1, 2, [partitionFragment0LeftChildLevel1][tile], [partitionFragment0RightChildLevel1][tile])
         Reduce(1, 2, [partitionFragment1LeftChildLevel1][tile], [partitionFragment1RightChildLevel1][tile])
 --- etc for more fragments
       end
-    end
-
 
 -- etc for more tree levels (numLayers > 2^k)
 
 
-  __demand(__spmd) do
     for tile in tiles do
       SaveImage(tile,
         partitionFragment0ByDepth[zero],
-        partitionFragment1ByDepth[zero]
-    end
-  end
-)
+        partitionFragment1ByDepth[zero])
 -- etc for more fragments
-
+    end
 end
 
 

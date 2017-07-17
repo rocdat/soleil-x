@@ -73,6 +73,55 @@ FieldData max[3];
 
 
 
+static void
+write_targa(const char *filename, const GLfloat *rgbaBuffer, int width, int height)
+{
+  FILE *f = fopen( filename, "w" );
+  if (f) {
+    int i, x, y;
+    const GLfloat *ptr = rgbaBuffer;
+    fputc (0x00, f);  /* ID Length, 0 => No ID        */
+    fputc (0x00, f);  /* Color Map Type, 0 => No color map included   */
+    fputc (0x02, f);  /* Image Type, 2 => Uncompressed, True-color Image */
+    fputc (0x00, f);  /* Next five bytes are about the color map entries */
+    fputc (0x00, f);  /* 2 bytes Index, 2 bytes length, 1 byte size */
+    fputc (0x00, f);
+    fputc (0x00, f);
+    fputc (0x00, f);
+    fputc (0x00, f);  /* X-origin of Image    */
+    fputc (0x00, f);
+    fputc (0x00, f);  /* Y-origin of Image    */
+    fputc (0x00, f);
+    fputc (width & 0xff, f);      /* Image Width      */
+    fputc ((width>>8) & 0xff, f);
+    fputc (height & 0xff, f);     /* Image Height     */
+    fputc ((height>>8) & 0xff, f);
+    fputc (0x18, f);          /* Pixel Depth, 0x18 => 24 Bits */
+    fputc (0x20, f);          /* Image Descriptor     */
+    fclose(f);
+    f = fopen( filename, "ab" );  /* reopen in binary append mode */
+    for (y=height-1; y>=0; y--) {
+      GLubyte buffer[width * 3];
+      GLubyte* b = buffer;
+      for (x=0; x<width; x++) {
+        i = (y*width + x) * 4;
+        GLubyte R = (GLubyte)(ptr[i] * 255);
+        GLubyte G = (GLubyte)(ptr[i + 1] * 255);
+        GLubyte B = (GLubyte)(ptr[i + 2] * 255);
+        *b++ = B;
+        *b++ = G;
+        *b++ = R;
+        //debug
+        static int yoyo = 0;
+        if(yoyo < 8 && (R != 0 || G != 0 || B != 0)) {
+          std::cout << (yoyo++) << " targa x,y R,G,B " << x << "," << y << " " << (int)R << " " << (int)G << " " << (int)B << std::endl;
+        }
+      }
+      fwrite(buffer, 3 * sizeof(GLubyte), width, f);
+    }
+  }
+  std::cout << "wrote targa file " << filename << std::endl;
+}
 
 
 
@@ -847,6 +896,13 @@ static void writeImageToImageFragment(GLfloat* rgba,
       *G = rgba[1];
       *B = rgba[2];
       *A = rgba[3];
+      //debug
+      const float threshold = 1.0f / 255.0f;
+      static int yoyo = 0;
+      if(yoyo < 8 && (*R > threshold || *G > threshold || *B > threshold)) {
+        std::cout << (yoyo++) << " postrender x,y r,g,b,a " << x << "," << y << " " << *R << " " << *G << " " << *B << " " << *A << std::endl;
+      }
+      //debug
       rgba += 4;
       *Z = depth[0];
       depth++;
@@ -1110,6 +1166,12 @@ inline void compositePixelsLess(GLfloat *r0,
     } else {
       *rOut = *r1; *gOut = *g1; *bOut = *b1; *aOut = *a1; *zOut = *z1; *userdataOut = *userdata1;
     }
+    //debug
+    static int yoyo = 0;
+    if(yoyo < 8 && (*r0 != 0 || *g0 != 0 || *b0 != 0)) {
+      std::cout << (yoyo++) << " composite r,g,b,a,z " << *r0 << " " << *g0 << " " << *b0 << " " << *a0 << " " << *z0 << std::endl;
+    }
+    //debug
     increment(r0, g0, b0, a0, z0, userdata0, stride);
     increment(r1, g1, b1, a1, z1, userdata1, stride);
     increment(rOut, gOut, bOut, aOut, zOut, userdataOut, stride);
@@ -1210,7 +1272,7 @@ void cxx_reduce(legion_runtime_t runtime_,
 
 
 
-void cxx_saveImageToPPM(legion_runtime_t runtime_,
+void cxx_saveImage(legion_runtime_t runtime_,
                         legion_context_t ctx_,
                         int width,
                         int height,
@@ -1267,8 +1329,6 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
   unsigned fragmentID = 0;
   while(row < (unsigned)height) {
     
-    _T std::cout<<"row, fragmentID, rgba  "<<row<<" "<<fragmentID<<" "<<rgba<<std::endl;
-    
     PhysicalRegion* fragment = CObjectWrapper::unwrap(imageFragment[fragmentID][0]);
     for(unsigned field = 0; field < fields.size(); ++field) {
       switch(field) {
@@ -1295,6 +1355,12 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
     
     for(unsigned y = (unsigned)bounds.lo.x[1]; y <= bounds.hi.x[1]; ++y) {
       for(unsigned x = (unsigned)bounds.lo.x[0]; x <= bounds.hi.x[0]; ++x) {
+        //debug
+        static int yoyo = 0;
+        if(yoyo < 8 && (*R != 0 || *G != 0 || *B != 0)) {
+          std::cout << (yoyo++) << " saveImage x,y R,G,B,A " << x << "," << y << " " << *R << " " << *G << " " << *B << " " << *A << std::endl;
+        }
+        //debug
         rgba[0] = *R;
         rgba[1] = *G;
         rgba[2] = *B;
@@ -1313,8 +1379,9 @@ void cxx_saveImageToPPM(legion_runtime_t runtime_,
   
   static unsigned fileSerialID = 0;
   char buffer[256];
-  sprintf(buffer, "./out/image.%05d.ppm", fileSerialID++);
-  write_ppm(buffer, rgbaBuffer, width, height);
+  sprintf(buffer, "./out/image.%05d.tga", fileSerialID++);
+//  write_ppm(buffer, rgbaBuffer, width, height);
+  write_targa(buffer, rgbaBuffer, width, height);
   
   free(rgbaBuffer);
 }

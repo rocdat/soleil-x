@@ -48,7 +48,7 @@ extern "C" {
                   legion_physical_region_t *imageFragment1,
                   legion_field_id_t *imageFragment1_fields,
                   // etc for more fragments
-
+                  
                   int xnum, int ynum, int znum);
   
   
@@ -62,17 +62,17 @@ extern "C" {
                   int offset);
   
   
-  void cxx_saveImageToPPM(legion_runtime_t runtime,
-                          legion_context_t context,
-                          int width,
-                          int height,
-                          
-                          legion_physical_region_t *imageFragment0,
-                          legion_field_id_t *imageFragment0_fields,
-                          legion_physical_region_t *imageFragment1,
-                          legion_field_id_t *imageFragment1_fields);
+  void cxx_saveImage(legion_runtime_t runtime,
+                     legion_context_t context,
+                     int width,
+                     int height,
+                     
+                     legion_physical_region_t *imageFragment0,
+                     legion_field_id_t *imageFragment0_fields,
+                     legion_physical_region_t *imageFragment1,
+                     legion_field_id_t *imageFragment1_fields);
   // etc for more fragments
-
+  
   
 #ifdef __cplusplus
 }

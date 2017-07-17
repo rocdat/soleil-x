@@ -69,6 +69,7 @@ local numTilesY = 2
 local numTilesZ = 1
 local zero = terralib.constant(`int3d { __ptr = regentlib.__int3d { 0, 0, 0 } })
 local one = terralib.constant(`int3d { __ptr = regentlib.__int3d { 1, 1, 1 } })
+local indices = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })
 
 
 -- image fragments
@@ -357,10 +358,10 @@ end
 
 
 --
--- SaveImageToPPM
+-- SaveImage
 --
 
-local task SaveImageToPPM(
+local task SaveImage(tile : int3d,
   imageFragment0 : region(ispace(int3d), PixelFields),
   imageFragment1 : region(ispace(int3d), PixelFields)
 )
@@ -370,12 +371,14 @@ where
   reads(imageFragment1)
 -- etc for more fragments
 do
-  cviz.cxx_saveImageToPPM(__runtime(), __context(),
-    width, height,
-    __physical(imageFragment0), __fields(imageFragment0),
-    __physical(imageFragment1), __fields(imageFragment1)
-  )
+  if tile.z == 0 and tile.y == 0 and tile.x == 0 then
+    cviz.cxx_saveImage(__runtime(), __context(),
+      width, height,
+      __physical(imageFragment0), __fields(imageFragment0),
+      __physical(imageFragment1), __fields(imageFragment1)
+    )
 -- etc for more fragments
+  end
 end
 
 
@@ -389,8 +392,6 @@ end
 local exports = {}
 
 exports.InitializeFragment0 = rquote
-
-  var indices = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })
 
   var [imageFragment0] = region(indices, PixelFields)
   var [partitionFragment0ByDepth] = DepthPartition([imageFragment0], fragmentWidth, fragmentHeight, tiles)
@@ -496,9 +497,7 @@ end
 
 
 exports.Reduce = rquote
-  var indices = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })
 
-  if numLayers > 1 then
     __demand(__spmd) do
       for tile in tiles do
         Reduce(0, 1, [partitionFragment0LeftChildLevel0][tile], [partitionFragment0RightChildLevel0][tile])
@@ -506,9 +505,7 @@ exports.Reduce = rquote
 --- etc for more fragments
       end
     end
-  end
 
-  if numLayers > 2 then
     __demand(__spmd) do
       for tile in tiles do
         Reduce(1, 2, [partitionFragment0LeftChildLevel1][tile], [partitionFragment0RightChildLevel1][tile])
@@ -516,23 +513,18 @@ exports.Reduce = rquote
 --- etc for more fragments
       end
     end
-  end
 
-  if numLayers > 4 then
-    __demand(__spmd) do
-      for tile in tiles do
-        Reduce(2, 4, [partitionFragment0LeftChildLevel2][tile], [partitionFragment0RightChildLevel2][tile])
-        Reduce(2, 4, [partitionFragment1LeftChildLevel2][tile], [partitionFragment1RightChildLevel2][tile])
---- etc for more fragments
-      end
-    end
-  end
 
 -- etc for more tree levels (numLayers > 2^k)
 
-  SaveImageToPPM(
-    partitionFragment0ByDepth[zero],
-    partitionFragment1ByDepth[zero]
+
+  __demand(__spmd) do
+    for tile in tiles do
+      SaveImage(tile,
+        partitionFragment0ByDepth[zero],
+        partitionFragment1ByDepth[zero]
+    end
+  end
 )
 -- etc for more fragments
 

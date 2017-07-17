@@ -45,7 +45,7 @@ const int NUM_NODES = 4;//TODO eliminate this when timeStep is passed in
 
 const int trackedParticlesPerNode = 128;
 
-static const bool writeFiles = false;//write out text files with data
+static const bool writeFiles = true;//write out text files with data
 
 
 #ifdef STANDALONE
@@ -1090,6 +1090,21 @@ void cxx_render(legion_runtime_t runtime_,
                trackingBase, trackingIS,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, ctx);
   
+  
+  ////////////////////debug
+  unsigned yoyo = 0;
+  GLfloat* rgba = rgbaBuffer;
+  for(unsigned y = 0; y < height; ++y) {
+    for(unsigned x = 0; x < width; ++x) {
+      if(yoyo < 8 && (rgba[0] != 0 || rgba[1] != 0 || rgba[2] != 0)) {
+        std::cout << yoyo++ << " after render x,y rgba " << x << "," << y << " " << rgba[0] << " " << rgba[1] << " " << rgba[2] << " " << rgba[3] << std::endl;
+      }
+      rgba += 4;
+    }
+  }
+  
+  ////////////////////
+  
   if(writeFiles) {
     write_ppm(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
     std::string depthFileName = imageFileName("./out/depth", timeStep, bounds);
@@ -1122,59 +1137,79 @@ void cxx_render(legion_runtime_t runtime_,
 
 #ifndef STANDALONE
 
-static inline void increment(GLfloat *&r,
-                             GLfloat *&g,
-                             GLfloat *&b,
-                             GLfloat *&a,
-                             GLfloat *&z,
-                             GLfloat *&userdata,
-                             ByteOffset stride[3]) {
-  r += stride[0].offset;
-  g += stride[0].offset;
-  b += stride[0].offset;
-  a += stride[0].offset;
-  z += stride[0].offset;
-  userdata += stride[0].offset;
-}
-
 
 
 inline void compositePixelsLess(GLfloat *r0,
+                                ByteOffset strideR0[3],
                                 GLfloat *g0,
+                                ByteOffset strideG0[3],
                                 GLfloat *b0,
+                                ByteOffset strideB0[3],
                                 GLfloat *a0,
+                                ByteOffset strideA0[3],
                                 GLfloat *z0,
-                                GLfloat *userdata0,
+                                ByteOffset strideZ0[3],
+                                GLfloat *userData0,
+                                ByteOffset strideUserData0[3],
                                 GLfloat *r1,
+                                ByteOffset strideR1[3],
                                 GLfloat *g1,
+                                ByteOffset strideG1[3],
                                 GLfloat *b1,
+                                ByteOffset strideB1[3],
                                 GLfloat *a1,
+                                ByteOffset strideA1[3],
                                 GLfloat *z1,
-                                GLfloat *userdata1,
+                                ByteOffset strideZ1[3],
+                                GLfloat *userData1,
+                                ByteOffset strideUserData1[3],
                                 GLfloat *rOut,
+                                ByteOffset strideROut[3],
                                 GLfloat *gOut,
+                                ByteOffset strideGOut[3],
                                 GLfloat *bOut,
+                                ByteOffset strideBOut[3],
                                 GLfloat *aOut,
+                                ByteOffset strideAOut[3],
                                 GLfloat *zOut,
-                                GLfloat *userdataOut,
-                                int numPixels,
-                                ByteOffset stride[3]){
+                                ByteOffset strideZOut[3],
+                                GLfloat *userDataOut,
+                                ByteOffset strideUserDataOut[3],
+                                int numPixels){
   
   for(int i = 0; i < numPixels; ++i) {
     if(*z0 < *z1) {
-      *rOut = *r0; *gOut = *g0; *bOut = *b0; *aOut = *a0; *zOut = *z0; *userdataOut = *userdata0;
+      *rOut = *r0; *gOut = *g0; *bOut = *b0; *aOut = *a0; *zOut = *z0; *userDataOut = *userData0;
     } else {
-      *rOut = *r1; *gOut = *g1; *bOut = *b1; *aOut = *a1; *zOut = *z1; *userdataOut = *userdata1;
+      *rOut = *r1; *gOut = *g1; *bOut = *b1; *aOut = *a1; *zOut = *z1; *userDataOut = *userData1;
     }
     //debug
     static int yoyo = 0;
     if(yoyo < 8 && (*r0 != 0 || *g0 != 0 || *b0 != 0)) {
       std::cout << (yoyo++) << " composite r,g,b,a,z " << *r0 << " " << *g0 << " " << *b0 << " " << *a0 << " " << *z0 << std::endl;
     }
-    //debug
-    increment(r0, g0, b0, a0, z0, userdata0, stride);
-    increment(r1, g1, b1, a1, z1, userdata1, stride);
-    increment(rOut, gOut, bOut, aOut, zOut, userdataOut, stride);
+    
+    r0 += strideR0[0].offset / sizeof(*r0);
+    g0 += strideG0[0].offset / sizeof(*g0);
+    b0 += strideB0[0].offset / sizeof(*b0);
+    a0 += strideA0[0].offset / sizeof(*a0);
+    z0 += strideZ0[0].offset / sizeof(*z0);
+    userData0 += strideUserData0[0].offset / sizeof(*userData0);
+    
+    r1 += strideR1[0].offset / sizeof(*r1);
+    g1 += strideG1[0].offset / sizeof(*g1);
+    b1 += strideB1[0].offset / sizeof(*b1);
+    a1 += strideA1[0].offset / sizeof(*a1);
+    z1 += strideZ1[0].offset / sizeof(*z1);
+    userData1 += strideUserData1[0].offset / sizeof(*userData1);
+    
+    rOut += strideROut[0].offset / sizeof(*rOut);
+    gOut += strideGOut[0].offset / sizeof(*gOut);
+    bOut += strideBOut[0].offset / sizeof(*bOut);
+    aOut += strideAOut[0].offset / sizeof(*aOut);
+    zOut += strideZOut[0].offset / sizeof(*zOut);
+    userDataOut += strideUserDataOut[0].offset / sizeof(*userDataOut);
+
   }
   
 }
@@ -1264,8 +1299,11 @@ void cxx_reduce(legion_runtime_t runtime_,
       break;
     }
   }
-
-  compositePixelsLess(leftR, leftG, leftB, leftA, leftZ, leftUserData, rightR, rightG, rightB, rightA, rightZ, rightUserData, leftR, leftG, leftB, leftA, leftZ, leftUserData, (int)leftBounds.volume(), leftStrideR);
+  
+  compositePixelsLess(leftR, leftStrideR, leftG, leftStrideG, leftB, leftStrideB, leftA, leftStrideA, leftZ, leftStrideZ, leftUserData, leftStrideUserData,
+                      rightR, rightStrideR, rightG, rightStrideG, rightB, rightStrideB, rightA, rightStrideA, rightZ, rightStrideZ, rightUserData, rightStrideUserData,
+                      leftR, leftStrideR, leftG, leftStrideG, leftB, leftStrideB, leftA, leftStrideA, leftZ, leftStrideZ, leftUserData, leftStrideUserData,
+                      (int)leftBounds.volume());
 }
 
 
@@ -1366,10 +1404,10 @@ void cxx_saveImage(legion_runtime_t runtime_,
         rgba[2] = *B;
         rgba[3] = *A;
         rgba += 4;
-        R += strideR[0].offset;
-        G += strideG[0].offset;
-        B += strideB[0].offset;
-        A += strideA[0].offset;
+        R += strideR[0].offset / sizeof(*R);
+        G += strideG[0].offset / sizeof(*G);
+        B += strideB[0].offset / sizeof(*B);
+        A += strideA[0].offset / sizeof(*A);
       }
       row++;
     }

@@ -805,13 +805,13 @@ static std::string imageFileName(std::string table, std::string ext, int timeSte
 
 
 static void writeRenderedPixelsToImageFragments(GLfloat* rgba,
-                                      GLfloat* depth,
-                                      Runtime* runtime,
-                                      Context ctx,
-                                      legion_physical_region_t* imageFragment,
-                                      legion_field_id_t* imageFragment_fields,
-                                      std::vector<legion_field_id_t> fields,
-                                      Rect<3> bounds) {
+                                                GLfloat* depth,
+                                                Runtime* runtime,
+                                                Context ctx,
+                                                legion_physical_region_t* imageFragment,
+                                                legion_field_id_t* imageFragment_fields,
+                                                std::vector<legion_field_id_t> fields,
+                                                Rect<3> bounds) {
   
   float* R = NULL;
   float* G = NULL;
@@ -872,8 +872,8 @@ static void writeRenderedPixelsToImageFragments(GLfloat* rgba,
       pixelCounter++;
     }
   }
-
-  std::cout << "copied " << pixelCounter << " pixels to image fragment" << std::endl;
+  
+  std::cout << "copied " << pixelCounter << " rendered pixels to image fragment" << std::endl;
   
 }
 
@@ -881,13 +881,13 @@ static void writeRenderedPixelsToImageFragments(GLfloat* rgba,
 
 static void
 writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
-                           GLfloat* depthBuffer,
-                           Runtime* runtime,
-                           Context ctx,
-                           legion_physical_region_t* imageFragment[],
-                           legion_field_id_t* imageFragment_fields[],
-                           int width,
-                           int height) {
+                                    GLfloat* depthBuffer,
+                                    Runtime* runtime,
+                                    Context ctx,
+                                    legion_physical_region_t* imageFragment[],
+                                    legion_field_id_t* imageFragment_fields[],
+                                    int width,
+                                    int height) {
   
   PhysicalRegion* fragment = CObjectWrapper::unwrap(imageFragment[0][0]);
   std::vector<legion_field_id_t> fields;
@@ -899,17 +899,12 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
   int fragmentHeight = (int)(bounds.hi.x[1] - bounds.lo.x[1]) + 1;
   assert(fragmentHeight > 0);
   int numFragmentsPerImage = height / fragmentHeight;
-
+  
   std::cout << "numFragsPerImage = " << numFragmentsPerImage << " fragHeight " << fragmentHeight << std::endl;//debug
   
   for(int i = 0; i < numFragmentsPerImage; ++i) {
     GLfloat* rgba = rgbaBuffer + i * fragmentHeight * width * 4;
     GLfloat* depth = depthBuffer + i * fragmentHeight * width;
-
- int distance = rgba - rgbaBuffer;
- int lines = distance / (width * 4);
- std::cout << "rgba " << rgba << " distance " << distance << " lines " << lines << std::endl;
-
     writeRenderedPixelsToImageFragments(rgba, depth, runtime, ctx, imageFragment[i], imageFragment_fields[i], fields, bounds);
   }
 }
@@ -1054,7 +1049,7 @@ void cxx_render(legion_runtime_t runtime_,
                particleTemperatureBase, particleTemperatureIS,
                trackingBase, trackingIS,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, ctx);
-
+  
   if(writeFiles) {
     write_ppm(imageFileName("./out/image", ".ppm", timeStep, bounds).c_str(), rgbaBuffer, width, height);
     std::string depthFileName = imageFileName("./out/depth", ".zzz", timeStep, bounds);
@@ -1067,7 +1062,7 @@ void cxx_render(legion_runtime_t runtime_,
   }
   
   writeRenderedPixelsToImageFragments(rgbaBuffer, depthBuffer, runtime, ctx,
-                             imageFragment, imageFragment_fields, width, height);
+                                      imageFragment, imageFragment_fields, width, height);
   
 #endif
   
@@ -1154,7 +1149,7 @@ inline void compositePixelsLess(GLfloat *r0,
     aOut += strideAOut[0].offset / sizeof(*aOut);
     zOut += strideZOut[0].offset / sizeof(*zOut);
     userDataOut += strideUserDataOut[0].offset / sizeof(*userDataOut);
-
+    
   }
   
 }
@@ -1251,14 +1246,14 @@ void cxx_reduce(legion_runtime_t runtime_,
 
 
 void cxx_saveImage(legion_runtime_t runtime_,
-                        legion_context_t ctx_,
-                        int width,
-                        int height,
-                        
-                        legion_physical_region_t *imageFragment0,
-                        legion_field_id_t *imageFragment0_fields,
-                        legion_physical_region_t *imageFragment1,
-                        legion_field_id_t *imageFragment1_fields)
+                   legion_context_t ctx_,
+                   int width,
+                   int height,
+                   
+                   legion_physical_region_t *imageFragment0,
+                   legion_field_id_t *imageFragment0_fields,
+                   legion_physical_region_t *imageFragment1,
+                   legion_field_id_t *imageFragment1_fields)
 // etc for more fragments
 {
   
@@ -1332,6 +1327,9 @@ void cxx_saveImage(legion_runtime_t runtime_,
     int pixelCount = 0;
     Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, fragment->get_logical_region().get_index_space());
     Rect<3> bounds = indexSpaceDomain.get_rect<3>();
+    
+    std::cout << "copying from fragment " << bounds << std::endl;
+    
     for(unsigned y = (unsigned)bounds.lo.x[1]; y <= bounds.hi.x[1]; ++y) {
       for(unsigned x = (unsigned)bounds.lo.x[0]; x <= bounds.hi.x[0]; ++x) {
         rgba[0] = *R;

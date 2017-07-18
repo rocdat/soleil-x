@@ -43,13 +43,10 @@ extern "C" {
                   legion_physical_region_t *particles,
                   legion_field_id_t *particles_fields,
                   
-                  legion_physical_region_t *imageFragment0,
-                  legion_field_id_t *imageFragment0_fields,
-                  legion_physical_region_t *imageFragment1,
-                  legion_field_id_t *imageFragment1_fields,
-                  // etc for more fragments
+                  // CODEGEN: legion_physical_region_t_imageFragmentXComma
                   
-                  int xnum, int ynum, int znum);
+                  int xnum, int ynum, int znum,
+                  int timeStepNumber);
   
   
   void cxx_reduce(legion_runtime_t runtime,
@@ -66,13 +63,10 @@ extern "C" {
                      legion_context_t context,
                      int width,
                      int height,
+                     int timeStepNumber,
                      
-                     legion_physical_region_t *imageFragment0,
-                     legion_field_id_t *imageFragment0_fields,
-                     legion_physical_region_t *imageFragment1,
-                     legion_field_id_t *imageFragment1_fields);
-  // etc for more fragments
-  
+                     // CODEGEN: legion_physical_region_t_imageFragmentX
+  );
   
 #ifdef __cplusplus
 }

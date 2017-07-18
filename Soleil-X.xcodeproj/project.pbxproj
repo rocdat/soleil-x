@@ -1863,6 +1863,7 @@
 
 /* Begin PBXFileReference section */
 		41194F7F1F1DD2D1007DA5E4 /* taylor_green_vortex_256_256_256_modified.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_256_256_256_modified.lua; sourceTree = "<group>"; };
+		41194F801F1EA208007DA5E4 /* codegen.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = codegen.py; sourceTree = "<group>"; };
 		4127A7111F169C9D009A1F6A /* tree_reduction_lr.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = tree_reduction_lr.rg; path = ../tree_reduction_lr.rg; sourceTree = "<group>"; };
 		4127A7121F184D7D009A1F6A /* simple_reduction.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = simple_reduction.rg; path = ../simple_reduction.rg; sourceTree = "<group>"; };
 		4127A7141F1A8F86009A1F6A /* build_all.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = build_all.bash; sourceTree = "<group>"; };
@@ -13717,6 +13718,7 @@
 			children = (
 				4168B63A1F06C0F300530CC9 /* viz.rg */,
 				4168B6341F06C0DD00530CC9 /* viz.cc */,
+				41194F801F1EA208007DA5E4 /* codegen.py */,
 				4168B6351F06C0DD00530CC9 /* viz.h */,
 				E9519EBC1BD70630000851BC /* soleil-x.t */,
 				4168B6371F06C0EB00530CC9 /* soleil_mapper.cc */,

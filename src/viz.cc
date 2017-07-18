@@ -40,8 +40,6 @@ using namespace LegionRuntime::Accessor;
 #include <assert.h>
 #include <math.h>
 
-static int volatile timeStep = 0;//to do pass this in
-const int NUM_NODES = 4;//TODO eliminate this when timeStep is passed in
 const int trackedParticlesPerNode = 128;
 static const bool writeFiles = false;//write out text files with data
 
@@ -68,10 +66,6 @@ FieldData max[3];
 
 
 #endif
-
-
-
-
 
 
 
@@ -282,7 +276,6 @@ static void trackParticles(int numTracking,
 
 static void drawParticles(std::string particleFilePath,
                           GLUquadricObj* qobj) {
-  // (1,1,1) 0.03689573118 0.03673534665 0.03681553891  8900 20.05031482
   
   std::ifstream particleFile;
   particleFile.open(particleFilePath);
@@ -769,7 +762,7 @@ std::string fileName(std::string table, std::string ext, int timeStep) {
   char buffer[256];
   sprintf(buffer, "%s.%05d%s",
           table.c_str(),
-          timeStep / NUM_NODES,//TODO don't divide by NUM_NODES once timeStep is passed in
+          timeStep,
           ext.c_str());
   return std::string(buffer);
 }
@@ -777,10 +770,9 @@ std::string fileName(std::string table, std::string ext, int timeStep) {
 static
 std::string fileName(std::string table, std::string ext, int timeStep, Rect<3> bounds) {
   char buffer[256];
-  int t = timeStep / (writeFiles ? (NUM_NODES + 1) : 1);
   sprintf(buffer, "%s.%05d.%lld_%lld_%lld__%lld_%lld_%lld%s",
           table.c_str(),
-          t,
+          timeStep,
           bounds.lo.x[0], bounds.lo.x[1], bounds.lo.x[2],
           bounds.hi.x[0], bounds.hi.x[1], bounds.hi.x[2],
           ext.c_str());
@@ -804,14 +796,14 @@ static std::string imageFileName(std::string table, std::string ext, int timeSte
 
 
 
-static void writeRenderedPixelsToImageFragments(GLfloat* rgba,
-                                                GLfloat* depth,
-                                                Runtime* runtime,
-                                                Context ctx,
-                                                legion_physical_region_t* imageFragment,
-                                                legion_field_id_t* imageFragment_fields,
-                                                std::vector<legion_field_id_t> fields,
-                                                Rect<3> bounds) {
+static void writeRenderedPixelsToImageFragment(GLfloat* rgba,
+                                               GLfloat* depth,
+                                               Runtime* runtime,
+                                               Context ctx,
+                                               legion_physical_region_t* imageFragment,
+                                               legion_field_id_t* imageFragment_fields,
+                                               std::vector<legion_field_id_t> fields,
+                                               Rect<3> bounds) {
   
   float* R = NULL;
   float* G = NULL;
@@ -900,7 +892,7 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
   for(int i = 0; i < numFragmentsPerImage; ++i) {
     GLfloat* rgba = rgbaBuffer + i * fragmentHeight * width * 4;
     GLfloat* depth = depthBuffer + i * fragmentHeight * width;
-    writeRenderedPixelsToImageFragments(rgba, depth, runtime, ctx, imageFragment[i], imageFragment_fields[i], fields, bounds);
+    writeRenderedPixelsToImageFragment(rgba, depth, runtime, ctx, imageFragment[i], imageFragment_fields[i], fields, bounds);
   }
 }
 
@@ -923,31 +915,17 @@ void cxx_render(legion_runtime_t runtime_,
                 legion_field_id_t *cells_fields,
                 legion_physical_region_t *particles,
                 legion_field_id_t *particles_fields,
-                /////
-                legion_physical_region_t *imageFragment0,
-                legion_field_id_t *imageFragment0_fields,
-                legion_physical_region_t *imageFragment1,
-                legion_field_id_t *imageFragment1_fields,
-                /***extend here for more regions***///////////////////
+                // CODEGEN: legion_physical_region_t_imageFragmentXComma
                 int xnum,
                 int ynum,
-                int znum)
+                int znum,
+                int timeStepNumber)
 #endif
 {
   
 #ifndef STANDALONE
   
-  legion_physical_region_t* imageFragment[] = {
-    imageFragment0,
-    imageFragment1
-    /***extend here for more regions***///////////////////
-  };
-  
-  legion_field_id_t* imageFragment_fields[] = {
-    imageFragment0_fields,
-    imageFragment1_fields
-    /***extend here for more regions***///////////////////
-  };
+  // CODEGEN: legion_physical_region_t_imageFragment_arrays
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
@@ -965,7 +943,7 @@ void cxx_render(legion_runtime_t runtime_,
                  strideCenter, strideVelocity, strideTemperature, bounds, runtime, ctx);
   
   if(writeFiles) {
-    std::string cellsFileName = dataFileName("./out/cells", timeStep, bounds);
+    std::string cellsFileName = dataFileName("./out/cells", timeStepNumber, bounds);
     writeCellsToFile(cellsFileName, bounds, velocity, centerCoordinates,
                      temperature, strideCenter, strideVelocity, strideTemperature);
   }
@@ -1002,7 +980,7 @@ void cxx_render(legion_runtime_t runtime_,
                      runtime, ctx);
   
   if(writeFiles) {
-    std::string particlesFileName = dataFileName("./out/particles", timeStep, bounds);
+    std::string particlesFileName = dataFileName("./out/particles", timeStepNumber, bounds);
     writeParticlesToFile(particlesFileName, __validBase, __validIS, cellXBase, cellXIS, cellYBase, cellYIS,
                          cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
                          particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS, runtime, ctx);
@@ -1046,8 +1024,8 @@ void cxx_render(legion_runtime_t runtime_,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, ctx);
   
   if(writeFiles) {
-    write_ppm(imageFileName("./out/image", ".ppm", timeStep, bounds).c_str(), rgbaBuffer, width, height);
-    std::string depthFileName = imageFileName("./out/depth", ".zzz", timeStep, bounds);
+    write_ppm(imageFileName("./out/image", ".ppm", timeStepNumber, bounds).c_str(), rgbaBuffer, width, height);
+    std::string depthFileName = imageFileName("./out/depth", ".zzz", timeStepNumber, bounds);
     FILE* depthFile = fopen(depthFileName.c_str(), "w");
     assert(depthFile != NULL);
     fprintf(depthFile, "%d %d\n", width, height);
@@ -1068,8 +1046,6 @@ void cxx_render(legion_runtime_t runtime_,
   
   /* destroy the context */
   OSMesaDestroyContext(mesaCtx);
-  
-  timeStep++;
   
 }
 
@@ -1244,25 +1220,12 @@ void cxx_saveImage(legion_runtime_t runtime_,
                    legion_context_t ctx_,
                    int width,
                    int height,
-                   
-                   legion_physical_region_t *imageFragment0,
-                   legion_field_id_t *imageFragment0_fields,
-                   legion_physical_region_t *imageFragment1,
-                   legion_field_id_t *imageFragment1_fields)
-// etc for more fragments
+                   int timeStepNumber,
+                   // CODEGEN: legion_physical_region_t_imageFragmentX
+                   )
 {
+  // CODEGEN: legion_physical_region_t_imageFragment_arrays
   
-  legion_physical_region_t* imageFragment[] = {
-    imageFragment0,
-    imageFragment1
-    /***extend here for more regions***///////////////////
-  };
-  
-  legion_field_id_t* imageFragment_fields[] = {
-    imageFragment0_fields,
-    imageFragment1_fields
-    /***extend here for more regions***///////////////////
-  };
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
@@ -1342,7 +1305,8 @@ void cxx_saveImage(legion_runtime_t runtime_,
     fragmentID++;
   }
   
-  write_ppm(imageFileName("./out/image", ".ppm", timeStep).c_str(), rgbaBuffer, width, height);
+  // in the future, this displays on a projector tile
+  write_ppm(imageFileName("./out/image", ".ppm", timeStepNumber).c_str(), rgbaBuffer, width, height);
   
   free(rgbaBuffer);
 }

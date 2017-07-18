@@ -3346,18 +3346,15 @@ end
 ------------
 
 function Visualize.Initialize()
-  M.INLINE(viz.InitializeFragment0)
-  M.INLINE(viz.InitializeFragment1)
--- etc for more fragments
+-- CODEGEN: viz.InitializeFragmentX
 end
 
-local dummy = 1234
-function Visualize.Render()
-  M.INLINE(viz.Render(dummy))
+function Visualize.Render(timeStepNumber)
+  M.INLINE(viz.Render(timeStepNumber))
 end
 
-function Visualize.Reduce()
-  M.INLINE(viz.Reduce)
+function Visualize.Reduce(timeStepNumber)
+  M.INLINE(viz.Reduce(timeStepNumber))
 end
 
 -----------------------------------------------------------------------------
@@ -3374,8 +3371,8 @@ if radiation_options.radiationType ~= RadiationType.OFF then
 end
 IO.WriteOutput()
 Visualize.Initialize()
-Visualize.Render()
-Visualize.Reduce()
+Visualize.Render(TimeIntegrator.timeStep:get())
+Visualize.Reduce(TimeIntegrator.timeStep:get())
 
 -- Main iteration loop
 
@@ -3384,8 +3381,8 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
         true)
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
-  Visualize.Render()
-  Visualize.Reduce()
+  Visualize.Render(TimeIntegrator.timeStep:get())
+  Visualize.Reduce(TimeIntegrator.timeStep:get())
 
   if not regentlib.config['flow-spmd'] then
     M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))

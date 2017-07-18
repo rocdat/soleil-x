@@ -58,9 +58,7 @@ where
   reads writes(particles),
   reads(cells.{velocity, centerCoordinates})
 do
-
-  regentlib.c.printf("particlesPerTask %d config.num %d NUM_PRIM_PARTS %d\n", particlesPerTask, config.num, NUM_PRIM_PARTS)
-
+  var numValid = 0
   var pBase = 0
   for p in particles do
     pBase = __raw(p).value
@@ -80,6 +78,7 @@ do
   for p in particles do
     if __raw(p).value - pBase < particlesPerTask then
       p.__valid = true
+      numValid = numValid + 1
       var relIdx = __raw(p).value - pBase
       var c : int3d = { lo.x + relIdx % xSize,
                         lo.y + relIdx / xSize % ySize,
@@ -93,6 +92,7 @@ do
       p.tracking = false
     end
   end
+  regentlib.c.printf("initialized %d valid particles\n", numValid)
 end
 
 -------------------------------------------------------------------------------

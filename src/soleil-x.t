@@ -3373,6 +3373,8 @@ if radiation_options.radiationType ~= RadiationType.OFF then
 end
 IO.WriteOutput()
 Visualize.Initialize()
+Visualize.Render()
+Visualize.Reduce()
 
 -- Main iteration loop
 

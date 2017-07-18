@@ -87,6 +87,7 @@ do
       p.density = density
       p.particle_temperature = initialTemperature
       p.diameter = diameter_mean
+      p.tracking = false
     end
   end
 end

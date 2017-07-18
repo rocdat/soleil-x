@@ -323,6 +323,11 @@ where
 -- etc more fragments here
 do
   regentlib.c.printf("in local task Render\n")
+
+  for cell in cells do
+    regentlib.c.printf("cell %lf, %lf, %lf\n", cell.centerCoordinates[0], cell.centerCoordinates[1], cell.centerCoordinates[2])
+  end
+
   cviz.cxx_render(__runtime(), __context(),
     __physical(cells), __fields(cells),
     __physical(particles), __fields(particles),

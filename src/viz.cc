@@ -42,9 +42,7 @@ using namespace LegionRuntime::Accessor;
 
 static int volatile timeStep = 0;//to do pass this in
 const int NUM_NODES = 4;//TODO eliminate this when timeStep is passed in
-
 const int trackedParticlesPerNode = 128;
-
 static const bool writeFiles = true;//write out text files with data
 
 
@@ -73,55 +71,7 @@ FieldData max[3];
 
 
 
-static void
-write_targa(const char *filename, const GLfloat *rgbaBuffer, int width, int height)
-{
-  FILE *f = fopen( filename, "w" );
-  if (f) {
-    int i, x, y;
-    const GLfloat *ptr = rgbaBuffer;
-    fputc (0x00, f);  /* ID Length, 0 => No ID        */
-    fputc (0x00, f);  /* Color Map Type, 0 => No color map included   */
-    fputc (0x02, f);  /* Image Type, 2 => Uncompressed, True-color Image */
-    fputc (0x00, f);  /* Next five bytes are about the color map entries */
-    fputc (0x00, f);  /* 2 bytes Index, 2 bytes length, 1 byte size */
-    fputc (0x00, f);
-    fputc (0x00, f);
-    fputc (0x00, f);
-    fputc (0x00, f);  /* X-origin of Image    */
-    fputc (0x00, f);
-    fputc (0x00, f);  /* Y-origin of Image    */
-    fputc (0x00, f);
-    fputc (width & 0xff, f);      /* Image Width      */
-    fputc ((width>>8) & 0xff, f);
-    fputc (height & 0xff, f);     /* Image Height     */
-    fputc ((height>>8) & 0xff, f);
-    fputc (0x18, f);          /* Pixel Depth, 0x18 => 24 Bits */
-    fputc (0x20, f);          /* Image Descriptor     */
-    fclose(f);
-    f = fopen( filename, "ab" );  /* reopen in binary append mode */
-    for (y=height-1; y>=0; y--) {
-      GLubyte buffer[width * 3];
-      GLubyte* b = buffer;
-      for (x=0; x<width; x++) {
-        i = (y*width + x) * 4;
-        GLubyte R = (GLubyte)(ptr[i] * 255);
-        GLubyte G = (GLubyte)(ptr[i + 1] * 255);
-        GLubyte B = (GLubyte)(ptr[i + 2] * 255);
-        *b++ = B;
-        *b++ = G;
-        *b++ = R;
-        //debug
-        static int yoyo = 0;
-        if(yoyo < 8 && (R != 0 || G != 0 || B != 0)) {
-          std::cout << (yoyo++) << " targa x,y R,G,B " << (x / 3) << "," << y << " " << (int)R << " " << (int)G << " " << (int)B << std::endl;
-        }
-      }
-      fwrite(buffer, 3 * sizeof(GLubyte), width, f);
-    }
-  }
-  std::cout << "wrote targa file " << filename << std::endl;
-}
+
 
 
 
@@ -223,7 +173,7 @@ static void scaledTemperatureToColor(GLfloat temperature,
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
-  GLfloat scale = 0.00025f;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
+  GLfloat scale = 1;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
   GLfloat base[] = {
     (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
   };
@@ -364,11 +314,11 @@ static void drawParticles(std::string particleFilePath,
 static void setCamera() {//TODO this is testcase dependent
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho(-5, 5, -5, 8, 0.0, 40.0);//TODO this may be testcase dependent
+  glOrtho(-10, 10, -5, 8, 0.0, 40.0);//TODO this may be testcase dependent
   
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  gluLookAt(/*eye*/10, 10, 5, /*at*/0.0, 0.0, 0.0, /*up*/0.0, 0.0, 1.0);
+  gluLookAt(/*eye*/10, 10, 5, /*at*/3.0, 3.0, 0.0, /*up*/0.0, 0.0, 1.0);
 }
 
 
@@ -430,7 +380,7 @@ void render_image(int width,
   GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
   GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
   GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-  GLfloat light_position[] = { 0.0, 0.0, 10.0, 1.0 };
+  GLfloat light_position[] = { 300.0, 300.0, 1000.0, 1.0 };
   //  GLfloat red_mat[]   = { 1.0, 0.2, 0.2, 1.0 };
   //  GLfloat green_mat[] = { 0.2, 1.0, 0.2, 0.5 };
   //  GLfloat blue_mat[]  = { 0.2, 0.2, 1.0, 1.0 };
@@ -460,7 +410,8 @@ void render_image(int width,
   glBegin(GL_LINES);
   for(int i = 0; i < totalCells; ++i) {
     drawVelocityVector(centerCoordinates, velocity, temperature);
-    float velocityMagnitude = sqrtf(velocity[0] * velocity[0] + velocity[1] * velocity[1] + velocity[2] * velocity[2]);
+    float magnitudeSquared = velocity[0] * velocity[0] + velocity[1] * velocity[1] + velocity[2] * velocity[2];
+    float velocityMagnitude = sqrtf(magnitudeSquared);
     totalVelocityMagnitude += velocityMagnitude;
     centerCoordinates += 3;
     velocity += 3;
@@ -785,7 +736,7 @@ void writeParticlesToFile(std::string filePath,
   IndexIterator particleTemperatureIterator(runtime, ctx, particleTemperatureIS);
   IndexIterator trackingIterator(runtime, ctx, trackingIS);
   
-  while(cellXIterator.has_next()) {
+  while(__validIterator.has_next()) {
     bool valid = *NEXT(__valid);
     int cellX = *NEXT(cellX);
     int cellY = *NEXT(cellY);
@@ -814,6 +765,16 @@ void writeParticlesToFile(std::string filePath,
 
 
 static
+std::string fileName(std::string table, std::string ext, int timeStep) {
+  char buffer[256];
+  sprintf(buffer, "%s.%05d.%s",
+          table.c_str(),
+          timeStep / NUM_NODES,//TODO don't divide by NUM_NODES once timeStep is passed in
+          ext.c_str());
+  return std::string(buffer);
+}
+
+static
 std::string fileName(std::string table, std::string ext, int timeStep, Rect<3> bounds) {
   char buffer[256];
   sprintf(buffer, "%s.%05d.%lld_%lld_%lld__%lld_%lld_%lld%s",
@@ -825,6 +786,7 @@ std::string fileName(std::string table, std::string ext, int timeStep, Rect<3> b
   return std::string(buffer);
 }
 
+
 static std::string dataFileName(std::string table, int timeStep, Rect<3> bounds) {
   return fileName(table, ".txt", timeStep, bounds);
 }
@@ -833,6 +795,10 @@ static std::string dataFileName(std::string table, int timeStep, Rect<3> bounds)
 
 static std::string imageFileName(std::string table, std::string ext, int timeStep, Rect<3> bounds) {
   return fileName(table, ext, timeStep, bounds);
+}
+
+static std::string imageFileName(std::string table, std::string ext, int timeStep) {
+  return fileName(table, ext, timeStep);
 }
 
 
@@ -892,13 +858,6 @@ static void writeImageToImageFragment(GLfloat* rgba,
       *G = rgba[1];
       *B = rgba[2];
       *A = rgba[3];
-      //debug
-      const float threshold = 1.0f / 255.0f;
-      static int yoyo = 0;
-      if(yoyo < 8 && (*R > threshold || *G > threshold || *B > threshold)) {
-        std::cout << (yoyo++) << " postrender x,y r,g,b,a " << x << "," << y << " " << *R << " " << *G << " " << *B << " " << *A << std::endl;
-      }
-      //debug
       rgba += 4;
       *Z = depth[0];
       depth++;
@@ -912,7 +871,6 @@ static void writeImageToImageFragment(GLfloat* rgba,
       pixelCounter++;
     }
   }
-  std::cout << "pushed " << pixelCounter << " rendered pixels to image fragment" << std::endl;
   
 }
 
@@ -965,6 +923,7 @@ void cxx_render(legion_runtime_t runtime_,
                 legion_field_id_t *cells_fields,
                 legion_physical_region_t *particles,
                 legion_field_id_t *particles_fields,
+                /////
                 legion_physical_region_t *imageFragment0,
                 legion_field_id_t *imageFragment0_fields,
                 legion_physical_region_t *imageFragment1,
@@ -1085,22 +1044,7 @@ void cxx_render(legion_runtime_t runtime_,
                particleTemperatureBase, particleTemperatureIS,
                trackingBase, trackingIS,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, ctx);
-  
-  
-  ////////////////////debug
-  unsigned yoyo = 0;
-  GLfloat* rgba = rgbaBuffer;
-  for(unsigned y = 0; y < height; ++y) {
-    for(unsigned x = 0; x < width; ++x) {
-      if(yoyo < 8 && (rgba[0] != 0 || rgba[1] != 0 || rgba[2] != 0)) {
-        std::cout << yoyo++ << " after render x,y rgba " << x << "," << y << " " << rgba[0] << " " << rgba[1] << " " << rgba[2] << " " << rgba[3] << std::endl;
-      }
-      rgba += 4;
-    }
-  }
-  
-  ////////////////////
-  
+
   if(writeFiles) {
     write_ppm(imageFileName("./out/image", ".ppm", timeStep, bounds).c_str(), rgbaBuffer, width, height);
     std::string depthFileName = imageFileName("./out/depth", ".zzz", timeStep, bounds);
@@ -1179,11 +1123,6 @@ inline void compositePixelsLess(GLfloat *r0,
     } else {
       *rOut = *r1; *gOut = *g1; *bOut = *b1; *aOut = *a1; *zOut = *z1; *userDataOut = *userData1;
     }
-    //debug
-    static int yoyo = 0;
-    if(yoyo < 8 && (*r0 != 0 || *g0 != 0 || *b0 != 0)) {
-      std::cout << (yoyo++) << " composite r,g,b,a,z " << *r0 << " " << *g0 << " " << *b0 << " " << *a0 << " " << *z0 << std::endl;
-    }
     
     r0 += strideR0[0].offset / sizeof(*r0);
     g0 += strideG0[0].offset / sizeof(*g0);
@@ -1230,11 +1169,6 @@ void cxx_reduce(legion_runtime_t runtime_,
   assert(fields.size() == expectedNumFields);
   Domain leftIndexSpaceDomain = runtime->get_index_space_domain(ctx, leftImage->get_logical_region().get_index_space());
   Rect<3> leftBounds = leftIndexSpaceDomain.get_rect<3>();
-  
-  PhysicalRegion* rightImage = CObjectWrapper::unwrap(rightSubregion[0]);
-  Domain rightIndexSpaceDomain = runtime->get_index_space_domain(ctx, rightImage->get_logical_region().get_index_space());
-  Rect<3> rightBounds = rightIndexSpaceDomain.get_rect<3>();
-  std::cout << "cxx_reduce subregion bounds " << leftBounds << "   " << rightBounds << std::endl;
   
   float* leftR = NULL;
   float* leftG = NULL;
@@ -1389,12 +1323,6 @@ void cxx_saveImage(legion_runtime_t runtime_,
     
     for(unsigned y = (unsigned)bounds.lo.x[1]; y <= bounds.hi.x[1]; ++y) {
       for(unsigned x = (unsigned)bounds.lo.x[0]; x <= bounds.hi.x[0]; ++x) {
-        //debug
-        static int yoyo = 0;
-        if(yoyo < 8 && (*R != 0 || *G != 0 || *B != 0)) {
-          std::cout << (yoyo++) << " saveImage x,y R,G,B,A " << x << "," << y << " " << *R << " " << *G << " " << *B << " " << *A << std::endl;
-        }
-        //debug
         rgba[0] = *R;
         rgba[1] = *G;
         rgba[2] = *B;
@@ -1411,8 +1339,7 @@ void cxx_saveImage(legion_runtime_t runtime_,
     fragmentID++;
   }
   
-  write_ppm(imageFileName("./out/image", ".ppm", timeStep, bounds).c_str(), rgbaBuffer, width, height);
-  write_targa(imageFileName("./out/image", ".tga", timeStep, bounds).c_str(), rgbaBuffer, width, height);
+  write_ppm(imageFileName("./out/image", ".ppm", timeStep).c_str(), rgbaBuffer, width, height);
   
   free(rgbaBuffer);
 }

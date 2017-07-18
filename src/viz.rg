@@ -324,8 +324,8 @@ where
 do
   regentlib.c.printf("in local task Render\n")
 
-  for cell in cells do
-    regentlib.c.printf("cell %lf, %lf, %lf\n", cell.centerCoordinates[0], cell.centerCoordinates[1], cell.centerCoordinates[2])
+  for p in particles do
+    regentlib.c.printf("particle at %lf, %lf, %lf valid %d tracking %d\n", p.position[0], p.position[1], p.position[2], p.__valid, p.tracking)
   end
 
   cviz.cxx_render(__runtime(), __context(),
@@ -501,6 +501,8 @@ end
 
 exports.Reduce = rquote
 
+  __demand(__spmd) do
+
   -- tree level 0
   for tile in tiles do
     Reduce(0, 1, [partitionFragment0LeftChildLevel0][tile], [partitionFragment0RightChildLevel0][tile])
@@ -524,6 +526,8 @@ exports.Reduce = rquote
       partitionFragment1ByDepth[zero])
 -- etc for more fragments
   end
+
+end -- demand spmd
 
 end
 

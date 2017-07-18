@@ -173,7 +173,7 @@ static void scaledTemperatureToColor(GLfloat temperature,
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
-  GLfloat scale = 1;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
+  GLfloat scale = 1.0e+13;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
   GLfloat base[] = {
     (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
   };
@@ -314,11 +314,11 @@ static void drawParticles(std::string particleFilePath,
 static void setCamera() {//TODO this is testcase dependent
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glOrtho(-10, 10, -5, 8, 0.0, 40.0);//TODO this may be testcase dependent
+  glOrtho(-2000, 2000, -5, 2000, 0.0, 4000.0);//TODO this may be testcase dependent
   
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  gluLookAt(/*eye*/10, 10, 5, /*at*/3.0, 3.0, 0.0, /*up*/0.0, 0.0, 1.0);
+  gluLookAt(/*eye*/2000, 2000, 2000, /*at*/1000.0, 1000.0, 500.0, /*up*/0.0, 0.0, 1.0);
 }
 
 
@@ -380,7 +380,7 @@ void render_image(int width,
   GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
   GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
   GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-  GLfloat light_position[] = { 300.0, 300.0, 1000.0, 1.0 };
+  GLfloat light_position[] = { 1000.0, 1000.0, 3000.0, 1.0 };
   //  GLfloat red_mat[]   = { 1.0, 0.2, 0.2, 1.0 };
   //  GLfloat green_mat[] = { 0.2, 1.0, 0.2, 0.5 };
   //  GLfloat blue_mat[]  = { 0.2, 0.2, 1.0, 1.0 };

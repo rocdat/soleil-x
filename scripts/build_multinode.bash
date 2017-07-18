@@ -23,7 +23,7 @@ USE_HDF=0 DEBUG=0 SAVEOBJ=1 OBJNAME=soleil.exec \
 	-i ${TESTCASE} \
 	-fparallelize 1 \
 	-fparallelize-dop 2,2,1 \
-#	-fflow-spmd 1 \
+	-fflow-spmd 1 \
 #-fflow-spmd-shardsize 1
 
 echo start ${START}

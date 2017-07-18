@@ -43,7 +43,7 @@ using namespace LegionRuntime::Accessor;
 static int volatile timeStep = 0;//to do pass this in
 const int NUM_NODES = 4;//TODO eliminate this when timeStep is passed in
 const int trackedParticlesPerNode = 128;
-static const bool writeFiles = true;//write out text files with data
+static const bool writeFiles = false;//write out text files with data
 
 
 #ifdef STANDALONE

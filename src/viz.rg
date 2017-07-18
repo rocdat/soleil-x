@@ -324,9 +324,13 @@ where
 do
   regentlib.c.printf("in local task Render\n")
 
+  var numValid = 0
   for p in particles do
-    regentlib.c.printf("particle at %lf, %lf, %lf valid %d tracking %d\n", p.position[0], p.position[1], p.position[2], p.__valid, p.tracking)
+    if p.__valid then
+      numValid = numValid + 1
+    end
   end
+  regentlib.c.printf("number of valid particles = %d\n", numValid)
 
   cviz.cxx_render(__runtime(), __context(),
     __physical(cells), __fields(cells),

@@ -872,9 +872,6 @@ static void writeRenderedPixelsToImageFragments(GLfloat* rgba,
       pixelCounter++;
     }
   }
-  
-  std::cout << "copied " << pixelCounter << " rendered pixels to image fragment" << std::endl;
-  
 }
 
 
@@ -899,8 +896,6 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
   int fragmentHeight = (int)(bounds.hi.x[1] - bounds.lo.x[1]) + 1;
   assert(fragmentHeight > 0);
   int numFragmentsPerImage = height / fragmentHeight;
-  
-  std::cout << "numFragsPerImage = " << numFragmentsPerImage << " fragHeight " << fragmentHeight << std::endl;//debug
   
   for(int i = 0; i < numFragmentsPerImage; ++i) {
     GLfloat* rgba = rgbaBuffer + i * fragmentHeight * width * 4;
@@ -1328,8 +1323,6 @@ void cxx_saveImage(legion_runtime_t runtime_,
     Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, fragment->get_logical_region().get_index_space());
     Rect<3> bounds = indexSpaceDomain.get_rect<3>();
     
-    std::cout << "copying from fragment " << bounds << std::endl;
-    
     for(unsigned y = (unsigned)bounds.lo.x[1]; y <= bounds.hi.x[1]; ++y) {
       for(unsigned x = (unsigned)bounds.lo.x[0]; x <= bounds.hi.x[0]; ++x) {
         rgba[0] = *R;
@@ -1346,7 +1339,6 @@ void cxx_saveImage(legion_runtime_t runtime_,
       row++;
     }
     
-    std::cout << "copied " << pixelCount << " pixels from image fragments to float buffer to ppm" << std::endl;
     fragmentID++;
   }
   

@@ -1862,6 +1862,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		41194F7F1F1DD2D1007DA5E4 /* taylor_green_vortex_256_256_256_modified.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = taylor_green_vortex_256_256_256_modified.lua; sourceTree = "<group>"; };
 		4127A7111F169C9D009A1F6A /* tree_reduction_lr.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = tree_reduction_lr.rg; path = ../tree_reduction_lr.rg; sourceTree = "<group>"; };
 		4127A7121F184D7D009A1F6A /* simple_reduction.rg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = simple_reduction.rg; path = ../simple_reduction.rg; sourceTree = "<group>"; };
 		4127A7141F1A8F86009A1F6A /* build_all.bash */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = build_all.bash; sourceTree = "<group>"; };
@@ -7442,6 +7443,7 @@
 		412C67701F14733F00962655 /* taylor_with_smaller_particles */ = {
 			isa = PBXGroup;
 			children = (
+				41194F7F1F1DD2D1007DA5E4 /* taylor_green_vortex_256_256_256_modified.lua */,
 				412C67711F14733F00962655 /* taylor_green_vortex_1024_1024_1024.lua */,
 				412C67721F14733F00962655 /* taylor_green_vortex_1024_1024_512.lua */,
 				412C67731F14733F00962655 /* taylor_green_vortex_1024_512_512.lua */,

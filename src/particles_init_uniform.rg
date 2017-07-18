@@ -58,6 +58,9 @@ where
   reads writes(particles),
   reads(cells.{velocity, centerCoordinates})
 do
+
+  regentlib.c.printf("particlesPerTask %d config.num %d NUM_PRIM_PARTS %d\n", particlesPerTask, config.num, NUM_PRIM_PARTS)
+
   var pBase = 0
   for p in particles do
     pBase = __raw(p).value

@@ -490,13 +490,15 @@ end
 
 
 
-exports.Render = rquote
-  for tile in tiles do
-    Render(p_cells[tile], p_particles[tile],
-      [partitionFragment0ByDepth][tile],
-      [partitionFragment1ByDepth][tile]
-    )
+exports.Render = function(dummy)
+  return rquote
+    for tile in tiles do
+      Render(p_cells[tile], p_particles[tile],
+        [partitionFragment0ByDepth][tile],
+        [partitionFragment1ByDepth][tile]
+      )
 -- etc for more fragments
+    end
   end
 end
 

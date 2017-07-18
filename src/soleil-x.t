@@ -3351,8 +3351,9 @@ function Visualize.Initialize()
 -- etc for more fragments
 end
 
+local dummy = 1234
 function Visualize.Render()
-  M.INLINE(viz.Render)
+  M.INLINE(viz.Render(dummy))
 end
 
 function Visualize.Reduce()

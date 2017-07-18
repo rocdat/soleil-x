@@ -114,7 +114,7 @@ write_targa(const char *filename, const GLfloat *rgbaBuffer, int width, int heig
         //debug
         static int yoyo = 0;
         if(yoyo < 8 && (R != 0 || G != 0 || B != 0)) {
-          std::cout << (yoyo++) << " targa x,y R,G,B " << x << "," << y << " " << (int)R << " " << (int)G << " " << (int)B << std::endl;
+          std::cout << (yoyo++) << " targa x,y R,G,B " << (x / 3) << "," << y << " " << (int)R << " " << (int)G << " " << (int)B << std::endl;
         }
       }
       fwrite(buffer, 3 * sizeof(GLubyte), width, f);
@@ -831,12 +831,8 @@ static std::string dataFileName(std::string table, int timeStep, Rect<3> bounds)
 
 
 
-static std::string imageFileName(std::string table, int timeStep, Rect<3> bounds) {
-#ifdef IMAGE_FORMAT_TGA
-  return fileName(table, ".tga", timeStep, bounds);
-#else
-  return fileName(table, ".ppm", timeStep, bounds);
-#endif
+static std::string imageFileName(std::string table, std::string ext, int timeStep, Rect<3> bounds) {
+  return fileName(table, ext, timeStep, bounds);
 }
 
 
@@ -1106,8 +1102,8 @@ void cxx_render(legion_runtime_t runtime_,
   ////////////////////
   
   if(writeFiles) {
-    write_ppm(imageFileName("./out/image", timeStep, bounds).c_str(), rgbaBuffer, width, height);
-    std::string depthFileName = imageFileName("./out/depth", timeStep, bounds);
+    write_ppm(imageFileName("./out/image", ".ppm", timeStep, bounds).c_str(), rgbaBuffer, width, height);
+    std::string depthFileName = imageFileName("./out/depth", ".zzz", timeStep, bounds);
     FILE* depthFile = fopen(depthFileName.c_str(), "w");
     assert(depthFile != NULL);
     fprintf(depthFile, "%d %d\n", width, height);
@@ -1415,11 +1411,8 @@ void cxx_saveImage(legion_runtime_t runtime_,
     fragmentID++;
   }
   
-  static unsigned fileSerialID = 0;
-  char buffer[256];
-  sprintf(buffer, "./out/image.%05d.tga", fileSerialID++);
-//  write_ppm(buffer, rgbaBuffer, width, height);
-  write_targa(buffer, rgbaBuffer, width, height);
+  write_ppm(imageFileName("./out/image", ".ppm", timeStep, bounds).c_str(), rgbaBuffer, width, height);
+  write_targa(imageFileName("./out/image", ".tga", timeStep, bounds).c_str(), rgbaBuffer, width, height);
   
   free(rgbaBuffer);
 }

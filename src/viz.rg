@@ -48,6 +48,8 @@ end
 -- Module parameters
 -------------------------------------------------------------------------------
 
+-- CODEGEN: local_module_declarations
+
 return function(cellsRel, particlesRel, xnum, ynum, znum, gridOrigin, gridWidth)
 
 local p_cells   = cellsRel:primPartSymbol()

@@ -26,6 +26,11 @@ then
   #TESTCASE=testcase.lua
 fi
 
+MESH=$4
+if [[ "$MESH" == "" ]]
+then
+  MESH=2x2x1
+fi
 
 echo === Build ${NUM_FRAGMENTS} fragments, ${NUM_TREE_LEVELS} tree levels, test case ${TESTCASE} ===
 
@@ -52,7 +57,7 @@ USE_HDF=0 DEBUG=0 SAVEOBJ=1 OBJNAME=${EXEC} \
 	$LISZT_PATH/liszt-legion.sh $SOLEIL_PATH/src/tmp_src/soleil-x.t \
 	-i ${TESTCASE} \
 	-fparallelize 1 \
-	-fparallelize-dop 2,2,1 \
+-fparallelize-dop ${MESH} \
 #	-fflow-spmd 1 \
 #-fflow-spmd-shardsize 1
 

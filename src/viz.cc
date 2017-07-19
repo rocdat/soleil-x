@@ -231,6 +231,7 @@ static void drawParticles(bool* __validBase,
   IndexIterator trackingIterator(runtime, ctx, trackingIS);
   
   numTracking = 0;
+  int numParticles = 0;
   while(__validIterator.has_next()) {
     bool valid = *NEXT(__valid);
     FieldData* p = NEXT3(position);
@@ -242,7 +243,9 @@ static void drawParticles(bool* __validBase,
       drawParticle(qobj, pos, density, particleTemperature);
       numTracking++;
     }
+    numParticles++;
   }
+  std::cout << "particles " << numParticles << " tracking " << numTracking << std::endl;
 }
 
 
@@ -1037,6 +1040,7 @@ void cxx_render(legion_runtime_t runtime_,
   writeRenderedPixelsToImageFragments(rgbaBuffer, depthBuffer, runtime, ctx,
                                       imageFragment, imageFragment_fields, width, height);
   
+
 #endif
   
   
@@ -1226,7 +1230,6 @@ void cxx_saveImage(legion_runtime_t runtime_,
 {
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
   
-  
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   Context ctx = CObjectWrapper::unwrap(ctx_)->context();
   
@@ -1235,11 +1238,11 @@ void cxx_saveImage(legion_runtime_t runtime_,
   fragment->get_fields(fields);
   const int expectedNumFields = 6;
   assert(fields.size() == expectedNumFields);
-  
+ 
   size_t numElements = width * height * expectedNumFields;
   GLfloat* rgbaBuffer = (GLfloat*)calloc(numElements, sizeof(GLfloat));
   GLfloat* rgba = rgbaBuffer;
-  
+
   float* R = NULL;
   float* G = NULL;
   float* B = NULL;
@@ -1281,7 +1284,6 @@ void cxx_saveImage(legion_runtime_t runtime_,
         break;
       }
     }
-    
     int pixelCount = 0;
     Domain indexSpaceDomain = runtime->get_index_space_domain(ctx, fragment->get_logical_region().get_index_space());
     Rect<3> bounds = indexSpaceDomain.get_rect<3>();

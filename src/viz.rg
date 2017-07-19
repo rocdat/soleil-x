@@ -63,6 +63,7 @@ local fragmentWidth = width
 local fragmentHeight = (height / numFragments)
 local zero = terralib.constant(`int3d { __ptr = regentlib.__int3d { 0, 0, 0 } })
 local one = terralib.constant(`int3d { __ptr = regentlib.__int3d { 1, 1, 1 } })
+local timeStep = 0
 
 
 -- CODEGEN: local_imageFragmentX
@@ -321,10 +322,11 @@ exports.Reduce = function(timeStepNumber)
 
       -- save result to disk
       for tile in tiles do
-        SaveImage(tile, 0, -- timeStepNumber,
+        SaveImage(tile, timeStep,
 -- CODEGEN: partitionFragmentXByDepth_argList
         )
       end
+      timeStep = timeStep + 1
 
     end -- demand spmd
   end

@@ -106,12 +106,23 @@ def generateCode(keyword, numFragments, numTreeLevels):
 #    legion_physical_region_t *imageFragment1,
 #      legion_field_id_t *imageFragment1_fields,
 
+  if(keyword == 'local_module_declarations'):
+    print 'local indices'
+    print 'local timeStep'
+    for i in range(numFragments):
+      print 'local imageFragment' + str(i)
+      print 'local partitionFragment' + str(i) + 'ByDepth'
+      for j in range(numTreeLevels):
+        print 'local partitionFragment' + str(i) + 'LeftRightLevel' + str(j)
+        print 'local partitionFragment' + str(i) + 'LeftChildLevel' + str(j)
+        print 'local partitionFragment' + str(i) + 'RightChildLevel' + str(j)
+
 
   if(keyword == 'local_imageFragmentX'):
-    print 'local indices = regentlib.newsymbol("indices")'
-    print 'local timeStep = regentlib.newsymbol("timeStep")'
+    print 'indices = regentlib.newsymbol("indices")'
+    print 'timeStep = regentlib.newsymbol("timeStep")'
     for i in range(numFragments):
-      print 'local imageFragment' + str(i) + ' = regentlib.newsymbol("imageFragment' + str(i) + '")'
+      print 'imageFragment' + str(i) + ' = regentlib.newsymbol("imageFragment' + str(i) + '")'
 
 #viz.rg:-- CODEGEN: local_imageFragmentX
 #local indices = regentlib.newsymbol("indices")
@@ -120,7 +131,7 @@ def generateCode(keyword, numFragments, numTreeLevels):
 
   if(keyword == 'local_partitionFragmentXByDepth'):
     for i in range(numFragments):
-      print 'local partitionFragment' + str(i) + 'ByDepth = regentlib.newsymbol("partitionFragment' + str(i) + 'ByDepth")'
+      print 'partitionFragment' + str(i) + 'ByDepth = regentlib.newsymbol("partitionFragment' + str(i) + 'ByDepth")'
     
     
     #viz.rg:-- CODEGEN: local_partitionFragmentXByDepth
@@ -131,9 +142,9 @@ def generateCode(keyword, numFragments, numTreeLevels):
     for i in range(numFragments):
       print '-- partitions for fragment ' + str(i) + ''
       for j in range(numTreeLevels):
-        print 'local partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '")'
-        print 'local partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '")'
-        print 'local partitionFragment' + str(i) + 'RightChildLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '")'
+        print 'partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '")'
+        print 'partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '")'
+        print 'partitionFragment' + str(i) + 'RightChildLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '")'
 
   #viz.rg:-- CODEGEN: local_partitionFragmentXLeftRightChildren
   #repeat this for num fragments

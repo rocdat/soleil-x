@@ -17,7 +17,6 @@ fi
 echo === Generate sources for $NUM_FRAGMENTS fragments, $NUM_TREE_LEVELS tree levels
 
 DIR=tmp_src
-rm -rf ${DIR}
 mkdir -p ${DIR}
 
 for SOURCE in soleil-x.t viz.rg viz.h viz.cc 

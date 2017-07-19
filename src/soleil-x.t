@@ -3350,8 +3350,6 @@ function Visualize.Initialize()
 end
 
 function Visualize.Render(timeStepNumber)
-  print(timeStepNumber)
-  for k, v in pairs(timeStepNumber) do print(k, v) end
   M.INLINE(viz.Render(timeStepNumber))
 end
 

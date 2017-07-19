@@ -107,22 +107,24 @@ def generateCode(keyword, numFragments, numTreeLevels):
 #      legion_field_id_t *imageFragment1_fields,
 
   if(keyword == 'local_module_declarations'):
-    print 'local indices'
-    print 'local timeStep'
-    for i in range(numFragments):
-      print 'local imageFragment' + str(i)
-      print 'local partitionFragment' + str(i) + 'ByDepth'
-      for j in range(numTreeLevels):
-        print 'local partitionFragment' + str(i) + 'LeftRightLevel' + str(j)
-        print 'local partitionFragment' + str(i) + 'LeftChildLevel' + str(j)
-        print 'local partitionFragment' + str(i) + 'RightChildLevel' + str(j)
+    print 'local my = {}'
+    
+#    print 'local my.indices'
+#    print 'local my.timeStep'
+#    for i in range(numFragments):
+#      print 'local my.imageFragment' + str(i)
+#      print 'local my.partitionFragment' + str(i) + 'ByDepth'
+#      for j in range(numTreeLevels):
+#        print 'local my.partitionFragment' + str(i) + 'LeftRightLevel' + str(j)
+#        print 'local my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j)
+#        print 'local my.partitionFragment' + str(i) + 'RightChildLevel' + str(j)
 
 
   if(keyword == 'local_imageFragmentX'):
-    print 'indices = regentlib.newsymbol("indices")'
-    print 'timeStep = regentlib.newsymbol("timeStep")'
+    print 'my.indices = regentlib.newsymbol("indices")'
+    print 'my.timeStep = regentlib.newsymbol("timeStep")'
     for i in range(numFragments):
-      print 'imageFragment' + str(i) + ' = regentlib.newsymbol("imageFragment' + str(i) + '")'
+      print 'my.imageFragment' + str(i) + ' = regentlib.newsymbol("imageFragment' + str(i) + '")'
 
 #viz.rg:-- CODEGEN: local_imageFragmentX
 #local indices = regentlib.newsymbol("indices")
@@ -131,7 +133,7 @@ def generateCode(keyword, numFragments, numTreeLevels):
 
   if(keyword == 'local_partitionFragmentXByDepth'):
     for i in range(numFragments):
-      print 'partitionFragment' + str(i) + 'ByDepth = regentlib.newsymbol("partitionFragment' + str(i) + 'ByDepth")'
+      print 'my.partitionFragment' + str(i) + 'ByDepth = regentlib.newsymbol("partitionFragment' + str(i) + 'ByDepth")'
     
     
     #viz.rg:-- CODEGEN: local_partitionFragmentXByDepth
@@ -142,9 +144,9 @@ def generateCode(keyword, numFragments, numTreeLevels):
     for i in range(numFragments):
       print '-- partitions for fragment ' + str(i) + ''
       for j in range(numTreeLevels):
-        print 'partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '")'
-        print 'partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '")'
-        print 'partitionFragment' + str(i) + 'RightChildLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '")'
+        print 'my.partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '")'
+        print 'my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '")'
+        print 'my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + ' = regentlib.newsymbol("partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '")'
 
   #viz.rg:-- CODEGEN: local_partitionFragmentXLeftRightChildren
   #repeat this for num fragments
@@ -267,15 +269,15 @@ def generateCode(keyword, numFragments, numTreeLevels):
       print '\nexports.InitializeFragment' + str(i) + ' = rquote\n'
       if(i == 0):
         print '  var numLayers = tiles.volume'
-        print '  var [timeStep] = 0'
-        print '  var [indices] = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })'
-      print '  var [imageFragment' + str(i) + '] = region([indices], PixelFields)'
-      print '  var [partitionFragment' + str(i) + 'ByDepth] = DepthPartition([imageFragment' + str(i) + '], fragmentWidth, fragmentHeight, tiles)'
+        print '  var [my.timeStep] = 0'
+        print '  var [my.indices] = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })'
+      print '  var [my.imageFragment' + str(i) + '] = region([my.indices], PixelFields)'
+      print '  var [my.partitionFragment' + str(i) + 'ByDepth] = DepthPartition([my.imageFragment' + str(i) + '], fragmentWidth, fragmentHeight, tiles)'
       pow2Level = 1
       for j in range(numTreeLevels):
-        print '  var [partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '] = SplitLeftRight([imageFragment' + str(i) + '], ' + str(i) + ', ' + str(pow2Level) + ', tiles)'
-        print '  var [partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '] = ChildPartition([partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '][zero], ' + str(j) + ', ' + str(pow2Level) + ', 0, tiles)'
-        print '  var [partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '] = ChildPartition([partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '][one], ' + str(j) + ', ' + str(pow2Level) + ', ' + str(pow2Level) + ', tiles)'
+        print '  var [my.partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '] = SplitLeftRight([my.imageFragment' + str(i) + '], ' + str(i) + ', ' + str(pow2Level) + ', tiles)'
+        print '  var [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '] = ChildPartition([my.partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '][zero], ' + str(j) + ', ' + str(pow2Level) + ', 0, tiles)'
+        print '  var [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '] = ChildPartition([my.partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '][one], ' + str(j) + ', ' + str(pow2Level) + ', ' + str(pow2Level) + ', tiles)'
         pow2Level = pow2Level * 2
       print '\nend'
 
@@ -328,9 +330,9 @@ def generateCode(keyword, numFragments, numTreeLevels):
   if(keyword == 'partitionFragmentXByDepth_argList'):
     for i in range(numFragments):
       if(i < numFragments - 1):
-        print '        [partitionFragment' + str(i) + 'ByDepth][tile],'
+        print '        [my.partitionFragment' + str(i) + 'ByDepth][tile],'
       else:
-        print '        [partitionFragment' + str(i) + 'ByDepth][tile]'
+        print '        [my.partitionFragment' + str(i) + 'ByDepth][tile]'
 
 
   #viz.rg:-- CODEGEN: partitionFragmentXByDepth_argList
@@ -343,7 +345,7 @@ def generateCode(keyword, numFragments, numTreeLevels):
       print '\n-- tree level ' + str(j) + '\n'
       print '      for tile in tiles do'
       for i in range(numFragments):
-        print '        Reduce(' + str(j) + ', ' + str(pow2Level) + ', [partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile], [partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '][tile])'
+        print '        Reduce(' + str(j) + ', ' + str(pow2Level) + ', [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile], [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '][tile])'
       print '      end'
       pow2Level = pow2Level * 2
 

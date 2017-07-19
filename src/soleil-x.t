@@ -3354,6 +3354,12 @@ function Visualize.Render(timeStepNumber)
 end
 
 function Visualize.Reduce(timeStepNumber)
+
+  -- debugging
+  print(timeStepNumber)
+  for k, v in pairs(timeStepNumber) do print(k, v) end
+  -- debugging
+
   M.INLINE(viz.Reduce(timeStepNumber))
 end
 

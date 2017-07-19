@@ -63,7 +63,6 @@ local fragmentWidth = width
 local fragmentHeight = (height / numFragments)
 local zero = terralib.constant(`int3d { __ptr = regentlib.__int3d { 0, 0, 0 } })
 local one = terralib.constant(`int3d { __ptr = regentlib.__int3d { 1, 1, 1 } })
-local timeStep = 0
 
 
 -- CODEGEN: local_imageFragmentX
@@ -214,7 +213,7 @@ end
 
 local task Render(cells : cellsType,
   particles : particlesType,
-  timeStepNumber : int,
+  timeStep : int,
 -- CODEGEN: imageFragmentX_arglist
   )
 where
@@ -236,7 +235,7 @@ do
     __physical(cells), __fields(cells),
     __physical(particles), __fields(particles),
 -- CODEGEN: __physical_imageFragmentX__fieldsComma
-    xnum, ynum, znum, timeStepNumber)
+    xnum, ynum, znum, timeStep)
 end
 
 
@@ -269,7 +268,7 @@ end
 --
 
 local task SaveImage(tile : int3d,
-  timeStepNumber : int,
+  timeStep : int,
 -- CODEGEN: imageFragmentX_arglist
 )
 where
@@ -277,7 +276,7 @@ where
 do
   if tile.z == 0 and tile.y == 0 and tile.x == 0 then
     cviz.cxx_saveImage(__runtime(), __context(),
-      width, height, timeStepNumber,
+      width, height, timeStep,
 -- CODEGEN: __physical_imageFragmentX__fields
     )
   end
@@ -322,11 +321,11 @@ exports.Reduce = function(timeStepNumber)
 
       -- save result to disk
       for tile in tiles do
-        SaveImage(tile, timeStep,
+        SaveImage(tile, [timeStep],
 -- CODEGEN: partitionFragmentXByDepth_argList
         )
       end
-      timeStep = timeStep + 1
+      [timeStep] = [timeStep] + 1
 
     end -- demand spmd
   end

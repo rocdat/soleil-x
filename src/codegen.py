@@ -109,6 +109,7 @@ def generateCode(keyword, numFragments, numTreeLevels):
 
   if(keyword == 'local_imageFragmentX'):
     print 'local indices = regentlib.newsymbol("indices")'
+    print 'local timeStep = regentlib.newsymbol("timeStep")'
     for i in range(numFragments):
       print 'local imageFragment' + str(i) + ' = regentlib.newsymbol("imageFragment' + str(i) + '")'
 
@@ -255,6 +256,7 @@ def generateCode(keyword, numFragments, numTreeLevels):
       print '\nexports.InitializeFragment' + str(i) + ' = rquote\n'
       if(i == 0):
         print '  var numLayers = tiles.volume'
+        print '  var [timeStep] = 0'
         print '  var [indices] = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })'
       print '  var [imageFragment' + str(i) + '] = region([indices], PixelFields)'
       print '  var [partitionFragment' + str(i) + 'ByDepth] = DepthPartition([imageFragment' + str(i) + '], fragmentWidth, fragmentHeight, tiles)'

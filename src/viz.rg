@@ -303,7 +303,7 @@ local exports = {}
 exports.Render = function(timeStepNumber)
   return rquote
     for tile in tiles do
-      Render(p_cells[tile], p_particles[tile], 0, -- timeStepNumber,
+      Render(p_cells[tile], p_particles[tile], [my.timeStep],
 -- CODEGEN: partitionFragmentXByDepth_argList
       )
     end
@@ -323,11 +323,11 @@ exports.Reduce = function(timeStepNumber)
 
       -- save result to disk
       for tile in tiles do
-        SaveImage(tile, [timeStep],
+        SaveImage(tile, [my.timeStep],
 -- CODEGEN: partitionFragmentXByDepth_argList
         )
       end
-      [timeStep] = [timeStep] + 1
+      [my.timeStep] = [my.timeStep] + 1
 
     end -- demand spmd
   end

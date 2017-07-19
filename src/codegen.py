@@ -254,16 +254,17 @@ def generateCode(keyword, numFragments, numTreeLevels):
     for i in range(numFragments):
       print '\nexports.InitializeFragment' + str(i) + ' = rquote\n'
       if(i == 0):
+        print '  var numLayers = tiles.volume'
         print '  var [indices] = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })'
       print '  var [imageFragment' + str(i) + '] = region([indices], PixelFields)'
       print '  var [partitionFragment' + str(i) + 'ByDepth] = DepthPartition([imageFragment' + str(i) + '], fragmentWidth, fragmentHeight, tiles)'
       pow2Level = 1
       for j in range(numTreeLevels):
-        print '  var [partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '] = SplitLeftRight([imageFragment' + str(i) + '], ' + str(i) + ', ' + str(pow2Level) + ')'
+        print '  var [partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '] = SplitLeftRight([imageFragment' + str(i) + '], ' + str(i) + ', ' + str(pow2Level) + ', tiles)'
         print '  var [partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '] = ChildPartition([partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '][zero], ' + str(j) + ', ' + str(pow2Level) + ', 0, tiles)'
         print '  var [partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '] = ChildPartition([partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '][one], ' + str(j) + ', ' + str(pow2Level) + ', ' + str(pow2Level) + ', tiles)'
         pow2Level = pow2Level * 2
-    print '\nend'
+      print '\nend'
 
 
 

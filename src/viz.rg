@@ -58,15 +58,9 @@ local tiles = A.primColors()
 
 local width = 3840
 local height = 2160
-local numLayers = tiles.volume()
-local fragmentsX = 1
-local fragmentsY = 2
-local fragmentsZ = numLayers
-local fragmentWidth = (width / fragmentsX)
-local fragmentHeight = (height / fragmentsY)
-local numTilesX = tiles.hi.x - tiles.lo.x + 1
-local numTilesY = tiles.hi.y - tiles.lo.y + 1
-local numTilesZ = tiles.hi.z - tiles.lo.z + 1
+local numFragments = 2
+local fragmentWidth = width 
+local fragmentHeight = (height / numFragments)
 local zero = terralib.constant(`int3d { __ptr = regentlib.__int3d { 0, 0, 0 } })
 local one = terralib.constant(`int3d { __ptr = regentlib.__int3d { 1, 1, 1 } })
 
@@ -102,12 +96,14 @@ local fspace PixelFields {
 
 local task SplitLeftRight(r : region(ispace(int3d), PixelFields),
   level : int,
-  pow2Level : int)
+  pow2Level : int,
+  tiles : ispace(int3d))
 
   var colors = ispace(int3d, int3d{ 2, 2, 2 }) -- 0 = left, 1 = right
   var coloring = regentlib.c.legion_multi_domain_point_coloring_create()
+  var numNodes = tiles.volume
 
-  for i = 0, numLayers do
+  for i = 0, numNodes do
     var rect = rect3d {
       lo = { 0, 0, i }, hi = { fragmentWidth - 1, fragmentHeight - 1, i }
     }
@@ -152,11 +148,14 @@ local task ChildPartition(r : region(ispace(int3d), PixelFields),
   tiles : ispace(int3d))
 
   var coloring = regentlib.c.legion_domain_point_coloring_create()
+  var numNodes = tiles.volume
+  var numTilesX = tiles.bounds.hi.x - tiles.bounds.lo.x + 1
+  var numTilesY = tiles.bounds.hi.y - tiles.bounds.lo.y + 1
 
   for tile in tiles do
     var rect = rect3d{ lo = one, hi = zero }
     var z = tile.x + (tile.y * numTilesX) + (tile.z * numTilesX * numTilesY)
-    if z < numLayers / (2 * pow2Level) then
+    if z < numNodes / (2 * pow2Level) then
       var layer = 2 * pow2Level * z + offset
       rect = rect3d{
         lo = int3d{ 0, 0, layer },
@@ -187,6 +186,9 @@ local task DepthPartition(r : region(ispace(int3d), PixelFields),
   tiles : ispace(int3d))
 
   var coloring = regentlib.c.legion_domain_point_coloring_create()
+  var numTilesX = 2
+  var numTilesY = 2
+  var numTilesZ = 1
 
   for tile in tiles do
     var z = tile.x + (tile.y * numTilesX) + (tile.z * numTilesX * numTilesY)
@@ -299,7 +301,7 @@ local exports = {}
 exports.Render = function(timeStepNumber)
   return rquote
     for tile in tiles do
-      Render(p_cells[tile], p_particles[tile], timeStepNumber,
+      Render(p_cells[tile], p_particles[tile], 0, -- timeStepNumber,
 -- CODEGEN: partitionFragmentXByDepth_argList
       )
     end
@@ -319,8 +321,9 @@ exports.Reduce = function(timeStepNumber)
 
       -- save result to disk
       for tile in tiles do
-        SaveImage(tile, timeStepNumber,
+        SaveImage(tile, 0, -- timeStepNumber,
 -- CODEGEN: partitionFragmentXByDepth_argList
+        )
       end
 
     end -- demand spmd

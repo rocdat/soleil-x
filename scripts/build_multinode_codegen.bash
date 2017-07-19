@@ -3,30 +3,47 @@
 if [[ "`pwd`" != "$SOLEIL_PATH/src" ]]
 then
   echo === Run this from $SOLEIL_PATH/src ===
+  exit -1
 fi 
 
-TESTCASE=$1
-if [[ "$1" == "" ]]
+NUM_FRAGMENTS=$1
+if [[ "$NUM_FRAGMENTS" == "" ]]
 then
-  TESTCASE=${SOLEIL_PATH}/testcases/taylor_with_smaller_particles/taylor_green_vortex_256_256_256_modified.lua
+  NUM_FRAGMENTS=2
+fi
+
+NUM_TREE_LEVELS=$2
+if [[ "$NUM_TREE_LEVELS" == "" ]]
+then
+  NUM_TREE_LEVELS=2
+fi
+
+TESTCASE=$3
+if [[ "$TESTCASE" == "" ]]
+then
+  TESTCASE=${SOLEIL_PATH}/testcases/taylor_with_smaller_particles/taylor_green_vortex_256_256_256.lua
   #cat ${SOLEIL_PATH}/testcases/taylor_with_smaller_particles/taylor_green_vortex_256_256_256_modified.lua| sed -e "s:max_iter =.*:max_iter = 25,:" > testcase.lua
   #TESTCASE=testcase.lua
 fi
 
-echo === Build test case ${TESTCASE} ===
+
+echo === Build ${NUM_FRAGMENTS} fragments, ${NUM_TREE_LEVELS} tree levels, test case ${TESTCASE} ===
 
 START=`date`
 echo start ${START}
 cd $SOLEIL_PATH/src 
 git checkout soleil_viz 
 
-EXEC=soleil_2_2.exec
+EXEC=soleil_${NUM_FRAGMENTS}_${NUM_TREE_LEVELS}.exec
 
-source $SOLEIL_PATH/scripts/codegen.bash 2 2
+source $SOLEIL_PATH/scripts/codegen.bash ${NUM_FRAGMENTS} ${NUM_TREE_LEVELS}
 
 for f in algebraic.rg particles_init_uniform.rg soleil_mapper.*
 do
-  ln $f tmp_src/$f
+  if [[ ! -e tmp_src/$f ]]
+  then
+    ln $f tmp_src/$f
+  fi
 done
 
 cd tmp_src

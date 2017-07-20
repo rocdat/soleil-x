@@ -20,8 +20,8 @@ $SOLEIL_PATH/scripts/build_multinode_codegen.bash $NUM_FRAGMENTS $NUM_TREE_LEVEL
 JOBID=Job_$NODES
 mkdir -p ${OUTDIR}/${JOBID}
 EXEC=soleil_${NUM_FRAGMENTS}_${NUM_TREE_LEVELS}.exec
-cp ./${EXEC} ${OUTDIR}/${JOBID}
-cp ./*.so ${OUTDIR}/${JOBID}
+mv ./${EXEC} ${OUTDIR}/${JOBID}
+mv ./*.so ${OUTDIR}/${JOBID}
 cat $SOLEIL_PATH/scripts/piz_daint_multinode_job.bash | \
   sed -e "s/TIME_LIMIT/${TIME_LIMIT}/" | \
   sed -e "s/NODES/${NODES}/" | \

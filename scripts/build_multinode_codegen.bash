@@ -18,9 +18,11 @@ fi
 TESTCASE=$3
 if [[ "$TESTCASE" == "" ]]
 then
-  #TESTCASE=${SOLEIL_PATH}/testcases/taylor_with_smaller_particles/taylor_green_vortex_256_256_256.lua
-  cat ${SOLEIL_PATH}/testcases/taylor_with_smaller_particles/taylor_green_vortex_256_256_256_modified.lua| sed -e "s:max_iter =.*:max_iter = 5,:" > testcase.lua
-  TESTCASE=testcase.lua
+  CASEDIR=taylor_with_smaller_particles
+  CASENAME=taylor_green_vortex_256_256_256.lua
+  CASE=${CASEDIR}/${CASENAME}
+  cat ${SOLEIL_PATH}/testcases/${CASE} | sed -e "s:max_iter =.*:max_iter = 3,:" > ${CASENAME}
+  TESTCASE=${CASENAME}
 fi
 MESH=$4
 if [[ "$MESH" == "" ]]

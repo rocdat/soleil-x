@@ -5,7 +5,6 @@ mkdir -p ${OUTDIR}
 
 # nodes mesh testcase numfragments numtreelevels
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 4 2,2,1 taylor_green_vortex_256_256_256.lua 4 2 00:10:00 ${OUTDIR}
-$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 4 2,2,1 taylor_green_vortex_256_256_256_modified.lua 4 2 00:10:00 ${OUTDIR}
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 8 4,2,1 taylor_green_vortex_512_256_256.lua 8 3 00:10:00 ${OUTDIR}
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 16 4,4,1 taylor_green_vortex_512_512_256.lua 16 4 00:10:00 ${OUTDIR}
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 32 4,4,2 taylor_green_vortex_512_512_512.lua 32 5 00:10:00 ${OUTDIR}

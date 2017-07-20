@@ -23,8 +23,9 @@ EXEC=soleil_${NUM_FRAGMENTS}_${NUM_TREE_LEVELS}.exec
 mv ./${EXEC} ${OUTDIR}/${JOBID}
 mv ./*.so ${OUTDIR}/${JOBID}
 cat $SOLEIL_PATH/scripts/piz_daint_multinode_job.bash | \
-  sed -e "s/TIME_LIMIT/${TIME_LIMIT}/" | \
-  sed -e "s/NODES/${NODES}/" | \
-  sed -e "s/JOBID/${JOBID}/" \
+  sed -e "s/TIME_LIMIT/${TIME_LIMIT}/g" | \
+  sed -e "s/NODES/${NODES}/g" | \
+  sed -e "s/JOBID/${JOBID}/g" \
+  sed -e "s/EXEC/${EXEC}/g" \
   > ${OUTDIR}/${JOBID}/${JOBID}_piz_daint.bash
 

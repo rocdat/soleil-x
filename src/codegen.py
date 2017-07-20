@@ -48,16 +48,14 @@ def generateCode(keyword, numFragments, numTreeLevels):
         print '    imageFragment' + str(i) + ','
       else:
         print '    imageFragment' + str(i)
-
-
     print '  };'
+
     print '  legion_field_id_t* imageFragment_fields[] = {'
     for i in range(numFragments):
       if(i < numFragments - 1):
         print '    imageFragment' + str(i) + '_fields,'
       else:
         print '    imageFragment' + str(i) + '_fields'
-
     print '  };'
 
 

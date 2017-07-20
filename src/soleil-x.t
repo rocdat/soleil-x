@@ -3385,6 +3385,7 @@ Visualize.Reduce(TimeIntegrator.timeStep:get())
 M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
               M.LT(TimeIntegrator.timeStep:get(), time_options.max_iter)),
         true)
+  M.PRINT("timeStep %d max_iter %d\n", TimeIntegrator.timeStep:get(), time_options.max_iter)
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
   Visualize.Render(TimeIntegrator.timeStep:get())

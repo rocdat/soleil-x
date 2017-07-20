@@ -24,5 +24,6 @@ tar xvf MesaLib-8.0.tar
 cd Mesa-8.0
 ./configure --enable-osmesa --disable-driglx-direct --disable-dri --with-gallium-drivers=swrast
 gmake
-ln -s $OSMESA_PATH/Mesa-8.0/lib/ $OSMESA_PATH/lib
+rm -f $OSMESA_PATH/lib
+ln -s $OSMESA_PATH/Mesa-8.0/lib $OSMESA_PATH/lib
 

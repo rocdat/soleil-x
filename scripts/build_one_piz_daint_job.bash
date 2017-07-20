@@ -8,9 +8,14 @@ NUM_TREE_LEVELS=$5
 TIME_LIMIT=$6
 OUTDIR=$7
 
+if [[ "$TESTCASE" == "" ]]
+then
+  TESTCASE=taylor_green_vortex_256_256_256.lua
+fi
+
 cd $SOLEIL_PATH/src
 
-CC=gcc CXX=g++ $SOLEIL_PATH/scripts/build_multinode_codegen.bash $NUM_FRAGMENTS $NUM_TREE_LEVELS $SOLEIL_PATH/testcases/taylor_with_smaller_particles/$TESTCASE $MESH
+$SOLEIL_PATH/scripts/build_multinode_codegen.bash $NUM_FRAGMENTS $NUM_TREE_LEVELS $SOLEIL_PATH/testcases/taylor_with_smaller_particles/$TESTCASE $MESH
 
 JOBID=Job_$NODES
 mkdir -p ${OUTDIR}/${JOBID}

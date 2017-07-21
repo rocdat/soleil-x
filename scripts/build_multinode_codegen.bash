@@ -57,7 +57,7 @@ COMPILE_COMMAND=\
 	-i testcase.lua \
 	-fparallelize 1 \
 	-fparallelize-dop ${MESH} \
--fflow 0 \ # without control replication
+-fflow 0 "
 #	-fflow-spmd 1 \
 #-fflow-spmd-shardsize 1
 echo $COMPILE_COMMAND

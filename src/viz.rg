@@ -109,9 +109,9 @@ local task SplitLeftRight(r : region(ispace(int3d), PixelFields),
     var rect = rect3d {
       lo = { 0, 0, i }, hi = { fragmentWidth - 1, fragmentHeight - 1, i }
     }
-    var color = 0
+    var color = int1d{ 0 }
     if (i / pow2Level) % 2 == 1 then
-      color = 1
+      color = int1d{ 1 }
     end
     regentlib.c.legion_multi_domain_point_coloring_color_domain(coloring, color, rect)
   end

@@ -22,21 +22,27 @@ then
   CASENAME=taylor_green_vortex_256_256_256.lua
   TESTCASE=${SOLEIL_PATH}/testcases/${CASEDIR}/${CASENAME}
 fi
-
-cat ${TESTCASE} | sed -e "s:max_iter =.*:max_iter = 3,:" > testcase.lua
 MESH=$4
 if [[ "$MESH" == "" ]]
 then
   MESH=2,2,1
 fi
+MAX_ITER=$5
+if [[ "$MAX_ITER" == "" ]]
+then
+  MAX_ITER=3
+fi
 
-echo === Build ${NUM_FRAGMENTS} fragments, ${NUM_TREE_LEVELS} tree levels, test case ${TESTCASE} ===
+
+echo === Build ${NUM_FRAGMENTS} fragments, ${NUM_TREE_LEVELS} tree levels, test case ${TESTCASE} MESH ${MESH} MAX_ITER ${MAX_ITER} ===
 
 START=`date`
 echo start ${START}
 cd $SOLEIL_PATH/src 
 git checkout soleil_viz 
 EXEC=soleil_${NUM_FRAGMENTS}_${NUM_TREE_LEVELS}.exec
+rm testcase.lua
+cat ${TESTCASE} | sed -e "s:max_iter =.*:max_iter = ${MAX_ITER},:" > testcase.lua
 
 GEN="viz.rg viz.h viz.cc soleil-x.t"
 git checkout -- $GEN

@@ -15,9 +15,9 @@ GASNET_BACKTRACE=1 LD_LIBRARY_PATH=.:$LEGION_PATH/bindings/terra/:/usr/lib/x86_6
 		-x LD_LIBRARY_PATH \
 		-x GASNET_BACKTRACE \
 	./tmp_src/soleil_2_2.exec \
-		-ll:cpu 4 \
+		-ll:cpu 8 \
 		-ll:util 1 \
 		-ll:dma 2 \
-		-ll:csize 50000 \
+		-ll:csize 100000 \
 		-lg:prof 4 \
 		-lg:prof_logfile soleil_prof_log

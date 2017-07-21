@@ -23,7 +23,7 @@ if [[ ! -d ${RUNDIR} ]]; then mkdir ${RUNDIR}; fi
 pushd ${RUNDIR}
 mkdir -p out
 
-srun -n NODES -N NODES --ntasks-per-node 1 --cpu_bind none /lib64/ld-linux-x86-64.so.2 $ROOT/PSAAP/soleil-x/src/piz_daint_jobs/JOBID/EXEC -ll:cpu 8 -ll:util 1 -ll:dma 2 -ll:csize 50000 -hl:sched -1 -level legion_prof=2,5 -lg:prof_logfile prof_%_logfile -hl:prof 1 | tee JOBID.log
+srun -n NODES -N NODES --ntasks-per-node 1 --cpu_bind none /lib64/ld-linux-x86-64.so.2 $ROOT/PSAAP/soleil-x/src/piz_daint_jobs/JOBID/EXEC -ll:cpu 8 -ll:util 1 -ll:dma 2 -ll:csize 50000 -hl:sched -1 -level legion_prof=2,5 -lg:prof_logfile prof_%_logfile -hl:prof 4 | tee JOBID.log
 
 popd
 

@@ -20,14 +20,14 @@ if [[ "$TESTCASE" == "" ]]
 then
   CASEDIR=taylor_with_smaller_particles
   CASENAME=taylor_green_vortex_256_256_256.lua
-  TESTCASE=${CASEDIR}/${CASENAME}
+  TESTCASE=${SOLEIL_PATH}/testcases/${CASEDIR}/${CASENAME}
 fi
 
 cat ${TESTCASE} | sed -e "s:max_iter =.*:max_iter = 3,:" > testcase.lua
 MESH=$4
 if [[ "$MESH" == "" ]]
 then
-  MESH=2x2x1
+  MESH=2,2,1
 fi
 
 echo === Build ${NUM_FRAGMENTS} fragments, ${NUM_TREE_LEVELS} tree levels, test case ${TESTCASE} ===
@@ -45,13 +45,16 @@ git checkout -- $GEN
 source $SOLEIL_PATH/scripts/codegen.bash ${NUM_FRAGMENTS} ${NUM_TREE_LEVELS}
 for f in $GEN ; do cp tmp_src/$f $f ; done
 
-CC=gcc CXX=g++ USE_HDF=0 DEBUG=0 SAVEOBJ=1 OBJNAME=${EXEC} \
+COMPILE_COMMAND=\
+"CC=gcc CXX=g++ USE_HDF=0 DEBUG=0 SAVEOBJ=1 OBJNAME=${EXEC} \
 	$LISZT_PATH/liszt-legion.sh $SOLEIL_PATH/src/soleil-x.t \
 	-i testcase.lua \
 	-fparallelize 1 \
-	-fparallelize-dop ${MESH} \
+	-fparallelize-dop ${MESH} "
 #	-fflow-spmd 1 \
 #-fflow-spmd-shardsize 1
+echo $COMPILE_COMMAND
+echo $COMPILE_COMMAND | /bin/bash
 
 git checkout -- $GEN
 

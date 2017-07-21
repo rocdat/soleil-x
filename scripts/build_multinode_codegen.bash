@@ -50,6 +50,7 @@ CC=gcc CXX=g++ USE_HDF=0 DEBUG=0 SAVEOBJ=1 OBJNAME=${EXEC} \
 	-i ${TESTCASE} \
 	-fparallelize 1 \
 	-fparallelize-dop ${MESH} \
+-fflow 0 \ # without control replication
 #	-fflow-spmd 1 \
 #-fflow-spmd-shardsize 1
 

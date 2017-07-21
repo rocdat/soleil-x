@@ -22,6 +22,8 @@ using namespace Legion::Mapping;
 
 static LegionRuntime::Logger::Category log_soleil("soleil");
 
+#define NUM_RENDER_PROCS 2
+
 class SoleilMapper : public DefaultMapper
 {
 public:
@@ -50,6 +52,10 @@ public:
                                      const LayoutConstraintSet &constraints,
                                      bool force_new_instances,
                                      bool meets_constraints);
+  virtual void slice_task(const MapperContext      ctx,
+                          const Task&              task,
+                          const SliceTaskInput&    input,
+                                SliceTaskOutput&   output);
   virtual void map_task(const MapperContext      ctx,
                         const Task&              task,
                         const MapTaskInput&      input,
@@ -62,6 +68,9 @@ public:
   virtual void map_must_epoch(const MapperContext           ctx,
                               const MapMustEpochInput&      input,
                                     MapMustEpochOutput&     output);
+
+  virtual bool default_policy_select_close_virtual(const MapperContext ctx,
+                                                   const Close &close);
 protected:
   bool soleil_create_custom_instances(MapperContext ctx,
                           Processor target, Memory target_memory,
@@ -87,6 +96,9 @@ private:
   std::map<Processor, Memory>& proc_regmems;
   std::map<Processor, Memory>& proc_fbmems;
   std::map<Processor, Memory>& proc_zcmems;
+
+  std::vector<TaskSlice> slice_cache_compute;
+  std::vector<TaskSlice> slice_cache_render;
 };
 
 //--------------------------------------------------------------------------
@@ -169,6 +181,87 @@ LogicalRegion SoleilMapper::default_policy_select_instance_region(
                              bool meets_constraints)
 {
   return req.region;
+}
+
+//--------------------------------------------------------------------------
+void SoleilMapper::slice_task(const MapperContext      ctx,
+                              const Task&              task,
+                              const SliceTaskInput&    input,
+                                    SliceTaskOutput&   output)
+//--------------------------------------------------------------------------
+{
+  const char* task_name = task.get_task_name();
+  assert(input.domain.dim == 3);
+  Rect<3> dom_rect = input.domain.get_rect<3>();
+
+  if (use_gpu)
+  {
+    if (strcmp(task_name, "Render") == 0 || strcmp(task_name, "Reduce") == 0)
+    {
+      if (slice_cache_render.size() == 0)
+      {
+        Point<3> num_blocks =
+          default_select_num_blocks<3>(loc_procs_list.size(), dom_rect);
+        default_decompose_points<3>(dom_rect, loc_procs_list,
+            num_blocks, false, stealing_enabled, slice_cache_render);
+      }
+      output.slices = slice_cache_render;
+    }
+    else
+    {
+      if (slice_cache_compute.size() == 0)
+      {
+        Point<3> num_blocks =
+          default_select_num_blocks<3>(toc_procs_list.size(), dom_rect);
+        default_decompose_points<3>(dom_rect, toc_procs_list,
+            num_blocks, false, stealing_enabled, slice_cache_compute);
+      }
+      output.slices = slice_cache_compute;
+    }
+  }
+  else
+  {
+    if (NUM_RENDER_PROCS > 0 &&
+        sysmem_local_procs.begin()->second.size() > NUM_RENDER_PROCS &&
+        (strcmp(task_name, "Render") == 0 || strcmp(task_name, "Reduce") == 0))
+    {
+      if (slice_cache_render.size() == 0)
+      {
+        std::vector<Processor> render_procs;
+        for (std::map<Memory, std::vector<Processor> >::iterator
+            it = sysmem_local_procs.begin(); it != sysmem_local_procs.end();
+            ++it)
+        {
+          for (unsigned idx = 0; idx < NUM_RENDER_PROCS; ++idx)
+            render_procs.push_back(it->second[idx]);
+        }
+        Point<3> num_blocks =
+          default_select_num_blocks<3>(render_procs.size(), dom_rect);
+        default_decompose_points<3>(dom_rect, render_procs,
+            num_blocks, false, stealing_enabled, slice_cache_render);
+      }
+      output.slices = slice_cache_render;
+    }
+    else
+    {
+      if (slice_cache_compute.size() == 0)
+      {
+        std::vector<Processor> compute_procs;
+        for (std::map<Memory, std::vector<Processor> >::iterator
+            it = sysmem_local_procs.begin(); it != sysmem_local_procs.end();
+            ++it)
+        {
+          for (unsigned idx = NUM_RENDER_PROCS; idx < it->second.size(); ++idx)
+            compute_procs.push_back(it->second[idx]);
+        }
+        Point<3> num_blocks =
+          default_select_num_blocks<3>(compute_procs.size(), dom_rect);
+        default_decompose_points<3>(dom_rect, compute_procs,
+            num_blocks, false, stealing_enabled, slice_cache_compute);
+      }
+      output.slices = slice_cache_compute;
+    }
+  }
 }
 
 //--------------------------------------------------------------------------
@@ -591,6 +684,13 @@ void SoleilMapper::map_must_epoch(const MapperContext           ctx,
     }
     output.constraint_mappings[idx].push_back(inst);
   }
+}
+
+bool SoleilMapper::default_policy_select_close_virtual(
+                      const MapperContext ctx,
+                      const Close&        close)
+{
+  return false;
 }
 
 static void create_mappers(Machine machine,

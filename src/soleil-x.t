@@ -3388,11 +3388,11 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
   M.PRINT("timeStep %d max_iter %d\n", TimeIntegrator.timeStep:get(), time_options.max_iter)
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
-  Visualize.Render(TimeIntegrator.timeStep:get())
-  Visualize.Reduce(TimeIntegrator.timeStep:get())
 
   if not regentlib.config['flow-spmd'] then
     M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
+      Visualize.Render(TimeIntegrator.timeStep:get())
+      Visualize.Reduce(TimeIntegrator.timeStep:get())
       Statistics.ComputeSpatialAverages()
       IO.WriteOutput()
     M.END()

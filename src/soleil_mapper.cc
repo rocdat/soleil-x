@@ -690,7 +690,7 @@ bool SoleilMapper::default_policy_select_close_virtual(
                       const MapperContext ctx,
                       const Close&        close)
 {
-  return false;
+  return true;
 }
 
 static void create_mappers(Machine machine,

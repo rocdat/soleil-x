@@ -56,7 +56,8 @@ COMPILE_COMMAND=\
 	$LISZT_PATH/liszt-legion.sh $SOLEIL_PATH/src/soleil-x.t \
 	-i testcase.lua \
 	-fparallelize 1 \
-	-fparallelize-dop ${MESH} "
+	-fparallelize-dop ${MESH} \
+-fflow 0 "
 #	-fflow-spmd 1 \
 #-fflow-spmd-shardsize 1
 echo $COMPILE_COMMAND

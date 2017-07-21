@@ -101,7 +101,7 @@ local task SplitLeftRight(r : region(ispace(int3d), PixelFields),
   pow2Level : int,
   tiles : ispace(int3d))
 
-  var colors = ispace(int3d, int3d{ 2, 2, 2 }) -- 0 = left, 1 = right
+  var colors = ispace(int1d, int1d{ 2 }) -- 0 = left, 1 = right
   var coloring = regentlib.c.legion_multi_domain_point_coloring_create()
   var numNodes = tiles.volume
 

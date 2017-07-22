@@ -1,4 +1,4 @@
-/* Copyright 2016 Stanford University
+/* Copyright 2017 Stanford University
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,8 +69,6 @@ public:
                               const MapMustEpochInput&      input,
                                     MapMustEpochOutput&     output);
 
-  virtual bool default_policy_select_close_virtual(const MapperContext ctx,
-                                                   const Close &close);
 protected:
   bool soleil_create_custom_instances(MapperContext ctx,
                           Processor target, Memory target_memory,
@@ -99,6 +97,13 @@ private:
 
   std::vector<TaskSlice> slice_cache_compute;
   std::vector<TaskSlice> slice_cache_render;
+  typedef std::vector<PhysicalInstance> CachedRegionMapping;
+  typedef std::vector<CachedRegionMapping> CachedTaskMapping;
+  std::map<DomainPoint, CachedTaskMapping> mapping_cache_render;
+  std::map<DomainPoint, CachedRegionMapping> mapping_cache_particle;
+  std::map<DomainPoint, CachedTaskMapping> mapping_cache_init;
+  std::map<DomainPoint, CachedTaskMapping> mapping_cache_push;
+  std::map<DomainPoint, CachedTaskMapping> mapping_cache_pull;
 };
 
 //--------------------------------------------------------------------------
@@ -158,6 +163,19 @@ Processor SoleilMapper::default_policy_select_initial_processor(
       return use_gpu ? toc_procs_list[color % toc_procs_list.size()]
                      : loc_procs_list[color % loc_procs_list.size()];
     }
+  }
+  else if (strcmp(task.get_task_name(), "main") == 0)
+  {
+    std::vector<Processor>& proc_list = sysmem_local_procs[sysmems_list[0]];
+    return proc_list.size() > NUM_RENDER_PROCS ?
+           proc_list[NUM_RENDER_PROCS] : *proc_list.begin();
+  }
+  else if (std::string(task.get_task_name()).find("__binary") == 0)
+  {
+    std::vector<Processor>& proc_list =
+      sysmem_local_procs[proc_sysmems[task.parent_task->target_proc]];
+    return proc_list.size() > NUM_RENDER_PROCS ?
+           proc_list[NUM_RENDER_PROCS] : *proc_list.begin();
   }
 
   return DefaultMapper::default_policy_select_initial_processor(ctx, task);
@@ -264,6 +282,14 @@ void SoleilMapper::slice_task(const MapperContext      ctx,
   }
 }
 
+enum TaskKind
+{
+  TASK_INIT = 1,
+  TASK_PUSH,
+  TASK_PULL,
+  TASK_OTHERS,
+};
+
 //--------------------------------------------------------------------------
 void SoleilMapper::map_task(const MapperContext      ctx,
                             const Task&              task,
@@ -338,6 +364,177 @@ void SoleilMapper::map_task(const MapperContext      ctx,
     }
   }
 
+  if (strcmp(task.get_task_name(), "Render") == 0)
+  {
+    std::map<DomainPoint, CachedTaskMapping>::iterator finder =
+      mapping_cache_render.find(task.index_point);
+    if (finder != mapping_cache_render.end())
+    {
+      CachedTaskMapping& cache = finder->second;
+      bool ok =
+        runtime->acquire_and_filter_instances(ctx, cache);
+      if (!ok)
+        fprintf(stderr, "cached mapping failed\n");
+      assert(ok);
+      output.chosen_instances = cache;
+    }
+    else
+    {
+      CachedTaskMapping& cache = mapping_cache_render[task.index_point];
+      cache.resize(task.regions.size());
+      Memory target_memory = proc_sysmems[task.target_proc];
+      for (size_t idx = 0; idx < task.regions.size(); ++idx)
+      {
+        PhysicalInstance inst;
+        std::vector<LogicalRegion> target_region;
+        target_region.push_back(task.regions[idx].region);
+        LayoutConstraintSet constraints;
+        std::vector<DimensionKind> dimension_ordering(4);
+        dimension_ordering[0] = DIM_X;
+        dimension_ordering[1] = DIM_Y;
+        dimension_ordering[2] = DIM_Z;
+        dimension_ordering[3] = DIM_F;
+        constraints.add_constraint(MemoryConstraint(target_memory.kind()))
+          .add_constraint(FieldConstraint(
+                task.regions[idx].instance_fields, false, false))
+          .add_constraint(OrderingConstraint(dimension_ordering, false));
+        runtime->create_physical_instance(ctx, target_memory,
+              constraints, target_region, inst);
+        runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
+        cache[idx].push_back(inst);
+      }
+
+      output.chosen_instances = cache;
+    }
+
+    return;
+  }
+
+  if (strcmp(task.get_task_name(), "SaveImage") == 0)
+  {
+    Memory target_memory = proc_sysmems[task.target_proc];
+    for (size_t idx = 0; idx < task.regions.size(); ++idx)
+    {
+      PhysicalInstance inst;
+      std::vector<LogicalRegion> target_region;
+      target_region.push_back(task.regions[idx].region);
+      LayoutConstraintSet constraints;
+      std::vector<DimensionKind> dimension_ordering(4);
+      dimension_ordering[0] = DIM_X;
+      dimension_ordering[1] = DIM_Y;
+      dimension_ordering[2] = DIM_Z;
+      dimension_ordering[3] = DIM_F;
+      constraints.add_constraint(MemoryConstraint(target_memory.kind()))
+        .add_constraint(FieldConstraint(
+              task.regions[idx].instance_fields, false, false))
+        .add_constraint(OrderingConstraint(dimension_ordering, false));
+      bool created;
+      runtime->find_or_create_physical_instance(ctx, target_memory,
+            constraints, target_region, inst, created);
+      runtime->set_garbage_collection_priority(ctx, inst, GC_FIRST_PRIORITY);
+      output.chosen_instances[idx].push_back(inst);
+    }
+    return;
+  }
+
+  TaskKind kind =
+    strcmp(task.get_task_name(), "InitParticlesUniform.parallelized") == 0 ?
+    TASK_INIT : (strcmp(task.get_task_name(), "pushAll") == 0 ?
+      TASK_PUSH : (strcmp(task.get_task_name(), "pullAll") == 0 ?
+        TASK_PULL : TASK_OTHERS));
+
+  if (kind != TASK_OTHERS)
+  {
+    // Check the cache for particle region
+    {
+      assert(task.regions.size() > 0);
+      std::map<DomainPoint, CachedRegionMapping>::iterator finder =
+        mapping_cache_particle.find(task.index_point);
+      if (finder != mapping_cache_particle.end())
+      {
+        CachedRegionMapping& cache = finder->second;
+        bool ok = runtime->acquire_and_filter_instances(ctx, cache);
+        if (!ok) fprintf(stderr, "cached mapping failed\n");
+        assert(ok);
+        output.chosen_instances[0] = cache;
+      }
+      else
+      {
+        CachedRegionMapping& cache = mapping_cache_particle[task.index_point];
+        Memory target_memory = proc_sysmems[task.target_proc];
+        PhysicalInstance inst;
+        std::vector<LogicalRegion> target_region;
+        target_region.push_back(task.regions[0].region);
+        LayoutConstraintSet constraints;
+        std::vector<DimensionKind> dimension_ordering(4);
+        dimension_ordering[0] = DIM_X;
+        dimension_ordering[1] = DIM_Y;
+        dimension_ordering[2] = DIM_Z;
+        dimension_ordering[3] = DIM_F;
+        constraints.add_constraint(MemoryConstraint(target_memory.kind()))
+          .add_constraint(FieldConstraint(
+                task.regions[0].instance_fields, false, false))
+          .add_constraint(OrderingConstraint(dimension_ordering, false));
+        runtime->create_physical_instance(ctx, target_memory,
+              constraints, target_region, inst);
+        runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
+        cache.push_back(inst);
+
+        output.chosen_instances[0] = cache;
+      }
+    }
+
+    // Check the cache for the rest of region requirements
+    {
+      std::map<DomainPoint, CachedTaskMapping>& mapping_cache =
+      kind == TASK_INIT ? mapping_cache_init :
+        (kind == TASK_PUSH ? mapping_cache_push : mapping_cache_pull);
+      std::map<DomainPoint, CachedTaskMapping>::iterator finder =
+        mapping_cache.find(task.index_point);
+      if (finder != mapping_cache.end())
+      {
+        CachedTaskMapping& cache = finder->second;
+        bool ok =
+          runtime->acquire_and_filter_instances(ctx, cache);
+        if (!ok)
+          fprintf(stderr, "cached mapping failed\n");
+        assert(ok);
+        for (size_t idx = 1; idx < task.regions.size(); ++idx)
+          output.chosen_instances[idx] = cache[idx];
+      }
+      else
+      {
+        CachedTaskMapping& cache = mapping_cache[task.index_point];
+        cache.resize(task.regions.size());
+        Memory target_memory = proc_sysmems[task.target_proc];
+        for (size_t idx = 1; idx < task.regions.size(); ++idx)
+        {
+          PhysicalInstance inst;
+          std::vector<LogicalRegion> target_region;
+          target_region.push_back(task.regions[idx].region);
+          LayoutConstraintSet constraints;
+          std::vector<DimensionKind> dimension_ordering(4);
+          dimension_ordering[0] = DIM_X;
+          dimension_ordering[1] = DIM_Y;
+          dimension_ordering[2] = DIM_Z;
+          dimension_ordering[3] = DIM_F;
+          constraints.add_constraint(MemoryConstraint(target_memory.kind()))
+            .add_constraint(FieldConstraint(
+                  task.regions[idx].instance_fields, false, false))
+            .add_constraint(OrderingConstraint(dimension_ordering, false));
+          bool created;
+          runtime->find_or_create_physical_instance(ctx, target_memory,
+                constraints, target_region, inst, created);
+          runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
+          cache[idx].push_back(inst);
+          output.chosen_instances[idx] = cache[idx];
+        }
+      }
+    }
+
+    return;
+  }
+
   bool needs_field_constraint_check = false;
 
   const TaskLayoutConstraintSet &layout_constraints =
@@ -355,7 +552,7 @@ void SoleilMapper::map_task(const MapperContext      ctx,
       continue;
 
     Memory target_memory = Memory::NO_MEMORY;
-    bool is_pull_task = strcmp(task.get_task_name(), "particles_pullAll") == 0;
+    bool is_pull_task = kind == TASK_PULL;
 
     if (task.must_epoch_task || (!task.is_index_space && !is_pull_task))
     {
@@ -684,13 +881,6 @@ void SoleilMapper::map_must_epoch(const MapperContext           ctx,
     }
     output.constraint_mappings[idx].push_back(inst);
   }
-}
-
-bool SoleilMapper::default_policy_select_close_virtual(
-                      const MapperContext ctx,
-                      const Close&        close)
-{
-  return true;
 }
 
 static void create_mappers(Machine machine,

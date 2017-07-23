@@ -712,7 +712,8 @@ void writeParticlesToFile(std::string filePath,
                           IndexSpace particleTemperatureIS,
                           bool* trackingBase,
                           IndexSpace trackingIS,
-                          Runtime* runtime) {
+                          Runtime* runtime,
+                          Context ctx) {
   
   std::ofstream outputFile;
   outputFile.open(filePath.c_str());
@@ -924,7 +925,7 @@ void cxx_render(legion_runtime_t runtime_,
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
-  Context ctx = CObjectWrapper::unwrap(ctx_);
+  Context ctx = CObjectWrapper::unwrap(ctx_)->context();
   
   FieldData* centerCoordinates = NULL;
   FieldData* velocity = NULL;
@@ -979,7 +980,7 @@ void cxx_render(legion_runtime_t runtime_,
     std::string particlesFileName = dataFileName("./out/particles", timeStepNumber, bounds);
     writeParticlesToFile(particlesFileName, __validBase, __validIS, cellXBase, cellXIS, cellYBase, cellYIS,
                          cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
-                         particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS, runtime);
+                         particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS, runtime, ctx);
   }
   
 #endif

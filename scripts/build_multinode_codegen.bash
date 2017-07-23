@@ -57,9 +57,9 @@ COMPILE_COMMAND=\
 	-i testcase.lua \
 	-fparallelize 1 \
 	-fparallelize-dop ${MESH} \
--fflow 0 "
-#	-fflow-spmd 1 \
-#-fflow-spmd-shardsize 1
+	-fflow-spmd 1 \
+        -fflow-spmd-shardsize 8 "
+#-fflow 0 "
 echo $COMPILE_COMMAND
 echo $COMPILE_COMMAND | /bin/bash
 

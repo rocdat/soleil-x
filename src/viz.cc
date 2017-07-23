@@ -423,11 +423,7 @@ void render_image(int width,
   int numTracking;
   drawParticles(__validBase, __validIS, positionBase, positionIS, densityBase, densityIS,
                 particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS,
-<<<<<<< HEAD
                 qobj, runtime, ctx, numTracking);
-=======
-                qobj, runtime, numTracking);
->>>>>>> 57bd9280fb2e3b3ef5deba4dba964a4f84d2ff6d
   
   if(numTracking < trackedParticlesPerNode) {
     trackParticles(numTracking, trackedParticlesPerNode, __validBase, __validIS,

@@ -316,7 +316,7 @@ end
 exports.Reduce = function(timeStepNumber)
   return rquote
 
-    -- __demand(__spmd) do
+    __demand(__spmd) do
 
 -- CODEGEN: tree_reductions
 
@@ -329,7 +329,7 @@ exports.Reduce = function(timeStepNumber)
       end
       [my.timeStep] = [my.timeStep] + 1
 
-    -- end -- demand spmd
+    end -- demand spmd
   end
 end
 

@@ -37,7 +37,7 @@ extern "C" {
 #endif
   
   void cxx_render(legion_runtime_t runtime,
-                  legion_context_t context,
+                  legion_context_t ctx,
                   legion_physical_region_t *cells,
                   legion_field_id_t *cells_fields,
                   legion_physical_region_t *particles,
@@ -50,7 +50,6 @@ extern "C" {
   
   
   void cxx_reduce(legion_runtime_t runtime,
-                  legion_context_t context,
                   legion_physical_region_t *leftSubregion,
                   legion_field_id_t *leftSubregion_fields,
                   legion_physical_region_t *rightSubregion,
@@ -60,7 +59,6 @@ extern "C" {
   
   
   void cxx_saveImage(legion_runtime_t runtime,
-                     legion_context_t context,
                      int width,
                      int height,
                      int timeStepNumber,

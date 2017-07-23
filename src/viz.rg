@@ -256,7 +256,7 @@ where
 do
   if leftSubregion.bounds.lo.x < leftSubregion.bounds.hi.x and
     rightSubregion.bounds.lo.x < rightSubregion.bounds.hi.x then
-    cviz.cxx_reduce(__runtime(), __context(),
+    cviz.cxx_reduce(__runtime(),
       __physical(leftSubregion), __fields(leftSubregion),
       __physical(rightSubregion), __fields(rightSubregion),
       treeLevel, offset)
@@ -277,7 +277,7 @@ where
 -- CODEGEN: reads_imageFragmentX
 do
   if tile.z == 0 and tile.y == 0 and tile.x == 0 then
-    cviz.cxx_saveImage(__runtime(), __context(),
+    cviz.cxx_saveImage(__runtime(),
       width, height, timeStep,
 -- CODEGEN: __physical_imageFragmentX__fields
     )

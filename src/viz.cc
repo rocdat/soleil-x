@@ -221,8 +221,8 @@ static void drawParticles(bool* __validBase,
                           bool* trackingBase,
                           IndexSpace trackingIS,
                           GLUquadricObj* qobj,
-                          Context ctx,
                           Runtime* runtime,
+                          Context ctx,
                           int &numTracking) {
   IndexIterator __validIterator(runtime, ctx, __validIS);
   IndexIterator positionIterator(runtime, ctx, positionIS);
@@ -425,7 +425,7 @@ void render_image(int width,
   int numTracking;
   drawParticles(__validBase, __validIS, positionBase, positionIS, densityBase, densityIS,
                 particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS,
-                qobj, ctx, runtime, numTracking);
+                qobj, runtime, ctx, numTracking);
   
   if(numTracking < trackedParticlesPerNode) {
     trackParticles(numTracking, trackedParticlesPerNode, __validBase, __validIS,

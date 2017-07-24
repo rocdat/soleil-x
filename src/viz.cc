@@ -930,7 +930,6 @@ void cxx_render(legion_runtime_t runtime_,
                 int timeStepNumber)
 #endif
 {
-  printTime("enter cxx_render"); 
 #ifndef STANDALONE
   
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
@@ -1056,7 +1055,6 @@ void cxx_render(legion_runtime_t runtime_,
   /* destroy the context */
   OSMesaDestroyContext(mesaCtx);
   
-  printTime("exit cxx_render"); 
 }
 
 
@@ -1219,7 +1217,6 @@ void cxx_reduce(legion_runtime_t runtime_,
                       rightR, rightStrideR, rightG, rightStrideG, rightB, rightStrideB, rightA, rightStrideA, rightZ, rightStrideZ, rightUserData, rightStrideUserData,
                       leftR, leftStrideR, leftG, leftStrideG, leftB, leftStrideB, leftA, leftStrideA, leftZ, leftStrideZ, leftUserData, leftStrideUserData,
                       (int)leftBounds.volume());
-  printTime("exit cxx_reduce");
 }
 
 
@@ -1317,7 +1314,6 @@ void cxx_saveImage(legion_runtime_t runtime_,
   write_ppm(imageFileName("./out/image", ".ppm", timeStepNumber).c_str(), rgbaBuffer, width, height);
   
   free(rgbaBuffer);
-  printTime("exit cxx_saveImage");
 }
 
 

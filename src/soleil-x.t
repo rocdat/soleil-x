@@ -3402,6 +3402,8 @@ M.END()
 -- Final stats printing
 
 if regentlib.config['flow-spmd'] then
+  Visualize.Render(TimeIntegrator.timeStep:get())
+  Visualize.Reduce(TimeIntegrator.timeStep:get())
   Statistics.ComputeSpatialAverages()
 end
 IO.WriteConsoleOutput()

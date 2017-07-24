@@ -40,6 +40,7 @@ using namespace LegionRuntime::Accessor;
 #include <assert.h>
 #include <math.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 const int trackedParticlesPerNode = 128;
 static const bool writeFiles = false;//write out text files with data

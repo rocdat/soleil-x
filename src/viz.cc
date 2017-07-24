@@ -1142,7 +1142,6 @@ void cxx_reduce(legion_runtime_t runtime_,
                 legion_field_id_t *rightSubregion_fields,
                 int treeLevel,
                 int offset) {
-  printTime("enter cxx_reduce");
 
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   
@@ -1231,7 +1230,6 @@ void cxx_saveImage(legion_runtime_t runtime_,
                    // CODEGEN: legion_physical_region_t_imageFragmentX
                    )
 {
-  printTime("enter cxx_saveImage");
 
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
   

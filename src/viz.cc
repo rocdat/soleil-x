@@ -898,6 +898,15 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
 #endif
 
 
+inline void printTime(std::string text) {
+  struct timespec tp;
+  clock_gettime(CLOCK_MONOTONIC, &tp);
+  char hostname[256];
+  gethostname(hostname, sizeof(hostname));
+  int pid = getpid();
+  std::cout << hostname << " pid " << pid << " sec " << tp.tv_sec << " nsec " << tp.tv_nsec << ": " << text << std::endl;
+}
+
 
 
 #ifdef STANDALONE
@@ -919,7 +928,7 @@ void cxx_render(legion_runtime_t runtime_,
                 int timeStepNumber)
 #endif
 {
-  
+  printTime("enter cxx_render"); 
 #ifndef STANDALONE
   
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
@@ -1045,6 +1054,7 @@ void cxx_render(legion_runtime_t runtime_,
   /* destroy the context */
   OSMesaDestroyContext(mesaCtx);
   
+  printTime("exit cxx_render"); 
 }
 
 
@@ -1131,7 +1141,8 @@ void cxx_reduce(legion_runtime_t runtime_,
                 legion_field_id_t *rightSubregion_fields,
                 int treeLevel,
                 int offset) {
-  
+  printTime("enter cxx_reduce");
+
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   
   PhysicalRegion* leftImage = CObjectWrapper::unwrap(leftSubregion[0]);
@@ -1206,6 +1217,7 @@ void cxx_reduce(legion_runtime_t runtime_,
                       rightR, rightStrideR, rightG, rightStrideG, rightB, rightStrideB, rightA, rightStrideA, rightZ, rightStrideZ, rightUserData, rightStrideUserData,
                       leftR, leftStrideR, leftG, leftStrideG, leftB, leftStrideB, leftA, leftStrideA, leftZ, leftStrideZ, leftUserData, leftStrideUserData,
                       (int)leftBounds.volume());
+  printTime("exit cxx_reduce");
 }
 
 
@@ -1219,6 +1231,8 @@ void cxx_saveImage(legion_runtime_t runtime_,
                    // CODEGEN: legion_physical_region_t_imageFragmentX
                    )
 {
+  printTime("enter cxx_saveImage");
+
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
@@ -1301,6 +1315,7 @@ void cxx_saveImage(legion_runtime_t runtime_,
   write_ppm(imageFileName("./out/image", ".ppm", timeStepNumber).c_str(), rgbaBuffer, width, height);
   
   free(rgbaBuffer);
+  printTime("exit cxx_saveImage");
 }
 
 

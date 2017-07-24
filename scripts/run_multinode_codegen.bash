@@ -18,7 +18,7 @@ then
   NUM_TREE_LEVELS=2
 fi
 
-GASNET_BACKTRACE=1 LD_LIBRARY_PATH=.:$LEGION_PATH/bindings/terra/:/usr/lib/x86_64-linux-gnu/:$SOLEIL_PATH/src/ \
+LEGION_BACKTRACE=1 LEGION_FREEZE_ON_ERROR=1 GASNET_BACKTRACE=1 LD_LIBRARY_PATH=.:$LEGION_PATH/bindings/terra/:/usr/lib/x86_64-linux-gnu/:$SOLEIL_PATH/src/ \
 	mpirun \
 		-bind-to none \
 		-npernode 1 \

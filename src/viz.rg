@@ -233,7 +233,7 @@ do
   end
   regentlib.c.printf("number of valid particles = %d\n", numValid)
 
-  cviz.cxx_render(__runtime(), __context(),
+  cviz.cxx_render(__runtime(),
     __physical(cells), __fields(cells),
     __physical(particles), __fields(particles),
 -- CODEGEN: __physical_imageFragmentX__fieldsComma

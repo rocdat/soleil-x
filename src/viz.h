@@ -37,7 +37,6 @@ extern "C" {
 #endif
   
   void cxx_render(legion_runtime_t runtime,
-                  legion_context_t ctx,
                   legion_physical_region_t *cells,
                   legion_field_id_t *cells_fields,
                   legion_physical_region_t *particles,

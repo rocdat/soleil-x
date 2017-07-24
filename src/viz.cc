@@ -905,7 +905,8 @@ inline void printTime(std::string text) {
   char hostname[256];
   gethostname(hostname, sizeof(hostname));
   int pid = getpid();
-  std::cout << hostname << " pid " << pid << " sec " << tp.tv_sec << " nsec " << tp.tv_nsec << ": " << text << std::endl;
+  pid_t tid = gettid();
+  std::cout << hostname << " pid " << pid << " tid " << tid << " (sec " << tp.tv_sec << " nsec " << tp.tv_nsec << ") " << text << std::endl;
 }
 
 

@@ -335,7 +335,7 @@ end
 
 exports.report = function(timeStep, maxIter, simT, finalT)
   return rquote
-    report(timeStep, maxIter, simT, finalT)
+    report(0, maxIter, 0.0, finalT)
   end
 end
 

@@ -30,7 +30,7 @@ fi
 MAX_ITER=$5
 if [[ "$MAX_ITER" == "" ]]
 then
-  MAX_ITER=3
+  MAX_ITER=6
 fi
 
 

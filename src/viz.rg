@@ -285,6 +285,9 @@ do
 end
 
 
+local task report(timeStep : int, maxIter : int, simT : float, finalT : float)
+  regentlib.c.printf("timestep %d maxiter %d simt %f finalt %f\n", timeStep, maxIter, simT, finalT)
+end
 
 
 
@@ -332,7 +335,7 @@ end
 
 exports.report = function(timeStep, maxIter, simT, finalT)
   return rquote
-    regentlib.c.printf("timestep %d maxIter %d simT %f finalT %f\n", timeStep, maxIter, simT, finalT)
+    report(timeStep, maxIter, simT, finalT)
   end
 end
 

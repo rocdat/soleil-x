@@ -341,10 +341,10 @@ def generateCode(keyword, numFragments, numTreeLevels):
     pow2Level = 1
     for j in range(numTreeLevels):
       print '\n-- tree level ' + str(j) + '\n'
-      print '      for tile in tiles do'
       for i in range(numFragments):
-        print '        Reduce(' + str(j) + ', ' + str(pow2Level) + ', [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile], [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '][tile])'
-      print '      end'
+        print '    for tile in tiles do'
+        print '      Reduce(' + str(j) + ', ' + str(pow2Level) + ', [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile], [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '][tile])'
+        print '    end'
       pow2Level = pow2Level * 2
 
 #viz.rg:-- CODEGEN: tree_reductions

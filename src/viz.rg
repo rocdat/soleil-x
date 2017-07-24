@@ -233,7 +233,7 @@ do
   end
   regentlib.c.printf("number of valid particles = %d\n", numValid)
 
-  cviz.cxx_render(__runtime(), __context(),
+  cviz.cxx_render(__runtime(),
     __physical(cells), __fields(cells),
     __physical(particles), __fields(particles),
 -- CODEGEN: __physical_imageFragmentX__fieldsComma
@@ -316,20 +316,16 @@ end
 exports.Reduce = function(timeStepNumber)
   return rquote
 
-    __demand(__spmd) do
-
 -- CODEGEN: tree_reductions
 
-
-      -- save result to disk
-      for tile in tiles do
-        SaveImage(tile, [my.timeStep],
+    -- save result to disk
+    for tile in tiles do
+      SaveImage(tile, [my.timeStep],
 -- CODEGEN: partitionFragmentXByDepth_argList
-        )
-      end
-      [my.timeStep] = [my.timeStep] + 1
+      )
+    end
+    [my.timeStep] = [my.timeStep] + 1
 
-    end -- demand spmd
   end
 end
 

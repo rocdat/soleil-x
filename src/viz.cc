@@ -222,13 +222,12 @@ static void drawParticles(bool* __validBase,
                           IndexSpace trackingIS,
                           GLUquadricObj* qobj,
                           Runtime* runtime,
-                          Context ctx,
                           int &numTracking) {
-  IndexIterator __validIterator(runtime, ctx, __validIS);
-  IndexIterator positionIterator(runtime, ctx, positionIS);
-  IndexIterator densityIterator(runtime, ctx, densityIS);
-  IndexIterator particleTemperatureIterator(runtime, ctx, particleTemperatureIS);
-  IndexIterator trackingIterator(runtime, ctx, trackingIS);
+  IndexIterator __validIterator(runtime, __validIS);
+  IndexIterator positionIterator(runtime, positionIS);
+  IndexIterator densityIterator(runtime, densityIS);
+  IndexIterator particleTemperatureIterator(runtime, particleTemperatureIS);
+  IndexIterator trackingIterator(runtime, trackingIS);
   
   numTracking = 0;
   int numParticles = 0;
@@ -255,11 +254,10 @@ static void trackParticles(int numTracking,
                            IndexSpace __validIS,
                            bool* trackingBase,
                            IndexSpace trackingIS,
-                           Runtime* runtime,
-                           Context ctx) {
+                           Runtime* runtime) {
   
-  IndexIterator __validIterator(runtime, ctx, __validIS);
-  IndexIterator trackingIterator(runtime, ctx, trackingIS);
+  IndexIterator __validIterator(runtime, __validIS);
+  IndexIterator trackingIterator(runtime, trackingIS);
   
   int needMore = trackedParticlesPerNode - numTracking;
   while(__validIterator.has_next() && needMore > 0) {
@@ -354,8 +352,7 @@ void render_image(int width,
                   GLfloat** rgbaBuffer,
                   GLfloat** depthBuffer,
                   OSMesaContext mesaCtx,
-                  Runtime* runtime,
-                  Context ctx)
+                  Runtime* runtime)
 #endif
 {
   
@@ -425,11 +422,11 @@ void render_image(int width,
   int numTracking;
   drawParticles(__validBase, __validIS, positionBase, positionIS, densityBase, densityIS,
                 particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS,
-                qobj, runtime, ctx, numTracking);
+                qobj, runtime, numTracking);
   
   if(numTracking < trackedParticlesPerNode) {
     trackParticles(numTracking, trackedParticlesPerNode, __validBase, __validIS,
-                   trackingBase, trackingIS, runtime, ctx);
+                   trackingBase, trackingIS, runtime);
   }
   
 #else
@@ -712,21 +709,20 @@ void writeParticlesToFile(std::string filePath,
                           IndexSpace particleTemperatureIS,
                           bool* trackingBase,
                           IndexSpace trackingIS,
-                          Runtime* runtime,
-                          Context ctx) {
+                          Runtime* runtime) {
   
   std::ofstream outputFile;
   outputFile.open(filePath.c_str());
   int counter = 0;
   
-  IndexIterator __validIterator(runtime, ctx, __validIS);
-  IndexIterator cellXIterator(runtime, ctx, cellXIS);
-  IndexIterator cellYIterator(runtime, ctx, cellYIS);
-  IndexIterator cellZIterator(runtime, ctx, cellZIS);
-  IndexIterator positionIterator(runtime, ctx, positionIS);
-  IndexIterator densityIterator(runtime, ctx, densityIS);
-  IndexIterator particleTemperatureIterator(runtime, ctx, particleTemperatureIS);
-  IndexIterator trackingIterator(runtime, ctx, trackingIS);
+  IndexIterator __validIterator(runtime, __validIS);
+  IndexIterator cellXIterator(runtime, cellXIS);
+  IndexIterator cellYIterator(runtime, cellYIS);
+  IndexIterator cellZIterator(runtime, cellZIS);
+  IndexIterator positionIterator(runtime, positionIS);
+  IndexIterator densityIterator(runtime, densityIS);
+  IndexIterator particleTemperatureIterator(runtime, particleTemperatureIS);
+  IndexIterator trackingIterator(runtime, trackingIS);
   
   while(__validIterator.has_next()) {
     bool valid = *NEXT(__valid);
@@ -907,7 +903,6 @@ void cxx_render(std::string particleFilePath, std::string outputFileName, int nu
 #else
 
 void cxx_render(legion_runtime_t runtime_,
-                legion_context_t ctx_,
                 legion_physical_region_t *cells,
                 legion_field_id_t *cells_fields,
                 legion_physical_region_t *particles,
@@ -925,7 +920,6 @@ void cxx_render(legion_runtime_t runtime_,
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
-  Context ctx = CObjectWrapper::unwrap(ctx_)->context();
   
   FieldData* centerCoordinates = NULL;
   FieldData* velocity = NULL;
@@ -980,7 +974,7 @@ void cxx_render(legion_runtime_t runtime_,
     std::string particlesFileName = dataFileName("./out/particles", timeStepNumber, bounds);
     writeParticlesToFile(particlesFileName, __validBase, __validIS, cellXBase, cellXIS, cellYBase, cellYIS,
                          cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
-                         particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS, runtime, ctx);
+                         particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS, runtime);
   }
   
 #endif
@@ -1018,7 +1012,7 @@ void cxx_render(legion_runtime_t runtime_,
                densityBase, densityIS,
                particleTemperatureBase, particleTemperatureIS,
                trackingBase, trackingIS,
-               &rgbaBuffer, &depthBuffer, mesaCtx, runtime, ctx);
+               &rgbaBuffer, &depthBuffer, mesaCtx, runtime);
   
   if(writeFiles) {
     write_ppm(imageFileName("./out/image", ".ppm", timeStepNumber, bounds).c_str(), rgbaBuffer, width, height);

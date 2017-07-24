@@ -286,7 +286,7 @@ end
 
 
 local task report(timeStep : int, maxIter : int, simT : float, finalT : float)
-  regentlib.c.printf("timestep %d maxiter %d simt %f finalt %f\n", timeStep, maxIter, simT, finalT)
+  regentlib.c.printf("timestep %d maxiter %d simt %lf finalt %lf\n", timeStep, maxIter, simT, finalT)
 end
 
 

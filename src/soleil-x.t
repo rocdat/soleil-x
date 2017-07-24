@@ -3363,6 +3363,10 @@ function Visualize.Reduce(timeStepNumber)
   M.INLINE(viz.Reduce(timeStepNumber))
 end
 
+function Visualize.report(timeStep, maxIter, simTime, finalTime)
+  M.PRINT("timestep %d maxIter %d simT %f finalT %f\n", timeStep, maxIter, simTime, finalTime)
+end
+
 -----------------------------------------------------------------------------
 --[[                            MAIN EXECUTION                           ]]--
 -----------------------------------------------------------------------------
@@ -3385,7 +3389,7 @@ Visualize.Reduce(TimeIntegrator.timeStep:get())
 M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
               M.LT(TimeIntegrator.timeStep:get(), time_options.max_iter)),
         true)
-  -- M.PRINT("timeStep %d max_iter %d simTime %f final_time %f\n", TimeIntegrator.timeStep:get(), time_options.max_iter, TimeIntegrator.simTime:get(), time_options.final_time)
+  Visualize.report(TimeIntegrator.timeStep:get(), time_options.max_iter, TimeIntegrator.simTime:get(), time_options.final_time)
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
 

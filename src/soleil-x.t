@@ -3364,7 +3364,7 @@ function Visualize.Reduce(timeStepNumber)
 end
 
 function Visualize.report(timeStep, maxIter, simTime, finalTime)
-  M.PRINT("timestep %d maxIter %d simT %f finalT %f\n", timeStep, maxIter, simTime, finalTime)
+  M.INLINE(viz.report(timeStep, maxIter, simTime, finalTime))
 end
 
 -----------------------------------------------------------------------------

@@ -330,6 +330,11 @@ exports.Reduce = function(timeStepNumber)
 end
 
 
+exports.report = function(timeStep, maxIter, simT, finalT)
+  return rquote
+    regentlib.c.printf("timestep %d maxIter %d simT %f finalT %f\n", timeStep, maxIter, simT, finalT)
+  end
+end
 
 -------------------------------------------------------------------------------
 -- Module exports

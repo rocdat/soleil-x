@@ -105,6 +105,7 @@ write_ppm(const char *filename, const GLfloat *rgba, int width, int height)
       fwrite(outputBuffer, 3 * sizeof(unsigned char), width, f);
     }
     fclose(f);
+    printf("successfully wrote %s\n", filename);
   } else {
     printf("could not write %s\n", filename);
   }

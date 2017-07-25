@@ -21,7 +21,7 @@ do
   end
   local cxx = os.getenv('CXX') or 'c++'
 
-  local cxx_flags = "-O2 -Wall -Werror"
+  local cxx_flags = "-O2 -Wall -Werror -ftree-vectorize"
   if os.execute('test "$(uname)" = Darwin') == 0 then
     cxx_flags =
       (cxx_flags ..

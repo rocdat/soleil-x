@@ -285,6 +285,9 @@ do
 end
 
 
+local task report(timeStep : int, maxIter : int, simT : float, finalT : float)
+  regentlib.c.printf("timestep %d maxiter %d simt %lf finalt %lf\n", timeStep, maxIter, simT, finalT)
+end
 
 
 
@@ -330,6 +333,11 @@ exports.Reduce = function(timeStepNumber)
 end
 
 
+exports.report = function(timeStep, maxIter, simT, finalT)
+  return rquote
+    report(0, maxIter, 0.0, finalT)
+  end
+end
 
 -------------------------------------------------------------------------------
 -- Module exports

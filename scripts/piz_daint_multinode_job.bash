@@ -17,6 +17,8 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export GASNET_BACKTRACE=1
 export LD_LIBRARY_PATH="$SOLEIL_PATH/src/piz_daint_jobs/JOBID/:$LEGION_PATH/bindings/terra/:$OSMESA_PATH/lib"
 export REALM_BACKTRACE=1
+export LEGION_BACKTRACE=1
+export LEGION_FREEZE_ON_ERROR=1
 RUNDIR=/scratch/snx3000/aheirich/runX
 
 if [[ ! -d ${RUNDIR} ]]; then mkdir ${RUNDIR}; fi

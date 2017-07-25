@@ -622,6 +622,7 @@ local gridOriginInteriorX = grid_options.origin[1]
 local gridOriginInteriorY = grid_options.origin[2]
 local gridOriginInteriorZ = grid_options.origin[3]
 
+local timestep__ = L.Constant(L.int, 0)
 local fluidGrid = Grid.NewGrid{
   name              = 'Fluid',
   dims              = {grid_options.xnum + 2*xBnum,
@@ -3104,6 +3105,7 @@ function TimeIntegrator.UpdateTime()
 end
 
 function TimeIntegrator.InitializeVariables()
+  timestep__ = 0
 
   fluidGrid:foreach(Flow.InitializeCell)
 
@@ -3345,31 +3347,24 @@ end
 -- Visualize
 ------------
 
+
 function Visualize.Initialize()
 -- CODEGEN: viz.InitializeFragmentX
 end
 
-function Visualize.Render(timeStepNumber)
-  M.INLINE(viz.Render(timeStepNumber))
+function Visualize.Render(timestep)
+  M.INLINE(viz.Render(timestep))
 end
 
-function Visualize.Reduce(timeStepNumber)
-
-  -- debugging
-  print(timeStepNumber)
-  for k, v in pairs(timeStepNumber) do print(k, v) end
-  -- debugging
-
-  M.INLINE(viz.Reduce(timeStepNumber))
+function Visualize.Reduce(timestep)
+  M.INLINE(viz.Reduce(timestep))
 end
 
-function Visualize.report(timeStep, maxIter, simTime, finalTime)
-  M.INLINE(viz.report(timeStep, maxIter, simTime, finalTime))
-end
 
 -----------------------------------------------------------------------------
 --[[                            MAIN EXECUTION                           ]]--
 -----------------------------------------------------------------------------
+
 
 -- Initialize all variables
 
@@ -3381,22 +3376,22 @@ if radiation_options.radiationType ~= RadiationType.OFF then
 end
 IO.WriteOutput()
 Visualize.Initialize()
-Visualize.Render(TimeIntegrator.timeStep:get())
-Visualize.Reduce(TimeIntegrator.timeStep:get())
+Visualize.Render(timestep__)
+Visualize.Reduce(timestep__)
 
 -- Main iteration loop
 
 M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
               M.LT(TimeIntegrator.timeStep:get(), time_options.max_iter)),
         true)
-  Visualize.report(TimeIntegrator.timeStep:get(), time_options.max_iter, TimeIntegrator.simTime:get(), time_options.final_time)
+  timestep__ = timestep__ + 1
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
 
   if not regentlib.config['flow-spmd'] then
     M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
-      Visualize.Render(TimeIntegrator.timeStep:get())
-      Visualize.Reduce(TimeIntegrator.timeStep:get())
+      Visualize.Render(timestep__)
+      Visualize.Reduce(timestep__)
       Statistics.ComputeSpatialAverages()
       IO.WriteOutput()
     M.END()
@@ -3407,8 +3402,8 @@ M.END()
 
 M.PRINT("exited run loop\n")
 if regentlib.config['flow-spmd'] then
-  Visualize.Render(TimeIntegrator.timeStep:get())
-  Visualize.Reduce(TimeIntegrator.timeStep:get())
+  Visualize.Render(timestep__)
+  Visualize.Reduce(timestep__)
   Statistics.ComputeSpatialAverages()
 end
 IO.WriteConsoleOutput()

@@ -74,8 +74,6 @@ local one = terralib.constant(`int3d { __ptr = regentlib.__int3d { 1, 1, 1 } })
 -- CODEGEN: local_partitionFragmentXLeftRightChildren
 
 
-
-
 local fspace PixelFields {
   R : float,
   G : float,
@@ -277,6 +275,7 @@ where
 -- CODEGEN: reads_imageFragmentX
 do
   if tile.z == 0 and tile.y == 0 and tile.x == 0 then
+    regentlib.c.printf("Save Image timeStep %d\n", timeStep)
     cviz.cxx_saveImage(__runtime(),
       width, height, timeStep,
 -- CODEGEN: __physical_imageFragmentX__fields
@@ -284,10 +283,6 @@ do
   end
 end
 
-
-local task report(timeStep : int, maxIter : int, simT : float, finalT : float)
-  regentlib.c.printf("timestep %d maxiter %d simt %lf finalt %lf\n", timeStep, maxIter, simT, finalT)
-end
 
 
 
@@ -301,9 +296,8 @@ local exports = {}
 
 
 
-
-
-exports.Render = function(timeStepNumber)
+-- TODO replace my.timeStep with timestep
+exports.Render = function(timeStep)
   return rquote
     for tile in tiles do
       Render(p_cells[tile], p_particles[tile], [my.timeStep],
@@ -316,14 +310,14 @@ end
 
 
 
-exports.Reduce = function(timeStepNumber)
+exports.Reduce = function(timeStep)
   return rquote
 
 -- CODEGEN: tree_reductions
 
     -- save result to disk
     for tile in tiles do
-      SaveImage(tile, [my.timeStep],
+      SaveImage(tile, timeStep,
 -- CODEGEN: partitionFragmentXByDepth_argList
       )
     end
@@ -333,11 +327,6 @@ exports.Reduce = function(timeStepNumber)
 end
 
 
-exports.report = function(timeStep, maxIter, simT, finalT)
-  return rquote
-    report(0, maxIter, 0.0, finalT)
-  end
-end
 
 -------------------------------------------------------------------------------
 -- Module exports

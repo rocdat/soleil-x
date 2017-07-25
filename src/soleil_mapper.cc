@@ -160,8 +160,39 @@ Processor SoleilMapper::default_policy_select_initial_processor(
                 point.point_data[1] * size_x +
                 point.point_data[2] * size_x * size_y;
       }
-      return use_gpu ? toc_procs_list[color % toc_procs_list.size()]
-                     : loc_procs_list[color % loc_procs_list.size()];
+
+      if (use_gpu)
+      {
+        if (strcmp(task.get_task_name(), "Reduce") == 0)
+          return loc_procs_list[color % loc_procs_list.size()];
+        else
+          return toc_procs_list[color % toc_procs_list.size()];
+      }
+      else
+      {
+        if (NUM_RENDER_PROCS > 0 &&
+            sysmem_local_procs.begin()->second.size() > NUM_RENDER_PROCS)
+        {
+          size_t num_procs_per_node = sysmem_local_procs.begin()->second.size();
+          size_t node_idx = color / num_procs_per_node;
+          size_t task_idx = color % num_procs_per_node;
+          if (strcmp(task.get_task_name(), "Reduce") == 0)
+          {
+            size_t proc_idx =
+              num_procs_per_node * node_idx + (task_idx % NUM_RENDER_PROCS);
+            return loc_procs_list[proc_idx % loc_procs_list.size()];
+          }
+          else
+          {
+            size_t proc_idx =
+              num_procs_per_node * node_idx + NUM_RENDER_PROCS +
+              (task_idx % (num_procs_per_node - NUM_RENDER_PROCS));
+            return loc_procs_list[proc_idx % loc_procs_list.size()];
+          }
+        }
+        else
+          return loc_procs_list[color % loc_procs_list.size()];
+      }
     }
   }
   else if (strcmp(task.get_task_name(), "main") == 0)
@@ -214,14 +245,14 @@ void SoleilMapper::slice_task(const MapperContext      ctx,
 
   if (use_gpu)
   {
-    if (strcmp(task_name, "Render") == 0 || strcmp(task_name, "Reduce") == 0)
+    if (strcmp(task_name, "Render") == 0 || strcmp(task_name, "SaveImage") == 0)
     {
       if (slice_cache_render.size() == 0)
       {
         Point<3> num_blocks =
           default_select_num_blocks<3>(loc_procs_list.size(), dom_rect);
         default_decompose_points<3>(dom_rect, loc_procs_list,
-            num_blocks, false, stealing_enabled, slice_cache_render);
+            num_blocks, false, false, slice_cache_render);
       }
       output.slices = slice_cache_render;
     }
@@ -232,7 +263,7 @@ void SoleilMapper::slice_task(const MapperContext      ctx,
         Point<3> num_blocks =
           default_select_num_blocks<3>(toc_procs_list.size(), dom_rect);
         default_decompose_points<3>(dom_rect, toc_procs_list,
-            num_blocks, false, stealing_enabled, slice_cache_compute);
+            num_blocks, false, false, slice_cache_compute);
       }
       output.slices = slice_cache_compute;
     }
@@ -240,42 +271,57 @@ void SoleilMapper::slice_task(const MapperContext      ctx,
   else
   {
     if (NUM_RENDER_PROCS > 0 &&
-        sysmem_local_procs.begin()->second.size() > NUM_RENDER_PROCS &&
-        (strcmp(task_name, "Render") == 0 || strcmp(task_name, "Reduce") == 0))
+        sysmem_local_procs.begin()->second.size() > NUM_RENDER_PROCS)
     {
-      if (slice_cache_render.size() == 0)
+      if (strcmp(task_name, "Render") == 0 ||
+          strcmp(task_name, "SaveImage") == 0)
       {
-        std::vector<Processor> render_procs;
-        for (std::map<Memory, std::vector<Processor> >::iterator
-            it = sysmem_local_procs.begin(); it != sysmem_local_procs.end();
-            ++it)
+        if (slice_cache_render.size() == 0)
         {
-          for (unsigned idx = 0; idx < NUM_RENDER_PROCS; ++idx)
-            render_procs.push_back(it->second[idx]);
+          std::vector<Processor> render_procs;
+          for (std::map<Memory, std::vector<Processor> >::iterator
+              it = sysmem_local_procs.begin(); it != sysmem_local_procs.end();
+              ++it)
+          {
+            for (unsigned idx = 0; idx < NUM_RENDER_PROCS; ++idx)
+              render_procs.push_back(it->second[idx]);
+          }
+          Point<3> num_blocks =
+            default_select_num_blocks<3>(render_procs.size(), dom_rect);
+          default_decompose_points<3>(dom_rect, render_procs,
+              num_blocks, false, false, slice_cache_render);
         }
-        Point<3> num_blocks =
-          default_select_num_blocks<3>(render_procs.size(), dom_rect);
-        default_decompose_points<3>(dom_rect, render_procs,
-            num_blocks, false, stealing_enabled, slice_cache_render);
+        output.slices = slice_cache_render;
       }
-      output.slices = slice_cache_render;
+      else
+      {
+        if (slice_cache_compute.size() == 0)
+        {
+          std::vector<Processor> compute_procs;
+          for (std::map<Memory, std::vector<Processor> >::iterator
+              it = sysmem_local_procs.begin(); it != sysmem_local_procs.end();
+              ++it)
+          {
+            for (unsigned idx = NUM_RENDER_PROCS; idx < it->second.size(); ++idx)
+              compute_procs.push_back(it->second[idx]);
+          }
+          Point<3> num_blocks =
+            default_select_num_blocks<3>(compute_procs.size(), dom_rect);
+          default_decompose_points<3>(dom_rect, compute_procs,
+              num_blocks, false, false, slice_cache_compute);
+        }
+        output.slices = slice_cache_compute;
+      }
     }
     else
     {
       if (slice_cache_compute.size() == 0)
       {
         std::vector<Processor> compute_procs;
-        for (std::map<Memory, std::vector<Processor> >::iterator
-            it = sysmem_local_procs.begin(); it != sysmem_local_procs.end();
-            ++it)
-        {
-          for (unsigned idx = NUM_RENDER_PROCS; idx < it->second.size(); ++idx)
-            compute_procs.push_back(it->second[idx]);
-        }
         Point<3> num_blocks =
-          default_select_num_blocks<3>(compute_procs.size(), dom_rect);
-        default_decompose_points<3>(dom_rect, compute_procs,
-            num_blocks, false, stealing_enabled, slice_cache_compute);
+          default_select_num_blocks<3>(loc_procs_list.size(), dom_rect);
+        default_decompose_points<3>(dom_rect, loc_procs_list,
+            num_blocks, false, false, slice_cache_compute);
       }
       output.slices = slice_cache_compute;
     }
@@ -398,8 +444,12 @@ void SoleilMapper::map_task(const MapperContext      ctx,
           .add_constraint(FieldConstraint(
                 task.regions[idx].instance_fields, false, false))
           .add_constraint(OrderingConstraint(dimension_ordering, false));
-        runtime->create_physical_instance(ctx, target_memory,
-              constraints, target_region, inst);
+        if(!runtime->create_physical_instance(ctx, target_memory,
+              constraints, target_region, inst))
+        {
+          default_report_failed_instance_creation(task, idx,
+              task.target_proc, target_memory);
+        }
         runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
         cache[idx].push_back(inst);
       }
@@ -429,8 +479,12 @@ void SoleilMapper::map_task(const MapperContext      ctx,
               task.regions[idx].instance_fields, false, false))
         .add_constraint(OrderingConstraint(dimension_ordering, false));
       bool created;
-      runtime->find_or_create_physical_instance(ctx, target_memory,
-            constraints, target_region, inst, created);
+      if(!runtime->find_or_create_physical_instance(ctx, target_memory,
+            constraints, target_region, inst, created))
+      {
+        default_report_failed_instance_creation(task, idx,
+            task.target_proc, target_memory);
+      }
       runtime->set_garbage_collection_priority(ctx, inst, GC_FIRST_PRIORITY);
       output.chosen_instances[idx].push_back(inst);
     }
@@ -475,8 +529,12 @@ void SoleilMapper::map_task(const MapperContext      ctx,
           .add_constraint(FieldConstraint(
                 task.regions[0].instance_fields, false, false))
           .add_constraint(OrderingConstraint(dimension_ordering, false));
-        runtime->create_physical_instance(ctx, target_memory,
-              constraints, target_region, inst);
+        if(!runtime->create_physical_instance(ctx, target_memory,
+              constraints, target_region, inst))
+        {
+          default_report_failed_instance_creation(task, 0,
+              task.target_proc, target_memory);
+        }
         runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
         cache.push_back(inst);
 
@@ -523,8 +581,12 @@ void SoleilMapper::map_task(const MapperContext      ctx,
                   task.regions[idx].instance_fields, false, false))
             .add_constraint(OrderingConstraint(dimension_ordering, false));
           bool created;
-          runtime->find_or_create_physical_instance(ctx, target_memory,
-                constraints, target_region, inst, created);
+          if(!runtime->find_or_create_physical_instance(ctx, target_memory,
+                constraints, target_region, inst, created))
+          {
+            default_report_failed_instance_creation(task, idx,
+                task.target_proc, target_memory);
+          }
           runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
           cache[idx].push_back(inst);
           output.chosen_instances[idx] = cache[idx];
@@ -649,13 +711,32 @@ void SoleilMapper::map_task(const MapperContext      ctx,
       continue;
     }
     // Otherwise make normal instances for the given region
-    if (!soleil_create_custom_instances(ctx, task.target_proc,
-            target_memory, task.regions[idx], idx, missing_fields,
-            layout_constraints, needs_field_constraint_check,
-            output.chosen_instances[idx]))
     {
-      default_report_failed_instance_creation(task, idx,
-                                  task.target_proc, target_memory);
+      PhysicalInstance inst;
+      std::vector<LogicalRegion> target_region;
+      target_region.push_back(task.regions[idx].region);
+      LayoutConstraintSet constraints;
+      std::vector<DimensionKind> dimension_ordering(4);
+      dimension_ordering[0] = DIM_X;
+      dimension_ordering[1] = DIM_Y;
+      dimension_ordering[2] = DIM_Z;
+      dimension_ordering[3] = DIM_F;
+      constraints.add_constraint(MemoryConstraint(target_memory.kind()))
+        .add_constraint(FieldConstraint(
+              task.regions[idx].instance_fields, false, false))
+        .add_constraint(OrderingConstraint(dimension_ordering, false));
+      bool created;
+      if(!runtime->find_or_create_physical_instance(ctx, target_memory,
+            constraints, target_region, inst, created))
+      {
+        default_report_failed_instance_creation(task, idx,
+            task.target_proc, target_memory);
+      }
+      if (strcmp(task.get_task_name(), "Reduce") == 0)
+        runtime->set_garbage_collection_priority(ctx, inst, GC_FIRST_PRIORITY);
+      else
+        runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
+      output.chosen_instances[idx].push_back(inst);
     }
   }
 }

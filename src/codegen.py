@@ -343,11 +343,7 @@ def generateCode(keyword, numFragments, numTreeLevels):
       print '\n-- tree level ' + str(j) + '\n'
       for i in range(numFragments):
         print '    for tile in tiles do'
-        print '      if [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile].bounds.lo.x >= [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile].bounds.hi.x then'
-        print '        Empty([my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile])'
-        print '      else'
-        print '        Reduce(' + str(j) + ', ' + str(pow2Level) + ', [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile], [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '][tile])'
-        print '      end'
+        print '      Reduce(' + str(j) + ', ' + str(pow2Level) + ', [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile], [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '][tile])'
         print '    end'
       pow2Level = pow2Level * 2
 

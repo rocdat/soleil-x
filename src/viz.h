@@ -65,7 +65,7 @@ extern "C" {
                      // CODEGEN: legion_physical_region_t_imageFragmentX
   );
 
-  void cxx_empty();
+  void cxx_empty(){};
   
 #ifdef __cplusplus
 }

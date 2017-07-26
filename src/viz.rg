@@ -263,7 +263,7 @@ end
 -- Empty: empty task
 --
 
-local task Empty(
+local task NullTask(
   leftSubregion : region(ispace(int3d), PixelFields)
 )
 where

@@ -337,15 +337,30 @@ def generateCode(keyword, numFragments, numTreeLevels):
   #[partitionFragment0ByDepth][tile],
   #  [partitionFragment1ByDepth][tile]
 
-  if(keyword == 'tree_reductions'):
-    pow2Level = 1
+if(keyword == 'tree_reductions'):
+  pow2Level = 1
     for j in range(numTreeLevels):
       print '\n-- tree level ' + str(j) + '\n'
       for i in range(numFragments):
         print '    for tile in tiles do'
-        print '      Reduce(' + str(j) + ', ' + str(pow2Level) + ', [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile], [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '][tile])'
+        print '      if [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile].bounds.hi.x <= [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile].bounds.lo.x then'
+        print '        Reduce(' + str(j) + ', ' + str(pow2Level) + ', [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile], [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '][tile])'
+        print '      else'
+        print '        NullTask([my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile])'
+        print '      end'
         print '    end'
       pow2Level = pow2Level * 2
+
+
+#if(keyword == 'tree_reductions'):
+#  pow2Level = 1
+#    for j in range(numTreeLevels):
+#      print '\n-- tree level ' + str(j) + '\n'
+#      for i in range(numFragments):
+#        print '    for tile in tiles do'
+#        print '      Reduce(' + str(j) + ', ' + str(pow2Level) + ', [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '][tile], [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '][tile])'
+#        print '    end'
+#      pow2Level = pow2Level * 2
 
 #viz.rg:-- CODEGEN: tree_reductions
 #repeat for numTreeLevels

@@ -337,8 +337,8 @@ def generateCode(keyword, numFragments, numTreeLevels):
   #[partitionFragment0ByDepth][tile],
   #  [partitionFragment1ByDepth][tile]
 
-if(keyword == 'tree_reductions'):
-  pow2Level = 1
+  if(keyword == 'tree_reductions'):
+    pow2Level = 1
     for j in range(numTreeLevels):
       print '\n-- tree level ' + str(j) + '\n'
       for i in range(numFragments):

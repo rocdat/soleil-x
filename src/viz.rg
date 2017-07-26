@@ -263,7 +263,11 @@ end
 -- Empty: empty task
 --
 
-local task Empty(dummy : int)
+local task Empty(
+  leftSubregion : region(ispace(int3d), PixelFields)
+)
+where
+  reads (leftSubregion)
 do
   cviz.cxx_empty()
 end
@@ -303,8 +307,7 @@ local exports = {}
 
 
 
--- TODO replace my.timeStep with timestep
-exports.Render = function(timeStep)
+exports.Render = function()
   return rquote
     for tile in tiles do
       Render(p_cells[tile], p_particles[tile], [my.timeStep],
@@ -317,14 +320,14 @@ end
 
 
 
-exports.Reduce = function(timeStep)
+exports.Reduce = function()
   return rquote
 
 -- CODEGEN: tree_reductions
 
     -- save result to disk
     for tile in tiles do
-      SaveImage(tile, timeStep,
+      SaveImage(tile, [my.timeStep],
 -- CODEGEN: partitionFragmentXByDepth_argList
       )
     end

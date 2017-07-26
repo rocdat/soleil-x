@@ -100,7 +100,7 @@ local task SplitLeftRight(r : region(ispace(int3d), PixelFields),
   tiles : ispace(int3d))
 
   var colors = ispace(int1d, int1d{ 2 }) -- 0 = left, 1 = right
-  var coloring = regentlib.c.legion_multi_domain_point_coloring_create()
+  var coloring = regentlib.c.legion_domain_point_coloring_create()
   var numNodes = tiles.volume
 
   for i = 0, numNodes do
@@ -111,11 +111,11 @@ local task SplitLeftRight(r : region(ispace(int3d), PixelFields),
     if (i / pow2Level) % 2 == 1 then
       color = int1d{ 1 }
     end
-    regentlib.c.legion_multi_domain_point_coloring_color_domain(coloring, color, rect)
+    regentlib.c.legion_domain_point_coloring_color_domain(coloring, color, rect)
   end
 
   var p = partition(disjoint, r, coloring, colors)
-  regentlib.c.legion_multi_domain_point_coloring_destroy(coloring)
+  regentlib.c.legion_domain_point_coloring_destroy(coloring)
   return p
 end
 
@@ -252,13 +252,10 @@ local task Reduce(treeLevel : int,
 where
    reads writes (leftSubregion), reads (rightSubregion)
 do
-  if leftSubregion.bounds.lo.x < leftSubregion.bounds.hi.x and
-    rightSubregion.bounds.lo.x < rightSubregion.bounds.hi.x then
-    cviz.cxx_reduce(__runtime(),
-      __physical(leftSubregion), __fields(leftSubregion),
-      __physical(rightSubregion), __fields(rightSubregion),
-      treeLevel, offset)
-  end
+  cviz.cxx_reduce(__runtime(),
+    __physical(leftSubregion), __fields(leftSubregion),
+    __physical(rightSubregion), __fields(rightSubregion),
+    treeLevel, offset)
 end
 
 

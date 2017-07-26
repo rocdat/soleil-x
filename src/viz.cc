@@ -1137,6 +1137,12 @@ void cxx_reduce(legion_runtime_t runtime_,
   Domain leftIndexSpaceDomain = runtime->get_index_space_domain(leftImage->get_logical_region().get_index_space());
   Rect<3> leftBounds = leftIndexSpaceDomain.get_rect<3>();
   
+  // early out on empty regions
+  
+  if(leftBounds.lo.x[0] > leftBounds.hi.x[0]) {
+    return;
+  }
+  
   float* leftR = NULL;
   float* leftG = NULL;
   float* leftB = NULL;

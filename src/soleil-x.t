@@ -109,7 +109,7 @@ do
 
   local cxx = os.getenv('CXX') or 'c++'
 
-  local cxx_flags = "-O2 -Wall -Werror"
+  local cxx_flags = "-O2 -Wall -Werror -ftree-vectorize"
   if os.execute('test "$(uname)" = Darwin') == 0 then
     cxx_flags =
       (cxx_flags ..
@@ -3105,8 +3105,6 @@ function TimeIntegrator.UpdateTime()
 end
 
 function TimeIntegrator.InitializeVariables()
-  timestep__ = 0
-
   fluidGrid:foreach(Flow.InitializeCell)
 
   -- Initialize several grid related entitities

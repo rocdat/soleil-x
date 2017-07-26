@@ -4,8 +4,9 @@ OUTDIR=$SOLEIL_PATH/src/piz_daint_jobs
 mkdir -p ${OUTDIR}
 
 # nodes mesh testcase numfragments numtreelevels
-$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 4 4,4,2 taylor_green_vortex_256_256_256.lua 4 2 00:05:00 ${OUTDIR}
-$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 8 8,4,2 taylor_green_vortex_512_256_256.lua 8 3 00:05:00 ${OUTDIR}
+$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 4 4,4,2 taylor_green_vortex_512_512_256.lua 4 2 00:10:00 ${OUTDIR}
+$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 8 8,4,2 taylor_green_vortex_512_512_512.lua 8 3 00:10:00 ${OUTDIR}
+
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 16 8,8,2 taylor_green_vortex_512_512_256.lua 16 4 00:05:00 ${OUTDIR}
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 32 8,8,4 taylor_green_vortex_512_512_512.lua 32 5 00:05:00 ${OUTDIR}
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 64 16,8,4 taylor_green_vortex_1024_512_512.lua 64 6 00:05:00 ${OUTDIR}

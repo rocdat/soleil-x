@@ -1307,6 +1307,9 @@ void cxx_saveImage(legion_runtime_t runtime_,
 
 
 
+void cxx_empty(){/*nothing*/}
+
+
 #endif
 
 

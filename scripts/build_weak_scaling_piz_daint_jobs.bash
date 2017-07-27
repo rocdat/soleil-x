@@ -3,9 +3,13 @@ cd $SOLEIL_PATH/src
 OUTDIR=$SOLEIL_PATH/src/piz_daint_jobs
 mkdir -p ${OUTDIR}
 
+# run with 8 cpus per node
+# so num tree levels is 3 + log_2(num nodes)
+# 4 nodes, tree levels = 3 + 2 = 5
+
 # nodes mesh testcase numfragments numtreelevels
-$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 4 4,4,2 taylor_green_vortex_512_512_256.lua 4 2 00:10:00 ${OUTDIR}
-$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 8 8,4,2 taylor_green_vortex_512_512_512.lua 8 3 00:10:00 ${OUTDIR}
+$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 4 4,4,2 taylor_green_vortex_512_512_256.lua 4 5 00:10:00 ${OUTDIR}
+$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 8 8,4,2 taylor_green_vortex_512_512_512.lua 8 6 00:10:00 ${OUTDIR}
 
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 16 8,8,2 taylor_green_vortex_512_512_256.lua 16 4 00:05:00 ${OUTDIR}
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 32 8,8,4 taylor_green_vortex_512_512_512.lua 32 5 00:05:00 ${OUTDIR}

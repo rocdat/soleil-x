@@ -3383,6 +3383,7 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
         true)
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
+  M.PRINT("completed one stime step")
 
   M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
     Visualize.Render()

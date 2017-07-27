@@ -3387,7 +3387,7 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
   M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
     Visualize.Render()
     Visualize.Reduce()
-  end
+  M.END()
 
   if not regentlib.config['flow-spmd'] then
     M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))

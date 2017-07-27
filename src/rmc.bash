@@ -29,6 +29,8 @@ LEGION_BACKTRACE=1 LEGION_FREEZE_ON_ERROR=1 GASNET_BACKTRACE=1 LD_LIBRARY_PATH=.
 		-x LEGION_FREEZE_ON_ERROR \
 	./soleil_${NUM_FRAGMENTS}_${NUM_TREE_LEVELS}.exec \
 		-ll:cpu 2 \
+		-ll:ocpu 1 \
+		-ll:othr 8 \
 		-ll:util 1 \
 		-ll:dma 2 \
 		-ll:csize 50000 \

@@ -40,7 +40,11 @@ using namespace LegionRuntime::Accessor;
 #include <assert.h>
 #include <math.h>
 
-const int trackedParticlesPerNode = 128;
+// search for the word "testcase" to find all of the testcase dependent changes
+// change this for each testcase to give the total num particles
+#define EXPECTED_NUM_PARTICLES 1375000 // this is for the 512x512x256 taylor testcase
+
+const int numVisibleParticlesPerNode = 1024 * 4;
 static const bool writeFiles = false;//write out text files with data
 
 
@@ -168,7 +172,7 @@ static void scaledTemperatureToColor(GLfloat temperature,
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
-  GLfloat scale = 5.0e+11;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
+  GLfloat scale = 5.0e+10;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
   GLfloat base[] = {
     (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
   };
@@ -203,13 +207,14 @@ static void drawParticle(GLUquadricObj* qobj, float* position, float density, fl
   
   glPushMatrix();
   glTranslatef(position[0], position[1], position[2] + verticalOffset);
-  const GLfloat densityScale = 0.00001f;
+  const GLfloat densityScale = 0.001f;
   gluSphere(qobj, density * densityScale, 3, 3);
   glPopMatrix();
 }
 
 
 #ifndef STANDALONE
+
 
 static void drawParticles(bool* __validBase,
                           IndexSpace __validIS,
@@ -229,9 +234,14 @@ static void drawParticles(bool* __validBase,
   IndexIterator densityIterator(runtime, densityIS);
   IndexIterator particleTemperatureIterator(runtime, particleTemperatureIS);
   IndexIterator trackingIterator(runtime, trackingIS);
+  srandom(0);
+  const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
+  const long randomThreshold = RAND_MAX_ * numVisibleParticlesPerNode / EXPECTED_NUM_PARTICLES;
   
   numTracking = 0;
   int numParticles = 0;
+  int numRandom = 0;
+  int numDrawn = 0;
   while(__validIterator.has_next()) {
     bool valid = *NEXT(__valid);
     FieldData* p = NEXT3(position);
@@ -239,18 +249,21 @@ static void drawParticles(bool* __validBase,
     float density = *NEXT(density);
     float particleTemperature = *NEXT(particleTemperature);
     bool tracking = *NEXT(tracking);
-    if(valid && tracking) {
+    if(tracking) numTracking++;
+    bool randomlySelected = random() < randomThreshold;
+    if(randomlySelected) numRandom++;
+    if(valid && (tracking || randomlySelected)) {
       drawParticle(qobj, pos, density, particleTemperature);
-      numTracking++;
+      numDrawn++;
     }
     numParticles++;
   }
-  std::cout << "particles " << numParticles << " tracking " << numTracking << std::endl;
+  std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
 }
 
 
 static void trackParticles(int numTracking,
-                           const int trackedParticlesPerNode,
+                           const int numVisibleParticlesPerNode,
                            bool* __validBase,
                            IndexSpace __validIS,
                            bool* trackingBase,
@@ -260,7 +273,7 @@ static void trackParticles(int numTracking,
   IndexIterator __validIterator(runtime, __validIS);
   IndexIterator trackingIterator(runtime, trackingIS);
   
-  int needMore = trackedParticlesPerNode - numTracking;
+  int needMore = numVisibleParticlesPerNode - numTracking;
   while(__validIterator.has_next() && needMore > 0) {
     bool valid = *NEXT(__valid);
     bool* tracking = NEXT(tracking);
@@ -281,9 +294,18 @@ static void drawParticles(std::string particleFilePath,
   
   std::ifstream particleFile;
   particleFile.open(particleFilePath);
+  int numDrawn = 0;
+  int numParticles = 0;
+  int numRandom = 0;
   int numTracking = 0;
+
   char buffer[256];
-  while(particleFile.getline(buffer, sizeof(buffer)) && numTracking < trackedParticlesPerNode) {
+  
+  srandom(0);
+  const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
+  const long randomThreshold = RAND_MAX_ * numVisibleParticlesPerNode / EXPECTED_NUM_PARTICLES;
+
+  while(particleFile.getline(buffer, sizeof(buffer))) {
     int cellX, cellY, cellZ;
     FieldData position[3];
     FieldData density;
@@ -293,12 +315,22 @@ static void drawParticles(std::string particleFilePath,
            position, position + 1, position + 2,
            &density,
            &particleTemperature);
-    float pos[3] = { (float)position[0], (float)position[1], (float)position[2] };
-    drawParticle(qobj, pos, density, particleTemperature);
-    numTracking++;
+    
+    bool tracking = (numTracking < numVisibleParticlesPerNode);
+    if(tracking) numTracking++;
+    tracking = false;//debug
+    bool randomlySelected = random() < randomThreshold;
+    if(randomlySelected) numRandom++;
+    if(tracking || randomlySelected) {
+      float pos[3] = { (float)position[0], (float)position[1], (float)position[2] };
+      drawParticle(qobj, pos, density, particleTemperature);
+      numDrawn++;
+    }
+    numParticles++;
   }
   particleFile.close();
-  
+  std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
+
 }
 
 #endif
@@ -312,16 +344,18 @@ static void drawParticles(std::string particleFilePath,
  mean velocity magnitude 2.57586e-13
  */
 
-static void setCamera() {//TODO this is testcase dependent
+static void setCamera() {
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
+  // change this for each testcase to hold the data
   glOrtho(-2000, 2000, -1500, 1500, -5000, 5000);
   
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
-  gluLookAt(/*eye*/-500, -500, 400, /*at*/1600, 1600, 800, /*up*/0.0, 0.0, 1.0);
+  // possbly change the at point for each testcase
+  gluLookAt(/*eye*/-500, -439, 439, /*at*/1600, 1600, 800, /*up*/0.0, 0.0, 1.0);
 }
 
 
@@ -433,8 +467,8 @@ void render_image(int width,
                 particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS,
                 qobj, runtime, numTracking);
   
-  if(numTracking < trackedParticlesPerNode) {
-    trackParticles(numTracking, trackedParticlesPerNode, __validBase, __validIS,
+  if(numTracking < numVisibleParticlesPerNode) {
+    trackParticles(numTracking, numVisibleParticlesPerNode, __validBase, __validIS,
                    trackingBase, trackingIS, runtime);
   }
   

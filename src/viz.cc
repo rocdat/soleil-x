@@ -168,7 +168,7 @@ static void scaledTemperatureToColor(GLfloat temperature,
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
-  GLfloat scale = 1.0e+13;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
+  GLfloat scale = 5.0e+11;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
   GLfloat base[] = {
     (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
   };
@@ -304,16 +304,24 @@ static void drawParticles(std::string particleFilePath,
 #endif
 
 
-
+/* 512x512x256 taylor
+ cell min 1611.64,807.389,807.389
+ cell max 2409.6,1605.35,1605.35
+ reading particle data from piz_daint_output/particles.00000.256_128_128__383_255_255.txt
+ calling cxx_render with output to foo.ppm
+ mean velocity magnitude 2.57586e-13
+ */
 
 static void setCamera() {//TODO this is testcase dependent
   glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
   glLoadIdentity();
-  glOrtho(-2000, 2000, -5, 2000, 0.0, 4000.0);//TODO this may be testcase dependent
+  glOrtho(-2000, 2000, -1500, 1500, -5000, 5000);
   
   glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
   glLoadIdentity();
-  gluLookAt(/*eye*/2000, 2000, 2000, /*at*/1000.0, 1000.0, 500.0, /*up*/0.0, 0.0, 1.0);
+  gluLookAt(/*eye*/-500, -500, 400, /*at*/1600, 1600, 800, /*up*/0.0, 0.0, 1.0);
 }
 
 
@@ -436,6 +444,7 @@ void render_image(int width,
   
 #endif
   
+  glPopMatrix();
   
   /* This is very important!!!
    * Make sure buffered commands are finished!!!
@@ -513,21 +522,21 @@ void accessCellData(legion_physical_region_t *cells,
     
     switch(field) {
       case 0:
-      create_field_pointer(*cell, velocity, cells_fields[field], strideVelocity, runtime);
-      assert(strideVelocity[0].offset == 3 * sizeof(FieldData));
-      break;
-      
+        create_field_pointer(*cell, velocity, cells_fields[field], strideVelocity, runtime);
+        assert(strideVelocity[0].offset == 3 * sizeof(FieldData));
+        break;
+        
       case 1:
-      create_field_pointer(*cell, centerCoordinates, cells_fields[field], strideCenter, runtime);
-      assert(strideCenter[0].offset == 3 * sizeof(FieldData));
-      break;
-      
+        create_field_pointer(*cell, centerCoordinates, cells_fields[field], strideCenter, runtime);
+        assert(strideCenter[0].offset == 3 * sizeof(FieldData));
+        break;
+        
       case 2:
-      create_field_pointer(*cell, temperature, cells_fields[field], strideTemperature, runtime);
-      assert(strideTemperature[0].offset == sizeof(FieldData));
-      break;
+        create_field_pointer(*cell, temperature, cells_fields[field], strideTemperature, runtime);
+        assert(strideTemperature[0].offset == sizeof(FieldData));
+        break;
       default:
-      std::cerr << "oops, field not found" << std::endl;
+        std::cerr << "oops, field not found" << std::endl;
     }
   }
 }
@@ -652,39 +661,39 @@ void accessParticleData(legion_physical_region_t *particles,
     
     switch(field) {
       case 0:
-      getBaseIndexSpaceInt(particle, particles_fields[field], cellX, cellXIS);
-      break;
-      
+        getBaseIndexSpaceInt(particle, particles_fields[field], cellX, cellXIS);
+        break;
+        
       case 1:
-      getBaseIndexSpaceInt(particle, particles_fields[field], cellY, cellYIS);
-      break;
-      
+        getBaseIndexSpaceInt(particle, particles_fields[field], cellY, cellYIS);
+        break;
+        
       case 2:
-      getBaseIndexSpaceInt(particle, particles_fields[field], cellZ, cellZIS);
-      break;
-      
+        getBaseIndexSpaceInt(particle, particles_fields[field], cellZ, cellZIS);
+        break;
+        
       case 3:
-      getBaseIndexSpaceFieldData3(particle, particles_fields[field], position, positionIS);
-      break;
-      
+        getBaseIndexSpaceFieldData3(particle, particles_fields[field], position, positionIS);
+        break;
+        
       case 4:
-      getBaseIndexSpaceFieldData(particle, particles_fields[field], density, densityIS);
-      break;
-      
+        getBaseIndexSpaceFieldData(particle, particles_fields[field], density, densityIS);
+        break;
+        
       case 5:
-      getBaseIndexSpaceFieldData(particle, particles_fields[field], particleTemperature, particleTemperatureIS);
-      break;
-      
+        getBaseIndexSpaceFieldData(particle, particles_fields[field], particleTemperature, particleTemperatureIS);
+        break;
+        
       case 6:
-      getBaseIndexSpaceBool(particle, particles_fields[field], tracking, trackingIS);
-      break;
-      
+        getBaseIndexSpaceBool(particle, particles_fields[field], tracking, trackingIS);
+        break;
+        
       case 7:
-      getBaseIndexSpaceBool(particle, particles_fields[field], __valid, __validIS);
-      break;
-      
+        getBaseIndexSpaceBool(particle, particles_fields[field], __valid, __validIS);
+        break;
+        
       default:
-      std::cerr << "oops, field not found" << std::endl;
+        std::cerr << "oops, field not found" << std::endl;
     }
   }
 }
@@ -818,23 +827,23 @@ static void writeRenderedPixelsToImageFragment(GLfloat* rgba,
     PhysicalRegion* image = CObjectWrapper::unwrap(imageFragment[field]);
     switch(field) {
       case 0:
-      create_field_pointer(*image, R, imageFragment_fields[field], strideR, runtime);
-      break;
+        create_field_pointer(*image, R, imageFragment_fields[field], strideR, runtime);
+        break;
       case 1:
-      create_field_pointer(*image, G, imageFragment_fields[field], strideG, runtime);
-      break;
+        create_field_pointer(*image, G, imageFragment_fields[field], strideG, runtime);
+        break;
       case 2:
-      create_field_pointer(*image, B, imageFragment_fields[field], strideB, runtime);
-      break;
+        create_field_pointer(*image, B, imageFragment_fields[field], strideB, runtime);
+        break;
       case 3:
-      create_field_pointer(*image, A, imageFragment_fields[field], strideA, runtime);
-      break;
+        create_field_pointer(*image, A, imageFragment_fields[field], strideA, runtime);
+        break;
       case 4:
-      create_field_pointer(*image, Z, imageFragment_fields[field], strideZ, runtime);
-      break;
+        create_field_pointer(*image, Z, imageFragment_fields[field], strideZ, runtime);
+        break;
       case 5:
-      create_field_pointer(*image, UserData, imageFragment_fields[field], strideUserData, runtime);
-      break;
+        create_field_pointer(*image, UserData, imageFragment_fields[field], strideUserData, runtime);
+        break;
     }
   }
   
@@ -1029,7 +1038,7 @@ void cxx_render(legion_runtime_t runtime_,
   writeRenderedPixelsToImageFragments(rgbaBuffer, depthBuffer, runtime,
                                       imageFragment, imageFragment_fields, width, height);
   
-
+  
 #endif
   
   
@@ -1177,29 +1186,29 @@ void cxx_reduce(legion_runtime_t runtime_,
     PhysicalRegion* rightImage = CObjectWrapper::unwrap(rightSubregion[field]);
     switch(field) {
       case 0:
-      create_field_pointer(*leftImage, leftR, leftSubregion_fields[field], leftStrideR, runtime);
-      create_field_pointer(*rightImage, rightR, rightSubregion_fields[field], rightStrideR, runtime);
-      break;
+        create_field_pointer(*leftImage, leftR, leftSubregion_fields[field], leftStrideR, runtime);
+        create_field_pointer(*rightImage, rightR, rightSubregion_fields[field], rightStrideR, runtime);
+        break;
       case 1:
-      create_field_pointer(*leftImage, leftG, leftSubregion_fields[field], leftStrideG, runtime);
-      create_field_pointer(*rightImage, rightG, rightSubregion_fields[field], rightStrideG, runtime);
-      break;
+        create_field_pointer(*leftImage, leftG, leftSubregion_fields[field], leftStrideG, runtime);
+        create_field_pointer(*rightImage, rightG, rightSubregion_fields[field], rightStrideG, runtime);
+        break;
       case 2:
-      create_field_pointer(*leftImage, leftB, leftSubregion_fields[field], leftStrideB, runtime);
-      create_field_pointer(*rightImage, rightB, rightSubregion_fields[field], rightStrideB, runtime);
-      break;
+        create_field_pointer(*leftImage, leftB, leftSubregion_fields[field], leftStrideB, runtime);
+        create_field_pointer(*rightImage, rightB, rightSubregion_fields[field], rightStrideB, runtime);
+        break;
       case 3:
-      create_field_pointer(*leftImage, leftA, leftSubregion_fields[field], leftStrideA, runtime);
-      create_field_pointer(*rightImage, rightA, rightSubregion_fields[field], rightStrideA, runtime);
-      break;
+        create_field_pointer(*leftImage, leftA, leftSubregion_fields[field], leftStrideA, runtime);
+        create_field_pointer(*rightImage, rightA, rightSubregion_fields[field], rightStrideA, runtime);
+        break;
       case 4:
-      create_field_pointer(*leftImage, leftZ, leftSubregion_fields[field], leftStrideZ, runtime);
-      create_field_pointer(*rightImage, rightZ, rightSubregion_fields[field], rightStrideZ, runtime);
-      break;
+        create_field_pointer(*leftImage, leftZ, leftSubregion_fields[field], leftStrideZ, runtime);
+        create_field_pointer(*rightImage, rightZ, rightSubregion_fields[field], rightStrideZ, runtime);
+        break;
       case 5:
-      create_field_pointer(*leftImage, leftUserData, leftSubregion_fields[field], leftStrideUserData, runtime);
-      create_field_pointer(*rightImage, rightUserData, rightSubregion_fields[field], rightStrideUserData, runtime);
-      break;
+        create_field_pointer(*leftImage, leftUserData, leftSubregion_fields[field], leftStrideUserData, runtime);
+        create_field_pointer(*rightImage, rightUserData, rightSubregion_fields[field], rightStrideUserData, runtime);
+        break;
     }
   }
   
@@ -1217,8 +1226,8 @@ void cxx_saveImage(legion_runtime_t runtime_,
                    int width,
                    int height,
                    int timeStepNumber,
-                   // CODEGEN: legion_physical_region_t_imageFragmentX
-                   )
+// CODEGEN: legion_physical_region_t_imageFragmentX
+)
 {
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
   
@@ -1229,11 +1238,11 @@ void cxx_saveImage(legion_runtime_t runtime_,
   fragment->get_fields(fields);
   const int expectedNumFields = 6;
   assert(fields.size() == expectedNumFields);
- 
+  
   size_t numElements = width * height * expectedNumFields;
   GLfloat* rgbaBuffer = (GLfloat*)calloc(numElements, sizeof(GLfloat));
   GLfloat* rgba = rgbaBuffer;
-
+  
   float* R = NULL;
   float* G = NULL;
   float* B = NULL;
@@ -1256,23 +1265,23 @@ void cxx_saveImage(legion_runtime_t runtime_,
     for(unsigned field = 0; field < fields.size(); ++field) {
       switch(field) {
         case 0:
-        create_field_pointer(*fragment, R, imageFragment_fields[fragmentID][field], strideR, runtime);
-        break;
+          create_field_pointer(*fragment, R, imageFragment_fields[fragmentID][field], strideR, runtime);
+          break;
         case 1:
-        create_field_pointer(*fragment, G, imageFragment_fields[fragmentID][field], strideG, runtime);
-        break;
+          create_field_pointer(*fragment, G, imageFragment_fields[fragmentID][field], strideG, runtime);
+          break;
         case 2:
-        create_field_pointer(*fragment, B, imageFragment_fields[fragmentID][field], strideB, runtime);
-        break;
+          create_field_pointer(*fragment, B, imageFragment_fields[fragmentID][field], strideB, runtime);
+          break;
         case 3:
-        create_field_pointer(*fragment, A, imageFragment_fields[fragmentID][field], strideA, runtime);
-        break;
+          create_field_pointer(*fragment, A, imageFragment_fields[fragmentID][field], strideA, runtime);
+          break;
         case 4:
-        create_field_pointer(*fragment, Z, imageFragment_fields[fragmentID][field], strideZ, runtime);
-        break;
+          create_field_pointer(*fragment, Z, imageFragment_fields[fragmentID][field], strideZ, runtime);
+          break;
         case 5:
-        create_field_pointer(*fragment, UserData, imageFragment_fields[fragmentID][field], strideUserData, runtime);
-        break;
+          create_field_pointer(*fragment, UserData, imageFragment_fields[fragmentID][field], strideUserData, runtime);
+          break;
       }
     }
     int pixelCount = 0;
@@ -1329,14 +1338,21 @@ void readCellData(std::string filePath,
   if (inputFile.is_open()) {
     std::string inputLine;
     if(getline(inputFile, inputLine)) {
+      unsigned expectedNumCells;
       unsigned xLo, yLo, zLo, xHi, yHi, zHi;
-      sscanf(inputLine.c_str(), "[(%d,%d,%d),(%d,%d,%d)]",
-             &xLo, &yLo, &zLo, &xHi, &yHi, &zHi);
-      numCells[0] = xHi - xLo + 1;
-      numCells[1] = yHi - yLo + 1;
-      numCells[2] = zHi - zLo + 1;
-      
-      unsigned expectedNumCells = numCells[0] * numCells[1] * numCells[2];
+      int numFields = sscanf(inputLine.c_str(), "[(%d,%d,%d),(%d,%d,%d)]",
+                             &xLo, &yLo, &zLo, &xHi, &yHi, &zHi);
+      if(numFields == 6) {
+        numCells[0] = xHi - xLo + 1;
+        numCells[1] = yHi - yLo + 1;
+        numCells[2] = zHi - zLo + 1;
+        expectedNumCells = numCells[0] * numCells[1] * numCells[2];
+      } else {
+        sscanf(inputLine.c_str(), "%d", &expectedNumCells);
+        numCells[0] = expectedNumCells;
+        numCells[1] = 1;
+        numCells[2] = 1;
+      }
       centerCoordinates = new FieldData[expectedNumCells * 3];
       velocity = new FieldData[expectedNumCells * 3];
       temperature = new FieldData[expectedNumCells];

@@ -3385,10 +3385,10 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
   TimeIntegrator.AdvanceTimeStep()
   M.PRINT("completed one stime step")
 
-  M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
+  -- M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
     Visualize.Render()
     Visualize.Reduce()
-  M.END()
+  -- M.END()
 
   if not regentlib.config['flow-spmd'] then
     M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))

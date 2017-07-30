@@ -3384,11 +3384,8 @@ M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
   M.PRINT("completed one stime step")
-
-  -- M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
-    Visualize.Render()
-    Visualize.Reduce()
-  -- M.END()
+  Visualize.Render()
+  Visualize.Reduce()
 
   if not regentlib.config['flow-spmd'] then
     M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))
@@ -3401,9 +3398,9 @@ M.END()
 -- Final stats printing
 
 M.PRINT("exited run loop\n")
+Visualize.Render()
+Visualize.Reduce()
 if regentlib.config['flow-spmd'] then
-  Visualize.Render()
-  Visualize.Reduce()
   Statistics.ComputeSpatialAverages()
 end
 IO.WriteConsoleOutput()

@@ -57,9 +57,9 @@ COMPILE_COMMAND=\
 	-i testcase.lua \
 	-fparallelize 1 \
 	-fparallelize-dop ${MESH} \
-	-fopenmp 1 \
         -fflow 0 "
 
+#	-fopenmp 1 \
 #	-fflow-spmd 1 \
 #        -fflow-spmd-shardsize 8 "
 

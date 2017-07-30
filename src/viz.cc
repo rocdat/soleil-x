@@ -195,7 +195,6 @@ static void drawVelocityVector(FieldData* centerCoordinate,
   glVertex3fv(base);
   glVertex3fv(top);
   
-  std::cout << "cell at " << base[0] << ", " << base[1] << ", " << base[2] << std::endl;
 }
 
 

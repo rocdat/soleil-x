@@ -39,12 +39,15 @@ using namespace LegionRuntime::Accessor;
 #include <iomanip>
 #include <assert.h>
 #include <math.h>
+#include <stdlib.h>
+#include <malloc.h>
+
 
 // search for the word "testcase" to find all of the testcase dependent changes
 // change this for each testcase to give the total num particles
 #define EXPECTED_NUM_PARTICLES 1375000 // this is for the 512x512x256 taylor testcase
 
-const int numVisibleParticlesPerNode = 1024 * 4;
+const int numVisibleParticlesPerNode = 1024;
 static const bool writeFiles = false;//write out text files with data
 
 
@@ -133,23 +136,23 @@ static void temperatureToColor(GLfloat temperature,
   
   // red
   if (temperature <= 6600)
-  R = 1.0f;
+    R = 1.0f;
   else
-  R = 0.0002889f * x5 - 0.01258f * x4 + 0.2148f * x3 - 1.776f * x2 + 6.907f * x - 8.723f;
+    R = 0.0002889f * x5 - 0.01258f * x4 + 0.2148f * x3 - 1.776f * x2 + 6.907f * x - 8.723f;
   
   // green
   if (temperature <= 6600)
-  G = -4.593e-05f * x5 + 0.001424f * x4 - 0.01489f * x3 + 0.0498f * x2 + 0.1669f * x - 0.1653f;
+    G = -4.593e-05f * x5 + 0.001424f * x4 - 0.01489f * x3 + 0.0498f * x2 + 0.1669f * x - 0.1653f;
   else
-  G = -1.308e-07f * x5 + 1.745e-05f * x4 - 0.0009116f * x3 + 0.02348f * x2 - 0.3048f * x + 2.159f;
+    G = -1.308e-07f * x5 + 1.745e-05f * x4 - 0.0009116f * x3 + 0.02348f * x2 - 0.3048f * x + 2.159f;
   
   // blue
   if (temperature <= 2000)
-  B = 0.0f;
+    B = 0.0f;
   else if (temperature < 6600)
-  B = 1.764e-05f * x5 + 0.0003575f * x4 - 0.01554f * x3 + 0.1549f * x2 - 0.3682f * x + 0.2386f;
+    B = 1.764e-05f * x5 + 0.0003575f * x4 - 0.01554f * x3 + 0.1549f * x2 - 0.3682f * x + 0.2386f;
   else
-  B = 1.0f;
+    B = 1.0f;
   
   color[0] = R;
   color[1] = G;
@@ -172,7 +175,7 @@ static void scaledTemperatureToColor(GLfloat temperature,
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
-  GLfloat scale = 5.0e+10;//TODO this is testcase dependent//TODO pass in domain bounds from simulation
+  GLfloat scale = 5.0e+13;
   GLfloat base[] = {
     (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
   };
@@ -191,6 +194,8 @@ static void drawVelocityVector(FieldData* centerCoordinate,
   
   glVertex3fv(base);
   glVertex3fv(top);
+  
+  std::cout << "cell at " << base[0] << ", " << base[1] << ", " << base[2] << std::endl;
 }
 
 
@@ -208,7 +213,7 @@ static void drawParticle(GLUquadricObj* qobj, float* position, float density, fl
   glPushMatrix();
   glTranslatef(position[0], position[1], position[2] + verticalOffset);
   const GLfloat densityScale = 0.001f;
-  gluSphere(qobj, density * densityScale, 3, 3);
+  gluSphere(qobj, density * densityScale, 7, 7);
   glPopMatrix();
 }
 
@@ -293,18 +298,18 @@ static void drawParticles(std::string particleFilePath,
                           GLUquadricObj* qobj) {
   
   std::ifstream particleFile;
-  particleFile.open(particleFilePath);
+  particleFile.open(particleFilePath.c_str(), std::ifstream::in);
   int numDrawn = 0;
   int numParticles = 0;
   int numRandom = 0;
   int numTracking = 0;
-
+  
   char buffer[256];
   
   srandom(0);
   const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
   const long randomThreshold = RAND_MAX_ * numVisibleParticlesPerNode / EXPECTED_NUM_PARTICLES;
-
+  
   while(particleFile.getline(buffer, sizeof(buffer))) {
     int cellX, cellY, cellZ;
     FieldData position[3];
@@ -330,7 +335,7 @@ static void drawParticles(std::string particleFilePath,
   }
   particleFile.close();
   std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
-
+  
 }
 
 #endif
@@ -349,14 +354,80 @@ static void setCamera() {
   glPushMatrix();
   glLoadIdentity();
   // change this for each testcase to hold the data
-  glOrtho(-2000, 2000, -1500, 1500, -5000, 5000);
+  glOrtho(-3000, 3000, -1500, 1500, -5000, 5000);
+  //gluPerspective(120, 3840 / 2160, 0, 4000);
   
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
   // possbly change the at point for each testcase
-  gluLookAt(/*eye*/-500, -439, 439, /*at*/1600, 1600, 800, /*up*/0.0, 0.0, 1.0);
+//  gluLookAt(/*eye*/-111, 7, 1000, /*at*/1600, 1600, 777, /*up*/0.0, 0.0, 1.0);
+  gluLookAt(/*eye*/-111, 237, 1000, /*at*/1603, 1605, 777, /*up*/0.0, 0.0, 1.0);
 }
+
+
+
+static void drawAveragedCells(FieldData* centerCoordinates, FieldData* velocity, FieldData* temperature, int numCells[3], GLUquadricObj *qobj) {
+  const unsigned zFactor = 8;//average over xFactor*yFactor*zFactor cells
+  const unsigned xFactor = 32;
+  const unsigned yFactor = 32;
+  const unsigned numMeanCells[] = {numCells[0] / xFactor, numCells[1] / yFactor, numCells[2] / zFactor };
+  const unsigned totalMeanCells = numMeanCells[0] * numMeanCells[1] * numMeanCells[2];
+  float totalVelocityMagnitude = 0;
+  
+  glBegin(GL_LINES);
+
+  for(unsigned meanZ = 0; meanZ < numMeanCells[2]; ++meanZ) {
+    for(unsigned meanY = 0; meanY < numMeanCells[1]; ++meanY) {
+      for(unsigned meanX = 0; meanX < numMeanCells[0]; ++meanX) {
+        
+        const unsigned baseCell[3] = { meanX * xFactor, meanY * yFactor, meanZ * zFactor };
+        FieldData meanCenterCoordinates[3] = { 0 };
+        FieldData meanVelocity[3] = { 0 };
+        FieldData meanTemperature = 0;
+        
+        for(unsigned dz = 0; dz < zFactor; ++dz) {
+          for(unsigned dy = 0; dy < yFactor; ++dy) {
+            for(unsigned dx = 0; dx < xFactor; ++dx) {
+              int cellX = baseCell[0] + dx;
+              int cellY = baseCell[1] + dy;
+              int cellZ = baseCell[2] + dz;
+              int cellIndex = cellX + (cellY * numCells[0]) + (cellZ * numCells[0] * numCells[1]);
+              FieldData* cellCenterCoordinates = centerCoordinates + 3 * cellIndex;
+              FieldData* cellVelocity = velocity + 3 * cellIndex;
+              FieldData* cellTemperature = temperature + cellIndex;
+              
+              for(unsigned i = 0; i < 3; ++i) {
+                meanCenterCoordinates[i] += cellCenterCoordinates[i];
+                meanVelocity[i] += cellVelocity[i];
+              }
+              meanTemperature += cellTemperature[0];
+            }
+          }
+        }
+        
+        for(unsigned i = 0; i < 3; ++i) {
+          meanCenterCoordinates[i] /= (xFactor * yFactor * zFactor);
+          meanVelocity[i] /= (xFactor * yFactor * zFactor);
+        }
+        meanTemperature /= (xFactor * yFactor * zFactor);
+        
+        drawVelocityVector(meanCenterCoordinates, meanVelocity, &meanTemperature);
+        float magnitudeSquared = meanVelocity[0] * meanVelocity[0] + meanVelocity[1] * meanVelocity[1] + meanVelocity[2] * meanVelocity[2];
+        float velocityMagnitude = sqrtf(magnitudeSquared);
+        totalVelocityMagnitude += velocityMagnitude;
+      }
+    }
+  }
+  
+  glEnd();
+  
+  totalVelocityMagnitude /= totalMeanCells;
+  std::cout << "mean velocity magnitude " << totalVelocityMagnitude << std::endl;
+  
+}
+
+
 
 
 #ifdef STANDALONE
@@ -370,7 +441,8 @@ void render_image(int width,
                   std::string particleFilePath,
                   GLfloat** rgbaBuffer,
                   GLfloat** depthBuffer,
-                  OSMesaContext mesaCtx)
+                  OSMesaContext mesaCtx,
+                  int numCells[3])
 
 
 #else
@@ -395,7 +467,8 @@ void render_image(int width,
                   GLfloat** rgbaBuffer,
                   GLfloat** depthBuffer,
                   OSMesaContext mesaCtx,
-                  Runtime* runtime)
+                  Runtime* runtime,
+                  int numCells[3])
 #endif
 {
   
@@ -416,7 +489,7 @@ void render_image(int width,
   GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
   GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
   GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-  GLfloat light_position[] = { 1000.0, 1000.0, 3000.0, 1.0 };
+  GLfloat light_position[] = { -500.0, -500.0, 500.0, 1.0 };
   //  GLfloat red_mat[]   = { 1.0, 0.2, 0.2, 1.0 };
   //  GLfloat green_mat[] = { 0.2, 1.0, 0.2, 0.5 };
   //  GLfloat blue_mat[]  = { 0.2, 0.2, 1.0, 1.0 };
@@ -441,22 +514,32 @@ void render_image(int width,
   // draw cells
   
   float totalVelocityMagnitude = 0;
-  
   glLineWidth(4);
-  glBegin(GL_LINES);
-  for(int i = 0; i < totalCells; ++i) {
-    drawVelocityVector(centerCoordinates, velocity, temperature);
-    float magnitudeSquared = velocity[0] * velocity[0] + velocity[1] * velocity[1] + velocity[2] * velocity[2];
-    float velocityMagnitude = sqrtf(magnitudeSquared);
-    totalVelocityMagnitude += velocityMagnitude;
-    centerCoordinates += 3;
-    velocity += 3;
-    temperature++;
-  }
-  glEnd();
   
-  float meanVelocityMagnitude = totalVelocityMagnitude / totalCells;
-  std::cout << "mean velocity magnitude " << meanVelocityMagnitude << std::endl;
+  bool is1D = (numCells[1] == 1 && numCells[2] == 1);
+  if(is1D) {
+    
+    glBegin(GL_LINES);
+    for(int i = 0; i < totalCells; ++i) {
+      drawVelocityVector(centerCoordinates, velocity, temperature);
+      float magnitudeSquared = velocity[0] * velocity[0] + velocity[1] * velocity[1] + velocity[2] * velocity[2];
+      float velocityMagnitude = sqrtf(magnitudeSquared);
+      totalVelocityMagnitude += velocityMagnitude;
+      centerCoordinates += 3;
+      velocity += 3;
+      temperature++;
+    }
+    glEnd();
+    
+    float meanVelocityMagnitude = totalVelocityMagnitude / totalCells;
+    std::cout << "mean velocity magnitude " << meanVelocityMagnitude << std::endl;
+
+  } else {
+    
+    drawAveragedCells(centerCoordinates, velocity, temperature, numCells, qobj);
+    
+  }
+  
   
   // draw particles
   
@@ -1044,7 +1127,7 @@ void cxx_render(legion_runtime_t runtime_,
 #ifdef STANDALONE
   
   render_image(width, height, centerCoordinates, velocity, temperature, totalCells, particleFilePath,
-               &rgbaBuffer, &depthBuffer, mesaCtx);
+               &rgbaBuffer, &depthBuffer, mesaCtx, numCells);
   write_ppm(outputFileName.c_str(), rgbaBuffer, width, height);
   std::string depthFileName = outputFileName + ".depth.ppm";
   
@@ -1056,7 +1139,7 @@ void cxx_render(legion_runtime_t runtime_,
                densityBase, densityIS,
                particleTemperatureBase, particleTemperatureIS,
                trackingBase, trackingIS,
-               &rgbaBuffer, &depthBuffer, mesaCtx, runtime);
+               &rgbaBuffer, &depthBuffer, mesaCtx, runtime, numCells);
   
   if(writeFiles) {
     write_ppm(imageFileName("./out/image", ".ppm", timeStepNumber, bounds).c_str(), rgbaBuffer, width, height);
@@ -1367,7 +1450,7 @@ void readCellData(std::string filePath,
                   int numCells[3],
                   FieldData min[3],
                   FieldData max[3]) {
-  std::ifstream inputFile(filePath);
+  std::ifstream inputFile(filePath.c_str(), std::ifstream::in);
   
   if (inputFile.is_open()) {
     std::string inputLine;

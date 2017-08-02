@@ -9,11 +9,11 @@ if [[ -d $SOLEIL_PATH ]] ; then echo skipping soleil-x; else
   git clone https://github.com/stanfordhpccenter/soleil-x.git $SOLEIL_PATH
 fi
 cd $LEGION_PATH/language
-git clone -b luajit2.1 https://github.com/magnatelee/terra.git
+git clone -b luajit2.1-no-opt https://github.com/elliottslaughter/terra.git
 
 if [[ "`hostname`" == "sapling" ]]
 then
-  CONDUIT=ibv ./install.py --gasnet
+  CONDUIT=ibv ./install.py --gasnet --openmp # --debug
 else
   HOSTNAME=`hostname`
   MYHOST=`echo ${HOSTNAME} | sed -e 's/daint.*/daint/'`
@@ -21,6 +21,7 @@ else
   then
     ${SOLEIL_PATH}/scripts/install_piz_daint.bash
   else
-    ./install.py
+    echo "can't identify what host you're on"
+    echo "skipping build"
   fi
 fi

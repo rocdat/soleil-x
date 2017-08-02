@@ -3,6 +3,8 @@ cd $SOLEIL_PATH/src
 OUTDIR=$SOLEIL_PATH/src/piz_daint_jobs
 mkdir -p ${OUTDIR}
 
+# run with 2 cpus per node
+
 # nodes mesh testcase numfragments numtreelevels
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 4 4,4,2 taylor_green_vortex_512_512_256.lua 4 2 00:10:00 ${OUTDIR}
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 8 8,4,2 taylor_green_vortex_512_512_512.lua 8 3 00:10:00 ${OUTDIR}

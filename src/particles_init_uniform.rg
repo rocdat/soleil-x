@@ -74,7 +74,7 @@ do
   hi.z = min(hi.z, zInteriorWidth + zBoundaryWidth - 1)
   var xSize = hi.x - lo.x + 1
   var ySize = hi.y - lo.y + 1
-  --__demand(__openmp)
+  __demand(__openmp)
   for p in particles do
     if __raw(p).value - pBase < particlesPerTask then
       p.__valid = true

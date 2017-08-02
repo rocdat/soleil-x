@@ -19,7 +19,8 @@ TESTCASE=$3
 if [[ "$TESTCASE" == "" ]]
 then
   CASEDIR=taylor_with_smaller_particles
-  CASENAME=taylor_green_vortex_512_512_256.lua
+  # CASENAME=taylor_green_vortex_512_512_256.lua
+  CASENAME=taylor_green_vortex_256_256_256.lua
   TESTCASE=${SOLEIL_PATH}/testcases/${CASEDIR}/${CASENAME}
 fi
 MESH=$4
@@ -39,7 +40,7 @@ echo === Build ${NUM_FRAGMENTS} fragments, ${NUM_TREE_LEVELS} tree levels, test 
 START=`date`
 echo start ${START}
 cd $SOLEIL_PATH/src 
-git checkout soleil_viz 
+# git checkout soleil_viz 
 EXEC=soleil_${NUM_FRAGMENTS}_${NUM_TREE_LEVELS}.exec
 rm testcase.lua
 cat ${TESTCASE} | sed -e "s:max_iter =.*:max_iter = ${MAX_ITER},:" > testcase.lua
@@ -57,12 +58,11 @@ COMPILE_COMMAND=\
 	-i testcase.lua \
 	-fparallelize 1 \
 	-fparallelize-dop ${MESH} \
-        -fflow 0 "
-
-#	-fopenmp 1 \
-#	-fflow-spmd 1 \
-#        -fflow-spmd-shardsize 8 "
-
+	-fopenmp 1 \
+        -fopenmp-strict 1 \
+	-fflow-spmd 1 \
+        -fflow-spmd-shardsize 1 "
+#-fflow 0 "
 echo $COMPILE_COMMAND
 echo $COMPILE_COMMAND | /bin/bash
 

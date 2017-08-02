@@ -3398,8 +3398,8 @@ M.END()
 -- Final stats printing
 
 M.PRINT("exited run loop\n")
-Visualize.Render()
-Visualize.Reduce()
+-- Visualize.Render()
+-- Visualize.Reduce()
 if regentlib.config['flow-spmd'] then
   Statistics.ComputeSpatialAverages()
 end

@@ -5,8 +5,8 @@ module load daint-mc
 unset LG_RT_DIR
 
 cd ${LEGION_PATH}/language
-rm -rf terra.build
-CC=cc CXX=CC HOST_CC=gcc HOST_CXX=g++ scripts/setup_env.py 
+rm -rf terra.build terra terra.build.master
+USE_OPENMP=1 CC=cc CXX=CC HOST_CC=gcc HOST_CXX=g++ scripts/setup_env.py 
 rm -rf terra.build.master
 mv terra.build terra.build.master
 git clone -b luajit2.1 https://github.com/magnatelee/terra.git terra.build

@@ -38,6 +38,7 @@ srun -n NODES \
         -ll:othr 8 \
         -ll:util 1 \
         -ll:dma 2 \
+	-ll:io 1 \
         -ll:csize 50000 \
         -level barriers=2 \
         -logfile barriers_%.log \

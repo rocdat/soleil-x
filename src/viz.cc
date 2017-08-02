@@ -248,6 +248,7 @@ static void drawParticles(bool* __validBase,
   int numDrawn = 0;
   while(__validIterator.has_next()) {
     bool valid = *NEXT(__valid);
+    valid = true;//debug
     FieldData* p = NEXT3(position);
     float pos[3] = { (float)p[0], (float)p[1], (float)p[2] };
     float density = *NEXT(density);
@@ -280,6 +281,7 @@ static void trackParticles(int numTracking,
   int needMore = numVisibleParticlesPerNode - numTracking;
   while(__validIterator.has_next() && needMore > 0) {
     bool valid = *NEXT(__valid);
+    valid = true;//debug
     bool* tracking = NEXT(tracking);
     if(valid && !*tracking) {
       *tracking = true;

@@ -15,7 +15,7 @@ fi
 
 cd $SOLEIL_PATH/src
 
-$SOLEIL_PATH/scripts/build_multinode_codegen.bash $NUM_FRAGMENTS $NUM_TREE_LEVELS $SOLEIL_PATH/testcases/taylor_with_smaller_particles/$TESTCASE $MESH
+$SOLEIL_PATH/scripts/build_multinode_openmp.bash $NUM_FRAGMENTS $NUM_TREE_LEVELS $SOLEIL_PATH/testcases/taylor_with_smaller_particles/$TESTCASE $MESH
 
 JOBID=Job_$NODES
 mkdir -p ${OUTDIR}/${JOBID}

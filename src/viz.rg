@@ -153,16 +153,15 @@ local task ChildPartition(r : region(ispace(int3d), PixelFields),
   var numTilesY = tiles.bounds.hi.y - tiles.bounds.lo.y + 1
 
   for tile in tiles do
-    var rect = rect3d{ lo = one, hi = zero }
     var z = tile.x + (tile.y * numTilesX) + (tile.z * numTilesX * numTilesY)
     if z < numNodes / (2 * pow2Level) then
       var layer = 2 * pow2Level * z + offset
-      rect = rect3d{
+      var rect = rect3d{
         lo = int3d{ 0, 0, layer },
         hi = int3d{ fragmentWidth - 1, fragmentHeight - 1, layer }
       }
+      regentlib.c.legion_domain_point_coloring_color_domain(coloring, tile, rect)
     end
-    regentlib.c.legion_domain_point_coloring_color_domain(coloring, tile, rect)
   end
 
   var p = partition(disjoint, r, coloring, tiles)

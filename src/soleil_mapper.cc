@@ -31,6 +31,7 @@ public:
                 const char *mapper_name,
                 std::vector<Processor>* loc_procs_list,
                 std::vector<Processor>* toc_procs_list,
+                std::vector<Processor>* io_procs_list,
                 std::vector<Processor>* omp_procs_list,
                 std::vector<Memory>* sysmems_list,
                 std::vector<Memory>* fbmems_list,
@@ -83,11 +84,13 @@ protected:
   void soleil_create_copy_instance(MapperContext ctx, const Copy &copy,
                                    const RegionRequirement &req, unsigned index,
                                    std::vector<PhysicalInstance> &instances);
+  Color get_task_color(MapperContext ctx, const Task &task);
 private:
   bool use_gpu;
   bool use_omp;
   std::vector<Processor>& loc_procs_list;
   std::vector<Processor>& toc_procs_list;
+  std::vector<Processor>& io_procs_list;
   std::vector<Processor>& omp_procs_list;
   std::vector<Memory>& sysmems_list;
   std::vector<Memory>& fbmems_list;
@@ -104,11 +107,11 @@ private:
   std::vector<TaskSlice> slice_cache_render;
   typedef std::vector<PhysicalInstance> CachedRegionMapping;
   typedef std::vector<CachedRegionMapping> CachedTaskMapping;
-  std::map<DomainPoint, CachedTaskMapping> mapping_cache_render;
-  std::map<DomainPoint, CachedRegionMapping> mapping_cache_particle;
-  std::map<DomainPoint, CachedTaskMapping> mapping_cache_init;
-  std::map<DomainPoint, CachedTaskMapping> mapping_cache_push;
-  std::map<DomainPoint, CachedTaskMapping> mapping_cache_pull;
+  std::map<std::pair<Color, RegionTreeID>, CachedTaskMapping> mapping_cache_render;
+  std::map<Color, CachedRegionMapping> mapping_cache_particle;
+  std::map<Color, CachedTaskMapping> mapping_cache_init;
+  std::map<Color, CachedTaskMapping> mapping_cache_push;
+  std::map<Color, CachedTaskMapping> mapping_cache_pull;
 };
 
 //--------------------------------------------------------------------------
@@ -116,6 +119,7 @@ SoleilMapper::SoleilMapper(MapperRuntime *rt, Machine machine, Processor local,
                              const char *mapper_name,
                              std::vector<Processor>* _loc_procs_list,
                              std::vector<Processor>* _toc_procs_list,
+                             std::vector<Processor>* _io_procs_list,
                              std::vector<Processor>* _omp_procs_list,
                              std::vector<Memory>* _sysmems_list,
                              std::vector<Memory>* _fbmems_list,
@@ -133,6 +137,7 @@ SoleilMapper::SoleilMapper(MapperRuntime *rt, Machine machine, Processor local,
     use_omp(false),
     loc_procs_list(*_loc_procs_list),
     toc_procs_list(*_toc_procs_list),
+    io_procs_list(*_io_procs_list),
     omp_procs_list(*_omp_procs_list),
     sysmems_list(*_sysmems_list),
     fbmems_list(*_fbmems_list),
@@ -150,6 +155,33 @@ SoleilMapper::SoleilMapper(MapperRuntime *rt, Machine machine, Processor local,
 }
 
 //--------------------------------------------------------------------------
+Color SoleilMapper::get_task_color(MapperContext ctx, const Task &task)
+//--------------------------------------------------------------------------
+{
+  assert(task.regions[0].handle_type == SINGULAR);
+
+  const LogicalRegion& region = task.regions[0].region;
+  Color color = -1U;
+  if (runtime->has_parent_index_partition(ctx, region.get_index_space())) {
+    IndexPartition ip =
+      runtime->get_parent_index_partition(ctx, region.get_index_space());
+    Domain domain =
+      runtime->get_index_partition_color_space(ctx, ip);
+    DomainPoint point =
+      runtime->get_logical_region_color_point(ctx, region);
+    assert(domain.dim == 3);
+    assert(point.dim == 3);
+    coord_t size_x = domain.rect_data[3] - domain.rect_data[0] + 1;
+    coord_t size_y = domain.rect_data[4] - domain.rect_data[1] + 1;
+    color = point.point_data[0] +
+            point.point_data[1] * size_x +
+            point.point_data[2] * size_x * size_y;
+  }
+
+  return color;
+}
+
+//--------------------------------------------------------------------------
 Processor SoleilMapper::default_policy_select_initial_processor(
                                     MapperContext ctx, const Task &task)
 //--------------------------------------------------------------------------
@@ -157,22 +189,15 @@ Processor SoleilMapper::default_policy_select_initial_processor(
   if (!task.regions.empty()) {
     if (task.regions[0].handle_type == SINGULAR &&
         task.regions[0].privilege != NO_ACCESS) {
-      const LogicalRegion& region = task.regions[0].region;
-      Color color = 0;
-      if (runtime->has_parent_index_partition(ctx, region.get_index_space())) {
-        IndexPartition ip =
-          runtime->get_parent_index_partition(ctx, region.get_index_space());
-        Domain domain =
-          runtime->get_index_partition_color_space(ctx, ip);
-        DomainPoint point =
-          runtime->get_logical_region_color_point(ctx, region);
-        assert(domain.dim == 3);
-        assert(point.dim == 3);
-        coord_t size_x = domain.rect_data[3] - domain.rect_data[0] + 1;
-        coord_t size_y = domain.rect_data[4] - domain.rect_data[1] + 1;
-        color = point.point_data[0] +
-                point.point_data[1] * size_x +
-                point.point_data[2] * size_x * size_y;
+      Color color = get_task_color(ctx, task);
+      assert(color != -1U);
+
+      // Special cases (which don't follow the default prioritization
+      // of processor kinds).
+      const char* task_name = task.get_task_name();
+      const char* prefix = "shard_";
+      if (strncmp(task_name, prefix, strlen(prefix)) == 0) {
+          return io_procs_list[color % io_procs_list.size()];
       }
 
       VariantInfo info =
@@ -188,6 +213,15 @@ Processor SoleilMapper::default_policy_select_initial_processor(
         default:
           break;
       }
+    }
+  }
+
+  {
+    // Special cases for tasks with no region arguments.
+    const char* task_name = task.get_task_name();
+    const char* prefix = "__";
+    if (strncmp(task_name, prefix, strlen(prefix)) == 0) {
+      return default_get_next_local_io();
     }
   }
 
@@ -308,8 +342,14 @@ void SoleilMapper::map_task(const MapperContext      ctx,
 
   if (strcmp(task.get_task_name(), "Render") == 0)
   {
-    std::map<DomainPoint, CachedTaskMapping>::iterator finder =
-      mapping_cache_render.find(task.index_point);
+    Color color = get_task_color(ctx, task);
+    assert(color != -1U);
+
+    assert(task.regions.size() >= 3 && task.regions[2].handle_type == SINGULAR);
+    std::pair<Color, RegionTreeID> key(color, task.regions[2].region.get_tree_id());
+
+    std::map<std::pair<Color, RegionTreeID>, CachedTaskMapping>::iterator finder =
+      mapping_cache_render.find(key);
     if (finder != mapping_cache_render.end())
     {
       CachedTaskMapping& cache = finder->second;
@@ -322,7 +362,7 @@ void SoleilMapper::map_task(const MapperContext      ctx,
     }
     else
     {
-      CachedTaskMapping& cache = mapping_cache_render[task.index_point];
+      CachedTaskMapping& cache = mapping_cache_render[key];
       cache.resize(task.regions.size());
       Memory target_memory = proc_sysmems[task.target_proc];
       for (size_t idx = 0; idx < task.regions.size(); ++idx)
@@ -397,9 +437,12 @@ void SoleilMapper::map_task(const MapperContext      ctx,
   {
     // Check the cache for particle region
     {
+      Color color = get_task_color(ctx, task);
+      assert(color != -1U);
+
       assert(task.regions.size() > 0);
-      std::map<DomainPoint, CachedRegionMapping>::iterator finder =
-        mapping_cache_particle.find(task.index_point);
+      std::map<Color, CachedRegionMapping>::iterator finder =
+        mapping_cache_particle.find(color);
       if (finder != mapping_cache_particle.end())
       {
         CachedRegionMapping& cache = finder->second;
@@ -410,7 +453,7 @@ void SoleilMapper::map_task(const MapperContext      ctx,
       }
       else
       {
-        CachedRegionMapping& cache = mapping_cache_particle[task.index_point];
+        CachedRegionMapping& cache = mapping_cache_particle[color];
         Memory target_memory = proc_sysmems[task.target_proc];
         PhysicalInstance inst;
         std::vector<LogicalRegion> target_region;
@@ -440,11 +483,14 @@ void SoleilMapper::map_task(const MapperContext      ctx,
 
     // Check the cache for the rest of region requirements
     {
-      std::map<DomainPoint, CachedTaskMapping>& mapping_cache =
+      Color color = get_task_color(ctx, task);
+      assert(color != -1U);
+
+      std::map<Color, CachedTaskMapping>& mapping_cache =
       kind == TASK_INIT ? mapping_cache_init :
         (kind == TASK_PUSH ? mapping_cache_push : mapping_cache_pull);
-      std::map<DomainPoint, CachedTaskMapping>::iterator finder =
-        mapping_cache.find(task.index_point);
+      std::map<Color, CachedTaskMapping>::iterator finder =
+        mapping_cache.find(color);
       if (finder != mapping_cache.end())
       {
         CachedTaskMapping& cache = finder->second;
@@ -458,7 +504,7 @@ void SoleilMapper::map_task(const MapperContext      ctx,
       }
       else
       {
-        CachedTaskMapping& cache = mapping_cache[task.index_point];
+        CachedTaskMapping& cache = mapping_cache[color];
         cache.resize(task.regions.size());
         Memory target_memory = proc_sysmems[task.target_proc];
         for (size_t idx = 1; idx < task.regions.size(); ++idx)
@@ -877,6 +923,7 @@ static void create_mappers(Machine machine,
 {
   std::vector<Processor>* loc_procs_list = new std::vector<Processor>();
   std::vector<Processor>* toc_procs_list = new std::vector<Processor>();
+  std::vector<Processor>* io_procs_list = new std::vector<Processor>();
   std::vector<Processor>* omp_procs_list = new std::vector<Processor>();
   std::vector<Memory>* sysmems_list = new std::vector<Memory>();
   std::vector<Memory>* fbmems_list = new std::vector<Memory>();
@@ -925,6 +972,7 @@ static void create_mappers(Machine machine,
       (*sysmem_local_procs)[it->second].push_back(it->first);
     }
     else if (it->first.kind() == Processor::IO_PROC) {
+      io_procs_list->push_back(it->first);
       (*sysmem_local_io_procs)[it->second].push_back(it->first);
     }
     else if (it->first.kind() == Processor::OMP_PROC) {
@@ -956,6 +1004,7 @@ static void create_mappers(Machine machine,
                                             machine, *it, "soleil_mapper",
                                             loc_procs_list,
                                             toc_procs_list,
+                                            io_procs_list,
                                             omp_procs_list,
                                             sysmems_list,
                                             fbmems_list,

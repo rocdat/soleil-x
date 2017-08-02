@@ -26,11 +26,17 @@ mpirun \
     -x LEGION_FREEZE_ON_ERROR=1 \
   ./soleil_${NUM_FRAGMENTS}_${NUM_TREE_LEVELS}.exec \
     -ll:cpu 1 \
+    -ll:io 1 \
     -ll:ocpu 1 \
-    -ll:othr 4 \
+    -ll:othr 8 \
+    -ll:onuma 0 \
     -ll:util 1 \
     -ll:dma 2 \
     -ll:csize 40000 \
     -lg:prof 4 \
-    -lg:prof_logfile soleil_prof_log \
-    -level barriers=2 -logfile barriers_%.log
+    -lg:prof_logfile soleil_prof_log
+
+    # -lg:spy \
+    # -logfile spy_%.log \
+
+    # -level task=2,dma=2,barrier=2,event=2 -logfile event_%.log | tee out.log

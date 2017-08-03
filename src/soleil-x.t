@@ -3378,8 +3378,9 @@ Visualize.Reduce()
 
 -- Main iteration loop
 
-M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
-              M.LT(TimeIntegrator.timeStep:get(), time_options.max_iter)),
+M.WHILE(-- M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
+              M.LT(TimeIntegrator.timeStep:get(), time_options.max_iter)-- )
+,
         true)
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()

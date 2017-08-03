@@ -154,8 +154,8 @@ local task ChildPartition(r : region(ispace(int3d), PixelFields),
 
   for tile in tiles do
     var z = tile.x + (tile.y * numTilesX) + (tile.z * numTilesX * numTilesY)
-    if z < numNodes / (2 * pow2Level) then
-      var layer = 2 * pow2Level * z + offset
+    if z % (2 * pow2Level) == 0 then
+      var layer = z + offset
       var rect = rect3d{
         lo = int3d{ 0, 0, layer },
         hi = int3d{ fragmentWidth - 1, fragmentHeight - 1, layer }

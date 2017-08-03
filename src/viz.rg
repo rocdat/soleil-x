@@ -103,9 +103,6 @@ local task SplitLeftRight(r : region(ispace(int3d), PixelFields),
   var coloring = regentlib.c.legion_multi_domain_point_coloring_create()
   var numNodes = tiles.volume
 
-  regentlib.c.legion_multi_domain_point_coloring_ensure_color(coloring, [int1d](0))
-  regentlib.c.legion_multi_domain_point_coloring_ensure_color(coloring, [int1d](1))
-
   for i = 0, numNodes do
     var rect = rect3d {
       lo = { 0, 0, i }, hi = { fragmentWidth - 1, fragmentHeight - 1, i }
@@ -156,7 +153,6 @@ local task ChildPartition(r : region(ispace(int3d), PixelFields),
   var numTilesY = tiles.bounds.hi.y - tiles.bounds.lo.y + 1
 
   for tile in tiles do
-    regentlib.c.legion_domain_point_coloring_ensure_color(coloring, tile)
     var z = tile.x + (tile.y * numTilesX) + (tile.z * numTilesX * numTilesY)
     if z < numNodes / (2 * pow2Level) then
       var layer = 2 * pow2Level * z + offset

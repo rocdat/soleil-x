@@ -6,7 +6,7 @@
 #SBATCH --nodes=NODES
 #SBATCH --ntasks-per-core=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=16
 #SBATCH --partition=normal
 #SBATCH --constraint=mc
 
@@ -30,7 +30,7 @@ mkdir -p out
 echo === run lscpu on all nodes ===
 srun -n NODES lscpu
 
-echo COMMAND=" \
+COMMAND=" \
 srun -n NODES \
         -N NODES \
         --ntasks-per-node 1 \
@@ -43,7 +43,7 @@ srun -n NODES \
         -ll:util 2 \
         -ll:dma 2 \
 	-ll:io 1 \
-        -ll:csize 50000 \
+        -ll:csize 60000 \
         -level barriers=2 \
         -logfile barriers_%.log \
         -hl:sched -1 \

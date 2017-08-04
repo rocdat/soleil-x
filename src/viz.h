@@ -43,14 +43,6 @@ extern "C" {
                   legion_field_id_t *particles_fields,
                   
                   // CODEGEN: legion_physical_region_t_imageFragmentXComma
-                   legion_physical_region_t *imageFragment0,
-                   legion_field_id_t *imageFragment0_fields,
-                   legion_physical_region_t *imageFragment1,
-                   legion_field_id_t *imageFragment1_fields,
-                   legion_physical_region_t *imageFragment2,
-                   legion_field_id_t *imageFragment2_fields,
-                   legion_physical_region_t *imageFragment3,
-                   legion_field_id_t *imageFragment3_fields,
                   
                   int xnum, int ynum, int znum,
                   int timeStepNumber);
@@ -71,14 +63,6 @@ extern "C" {
                      int timeStepNumber,
                      
                      // CODEGEN: legion_physical_region_t_imageFragmentX
-                   legion_physical_region_t *imageFragment0,
-                   legion_field_id_t *imageFragment0_fields,
-                   legion_physical_region_t *imageFragment1,
-                   legion_field_id_t *imageFragment1_fields,
-                   legion_physical_region_t *imageFragment2,
-                   legion_field_id_t *imageFragment2_fields,
-                   legion_physical_region_t *imageFragment3,
-                   legion_field_id_t *imageFragment3_fields
   );
 
   void cxx_empty(){};

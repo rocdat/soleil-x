@@ -3347,10 +3347,6 @@ end
 
 function Visualize.Initialize()
 -- CODEGEN: viz.InitializeFragmentX
-  M.INLINE(viz.InitializeFragment0)
-  M.INLINE(viz.InitializeFragment1)
-  M.INLINE(viz.InitializeFragment2)
-  M.INLINE(viz.InitializeFragment3)
 end
 
 function Visualize.Render()

@@ -17,18 +17,21 @@ cd $SOLEIL_PATH/src
 
 $SOLEIL_PATH/scripts/build_multinode_openmp.bash $NUM_FRAGMENTS $NUM_TREE_LEVELS $SOLEIL_PATH/testcases/taylor_with_smaller_particles/$TESTCASE $MESH
 
-JOBID=Job_$NODES
-mkdir -p ${OUTDIR}/${JOBID}
+JOB_ID=Job_$NODES
+mkdir -p ${OUTDIR}/${JOB_ID}
 EXEC=soleil_${NUM_FRAGMENTS}_${NUM_TREE_LEVELS}.exec
-mv ./${EXEC} ${OUTDIR}/${JOBID}
-mv ./*.so ${OUTDIR}/${JOBID}
-SCRIPT="${OUTDIR}/${JOBID}/${JOBID}_piz_daint.bash"
-cat $SOLEIL_PATH/scripts/piz_daint_multinode_job.bash | \
-  sed -e "s/TIME_LIMIT/${TIME_LIMIT}/g" | \
-  sed -e "s/TESTCASE/${TESTCASE}/g" | \
-  sed -e "s/NODES/${NODES}/g" | \
-  sed -e "s/JOBID/${JOBID}/g" | \
-  sed -e "s/EXEC/${EXEC}/g" | \
-  sed -e "s/SCRIPT/${SCRIPT}/g" \
-  > ${SCRIPT}
+mv ./${EXEC} ${OUTDIR}/${JOB_ID}
+mv ./*.so ${OUTDIR}/${JOB_ID}
+SCRIPT="${OUTDIR}/${JOB_ID}/${JOB_ID}_piz_daint.bash"
+COMMAND="cat $SOLEIL_PATH/scripts/piz_daint_multinode_job.bash | \
+  sed -e \"s/TIME_LIMIT/${TIME_LIMIT}/g\" | \
+  sed -e \"s/TESTCASE/${TESTCASE}/g\" | \
+  sed -e \"s/NODES/${NODES}/g\" | \
+  sed -e \"s/JOB_ID/${JOB_ID}/g\" | \
+  sed -e \"s/EXEC/${EXEC}/g\" | \
+  sed -e \"s:SCRIPT:${SCRIPT}:g\" \
+  > ${SCRIPT} "
+echo ${COMMAND}
+echo ${COMMAND} | /bin/bash
+
 

@@ -22,10 +22,13 @@ mkdir -p ${OUTDIR}/${JOBID}
 EXEC=soleil_${NUM_FRAGMENTS}_${NUM_TREE_LEVELS}.exec
 mv ./${EXEC} ${OUTDIR}/${JOBID}
 mv ./*.so ${OUTDIR}/${JOBID}
+SCRIPT="${OUTDIR}/${JOBID}/${JOBID}_piz_daint.bash"
 cat $SOLEIL_PATH/scripts/piz_daint_multinode_job.bash | \
   sed -e "s/TIME_LIMIT/${TIME_LIMIT}/g" | \
+  sed -e "s/TESTCASE/${TESTCASE}/g" | \
   sed -e "s/NODES/${NODES}/g" | \
   sed -e "s/JOBID/${JOBID}/g" | \
-  sed -e "s/EXEC/${EXEC}/g" \
-  > ${OUTDIR}/${JOBID}/${JOBID}_piz_daint.bash
+  sed -e "s/EXEC/${EXEC}/g" | \
+  sed -e "s/SCRIPT/${SCRIPT}/g" \
+  > ${SCRIPT}
 

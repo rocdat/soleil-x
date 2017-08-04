@@ -1,7 +1,6 @@
 #!/bin/bash -l
-#SBATCH --job-name=PSAAP_taylor_green_vortex
+#SBATCH --job-name=PSAAP_TESTCASE
 #SBATCH --mail-user=aheirich@stanford.edu
-#SBATCH --mail-type=ALL
 #SBATCH --time=TIME_LIMIT
 #SBATCH --nodes=NODES
 #SBATCH --ntasks-per-core=1
@@ -29,6 +28,9 @@ mkdir -p out
 
 echo === run lscpu on all nodes ===
 srun -n NODES lscpu
+
+echo === copy this script to run dir ===
+cp SCRIPT ${RUNDIR}
 
 COMMAND=" \
 srun -n NODES \

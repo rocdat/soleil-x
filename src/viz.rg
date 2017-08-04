@@ -49,6 +49,7 @@ end
 -------------------------------------------------------------------------------
 
 -- CODEGEN: local_module_declarations
+local my = {}
 
 return function(cellsRel, particlesRel, xnum, ynum, znum, gridOrigin, gridWidth)
 
@@ -68,10 +69,60 @@ local one = terralib.constant(`int3d { __ptr = regentlib.__int3d { 1, 1, 1 } })
 
 
 -- CODEGEN: local_imageFragmentX
+my.indices = regentlib.newsymbol("indices")
+my.timeStep = regentlib.newsymbol("timeStep")
+my.imageFragment0 = regentlib.newsymbol("imageFragment0")
+my.imageFragment1 = regentlib.newsymbol("imageFragment1")
+my.imageFragment2 = regentlib.newsymbol("imageFragment2")
+my.imageFragment3 = regentlib.newsymbol("imageFragment3")
 
 -- CODEGEN: local_partitionFragmentXByDepth
+my.partitionFragment0ByDepth = regentlib.newsymbol("partitionFragment0ByDepth")
+my.partitionFragment1ByDepth = regentlib.newsymbol("partitionFragment1ByDepth")
+my.partitionFragment2ByDepth = regentlib.newsymbol("partitionFragment2ByDepth")
+my.partitionFragment3ByDepth = regentlib.newsymbol("partitionFragment3ByDepth")
 
 -- CODEGEN: local_partitionFragmentXLeftRightChildren
+-- partitions for fragment 0
+my.partitionFragment0LeftRightLevel0 = regentlib.newsymbol("partitionFragment0LeftRightLevel0")
+my.partitionFragment0LeftChildLevel0 = regentlib.newsymbol("partitionFragment0LeftChildLevel0")
+my.partitionFragment0RightChildLevel0 = regentlib.newsymbol("partitionFragment0RightChildLevel0")
+my.partitionFragment0LeftRightLevel1 = regentlib.newsymbol("partitionFragment0LeftRightLevel1")
+my.partitionFragment0LeftChildLevel1 = regentlib.newsymbol("partitionFragment0LeftChildLevel1")
+my.partitionFragment0RightChildLevel1 = regentlib.newsymbol("partitionFragment0RightChildLevel1")
+my.partitionFragment0LeftRightLevel2 = regentlib.newsymbol("partitionFragment0LeftRightLevel2")
+my.partitionFragment0LeftChildLevel2 = regentlib.newsymbol("partitionFragment0LeftChildLevel2")
+my.partitionFragment0RightChildLevel2 = regentlib.newsymbol("partitionFragment0RightChildLevel2")
+-- partitions for fragment 1
+my.partitionFragment1LeftRightLevel0 = regentlib.newsymbol("partitionFragment1LeftRightLevel0")
+my.partitionFragment1LeftChildLevel0 = regentlib.newsymbol("partitionFragment1LeftChildLevel0")
+my.partitionFragment1RightChildLevel0 = regentlib.newsymbol("partitionFragment1RightChildLevel0")
+my.partitionFragment1LeftRightLevel1 = regentlib.newsymbol("partitionFragment1LeftRightLevel1")
+my.partitionFragment1LeftChildLevel1 = regentlib.newsymbol("partitionFragment1LeftChildLevel1")
+my.partitionFragment1RightChildLevel1 = regentlib.newsymbol("partitionFragment1RightChildLevel1")
+my.partitionFragment1LeftRightLevel2 = regentlib.newsymbol("partitionFragment1LeftRightLevel2")
+my.partitionFragment1LeftChildLevel2 = regentlib.newsymbol("partitionFragment1LeftChildLevel2")
+my.partitionFragment1RightChildLevel2 = regentlib.newsymbol("partitionFragment1RightChildLevel2")
+-- partitions for fragment 2
+my.partitionFragment2LeftRightLevel0 = regentlib.newsymbol("partitionFragment2LeftRightLevel0")
+my.partitionFragment2LeftChildLevel0 = regentlib.newsymbol("partitionFragment2LeftChildLevel0")
+my.partitionFragment2RightChildLevel0 = regentlib.newsymbol("partitionFragment2RightChildLevel0")
+my.partitionFragment2LeftRightLevel1 = regentlib.newsymbol("partitionFragment2LeftRightLevel1")
+my.partitionFragment2LeftChildLevel1 = regentlib.newsymbol("partitionFragment2LeftChildLevel1")
+my.partitionFragment2RightChildLevel1 = regentlib.newsymbol("partitionFragment2RightChildLevel1")
+my.partitionFragment2LeftRightLevel2 = regentlib.newsymbol("partitionFragment2LeftRightLevel2")
+my.partitionFragment2LeftChildLevel2 = regentlib.newsymbol("partitionFragment2LeftChildLevel2")
+my.partitionFragment2RightChildLevel2 = regentlib.newsymbol("partitionFragment2RightChildLevel2")
+-- partitions for fragment 3
+my.partitionFragment3LeftRightLevel0 = regentlib.newsymbol("partitionFragment3LeftRightLevel0")
+my.partitionFragment3LeftChildLevel0 = regentlib.newsymbol("partitionFragment3LeftChildLevel0")
+my.partitionFragment3RightChildLevel0 = regentlib.newsymbol("partitionFragment3RightChildLevel0")
+my.partitionFragment3LeftRightLevel1 = regentlib.newsymbol("partitionFragment3LeftRightLevel1")
+my.partitionFragment3LeftChildLevel1 = regentlib.newsymbol("partitionFragment3LeftChildLevel1")
+my.partitionFragment3RightChildLevel1 = regentlib.newsymbol("partitionFragment3RightChildLevel1")
+my.partitionFragment3LeftRightLevel2 = regentlib.newsymbol("partitionFragment3LeftRightLevel2")
+my.partitionFragment3LeftChildLevel2 = regentlib.newsymbol("partitionFragment3LeftChildLevel2")
+my.partitionFragment3RightChildLevel2 = regentlib.newsymbol("partitionFragment3RightChildLevel2")
 
 
 local fspace PixelFields {
@@ -215,11 +266,19 @@ local task Render(cells : cellsType,
   particles : particlesType,
   timeStep : int,
 -- CODEGEN: imageFragmentX_arglist
+  imageFragment0 : region(ispace(int3d), PixelFields),
+  imageFragment1 : region(ispace(int3d), PixelFields),
+  imageFragment2 : region(ispace(int3d), PixelFields),
+  imageFragment3 : region(ispace(int3d), PixelFields)
   )
 where
   reads(cells.{centerCoordinates, velocity, temperature}),
   reads(particles.{__valid, cell, position, density, particle_temperature, tracking}),
 -- CODEGEN: writes_imageFragmentX
+  writes(imageFragment0),
+  writes(imageFragment1),
+  writes(imageFragment2),
+  writes(imageFragment3)
 do
   regentlib.c.printf("in local task Render\n")
 
@@ -235,6 +294,10 @@ do
     __physical(cells), __fields(cells),
     __physical(particles), __fields(particles),
 -- CODEGEN: __physical_imageFragmentX__fieldsComma
+    __physical(imageFragment0), __fields(imageFragment0),
+    __physical(imageFragment1), __fields(imageFragment1),
+    __physical(imageFragment2), __fields(imageFragment2),
+    __physical(imageFragment3), __fields(imageFragment3),
     xnum, ynum, znum, timeStep)
 end
 
@@ -281,15 +344,27 @@ end
 local task SaveImage(tile : int3d,
   timeStep : int,
 -- CODEGEN: imageFragmentX_arglist
+  imageFragment0 : region(ispace(int3d), PixelFields),
+  imageFragment1 : region(ispace(int3d), PixelFields),
+  imageFragment2 : region(ispace(int3d), PixelFields),
+  imageFragment3 : region(ispace(int3d), PixelFields)
 )
 where
 -- CODEGEN: reads_imageFragmentX
+  reads(imageFragment0),
+  reads(imageFragment1),
+  reads(imageFragment2),
+  reads(imageFragment3)
 do
   if tile.z == 0 and tile.y == 0 and tile.x == 0 then
     regentlib.c.printf("Save Image timeStep %d\n", timeStep)
     cviz.cxx_saveImage(__runtime(),
       width, height, timeStep,
 -- CODEGEN: __physical_imageFragmentX__fields
+    __physical(imageFragment0), __fields(imageFragment0),
+    __physical(imageFragment1), __fields(imageFragment1),
+    __physical(imageFragment2), __fields(imageFragment2),
+    __physical(imageFragment3), __fields(imageFragment3)
     )
   end
 end
@@ -305,6 +380,73 @@ local exports = {}
 
 -- CODEGEN: InitializeFragmentX
 
+exports.InitializeFragment0 = rquote
+
+  var numLayers = tiles.volume
+  var [my.timeStep] = 0
+  var [my.indices] = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })
+  var [my.imageFragment0] = region([my.indices], PixelFields)
+  var [my.partitionFragment0ByDepth] = DepthPartition([my.imageFragment0], fragmentWidth, fragmentHeight, tiles)
+  var [my.partitionFragment0LeftRightLevel0] = SplitLeftRight([my.imageFragment0], 0, 1, tiles)
+  var [my.partitionFragment0LeftChildLevel0] = ChildPartition([my.partitionFragment0LeftRightLevel0][0], 0, 1, 0, tiles)
+  var [my.partitionFragment0RightChildLevel0] = ChildPartition([my.partitionFragment0LeftRightLevel0][1], 0, 1, 1, tiles)
+  var [my.partitionFragment0LeftRightLevel1] = SplitLeftRight([my.imageFragment0], 0, 2, tiles)
+  var [my.partitionFragment0LeftChildLevel1] = ChildPartition([my.partitionFragment0LeftRightLevel1][0], 1, 2, 0, tiles)
+  var [my.partitionFragment0RightChildLevel1] = ChildPartition([my.partitionFragment0LeftRightLevel1][1], 1, 2, 2, tiles)
+  var [my.partitionFragment0LeftRightLevel2] = SplitLeftRight([my.imageFragment0], 0, 4, tiles)
+  var [my.partitionFragment0LeftChildLevel2] = ChildPartition([my.partitionFragment0LeftRightLevel2][0], 2, 4, 0, tiles)
+  var [my.partitionFragment0RightChildLevel2] = ChildPartition([my.partitionFragment0LeftRightLevel2][1], 2, 4, 4, tiles)
+
+end
+
+exports.InitializeFragment1 = rquote
+
+  var [my.imageFragment1] = region([my.indices], PixelFields)
+  var [my.partitionFragment1ByDepth] = DepthPartition([my.imageFragment1], fragmentWidth, fragmentHeight, tiles)
+  var [my.partitionFragment1LeftRightLevel0] = SplitLeftRight([my.imageFragment1], 1, 1, tiles)
+  var [my.partitionFragment1LeftChildLevel0] = ChildPartition([my.partitionFragment1LeftRightLevel0][0], 0, 1, 0, tiles)
+  var [my.partitionFragment1RightChildLevel0] = ChildPartition([my.partitionFragment1LeftRightLevel0][1], 0, 1, 1, tiles)
+  var [my.partitionFragment1LeftRightLevel1] = SplitLeftRight([my.imageFragment1], 1, 2, tiles)
+  var [my.partitionFragment1LeftChildLevel1] = ChildPartition([my.partitionFragment1LeftRightLevel1][0], 1, 2, 0, tiles)
+  var [my.partitionFragment1RightChildLevel1] = ChildPartition([my.partitionFragment1LeftRightLevel1][1], 1, 2, 2, tiles)
+  var [my.partitionFragment1LeftRightLevel2] = SplitLeftRight([my.imageFragment1], 1, 4, tiles)
+  var [my.partitionFragment1LeftChildLevel2] = ChildPartition([my.partitionFragment1LeftRightLevel2][0], 2, 4, 0, tiles)
+  var [my.partitionFragment1RightChildLevel2] = ChildPartition([my.partitionFragment1LeftRightLevel2][1], 2, 4, 4, tiles)
+
+end
+
+exports.InitializeFragment2 = rquote
+
+  var [my.imageFragment2] = region([my.indices], PixelFields)
+  var [my.partitionFragment2ByDepth] = DepthPartition([my.imageFragment2], fragmentWidth, fragmentHeight, tiles)
+  var [my.partitionFragment2LeftRightLevel0] = SplitLeftRight([my.imageFragment2], 2, 1, tiles)
+  var [my.partitionFragment2LeftChildLevel0] = ChildPartition([my.partitionFragment2LeftRightLevel0][0], 0, 1, 0, tiles)
+  var [my.partitionFragment2RightChildLevel0] = ChildPartition([my.partitionFragment2LeftRightLevel0][1], 0, 1, 1, tiles)
+  var [my.partitionFragment2LeftRightLevel1] = SplitLeftRight([my.imageFragment2], 2, 2, tiles)
+  var [my.partitionFragment2LeftChildLevel1] = ChildPartition([my.partitionFragment2LeftRightLevel1][0], 1, 2, 0, tiles)
+  var [my.partitionFragment2RightChildLevel1] = ChildPartition([my.partitionFragment2LeftRightLevel1][1], 1, 2, 2, tiles)
+  var [my.partitionFragment2LeftRightLevel2] = SplitLeftRight([my.imageFragment2], 2, 4, tiles)
+  var [my.partitionFragment2LeftChildLevel2] = ChildPartition([my.partitionFragment2LeftRightLevel2][0], 2, 4, 0, tiles)
+  var [my.partitionFragment2RightChildLevel2] = ChildPartition([my.partitionFragment2LeftRightLevel2][1], 2, 4, 4, tiles)
+
+end
+
+exports.InitializeFragment3 = rquote
+
+  var [my.imageFragment3] = region([my.indices], PixelFields)
+  var [my.partitionFragment3ByDepth] = DepthPartition([my.imageFragment3], fragmentWidth, fragmentHeight, tiles)
+  var [my.partitionFragment3LeftRightLevel0] = SplitLeftRight([my.imageFragment3], 3, 1, tiles)
+  var [my.partitionFragment3LeftChildLevel0] = ChildPartition([my.partitionFragment3LeftRightLevel0][0], 0, 1, 0, tiles)
+  var [my.partitionFragment3RightChildLevel0] = ChildPartition([my.partitionFragment3LeftRightLevel0][1], 0, 1, 1, tiles)
+  var [my.partitionFragment3LeftRightLevel1] = SplitLeftRight([my.imageFragment3], 3, 2, tiles)
+  var [my.partitionFragment3LeftChildLevel1] = ChildPartition([my.partitionFragment3LeftRightLevel1][0], 1, 2, 0, tiles)
+  var [my.partitionFragment3RightChildLevel1] = ChildPartition([my.partitionFragment3LeftRightLevel1][1], 1, 2, 2, tiles)
+  var [my.partitionFragment3LeftRightLevel2] = SplitLeftRight([my.imageFragment3], 3, 4, tiles)
+  var [my.partitionFragment3LeftChildLevel2] = ChildPartition([my.partitionFragment3LeftRightLevel2][0], 2, 4, 0, tiles)
+  var [my.partitionFragment3RightChildLevel2] = ChildPartition([my.partitionFragment3LeftRightLevel2][1], 2, 4, 4, tiles)
+
+end
+
 
 
 exports.Render = function()
@@ -312,6 +454,10 @@ exports.Render = function()
     for tile in tiles do
       Render(p_cells[tile], p_particles[tile], [my.timeStep],
 -- CODEGEN: partitionFragmentXByDepth_argList
+        [my.partitionFragment0ByDepth][tile],
+        [my.partitionFragment1ByDepth][tile],
+        [my.partitionFragment2ByDepth][tile],
+        [my.partitionFragment3ByDepth][tile]
       )
     end
   end
@@ -325,10 +471,59 @@ exports.Reduce = function()
 
 -- CODEGEN: tree_reductions
 
+-- tree level 0
+
+    for tile in tiles do
+      Reduce(0, 1, [my.partitionFragment0LeftChildLevel0][tile], [my.partitionFragment0RightChildLevel0][tile])
+    end
+    for tile in tiles do
+      Reduce(0, 1, [my.partitionFragment1LeftChildLevel0][tile], [my.partitionFragment1RightChildLevel0][tile])
+    end
+    for tile in tiles do
+      Reduce(0, 1, [my.partitionFragment2LeftChildLevel0][tile], [my.partitionFragment2RightChildLevel0][tile])
+    end
+    for tile in tiles do
+      Reduce(0, 1, [my.partitionFragment3LeftChildLevel0][tile], [my.partitionFragment3RightChildLevel0][tile])
+    end
+
+-- tree level 1
+
+    for tile in tiles do
+      Reduce(1, 2, [my.partitionFragment0LeftChildLevel1][tile], [my.partitionFragment0RightChildLevel1][tile])
+    end
+    for tile in tiles do
+      Reduce(1, 2, [my.partitionFragment1LeftChildLevel1][tile], [my.partitionFragment1RightChildLevel1][tile])
+    end
+    for tile in tiles do
+      Reduce(1, 2, [my.partitionFragment2LeftChildLevel1][tile], [my.partitionFragment2RightChildLevel1][tile])
+    end
+    for tile in tiles do
+      Reduce(1, 2, [my.partitionFragment3LeftChildLevel1][tile], [my.partitionFragment3RightChildLevel1][tile])
+    end
+
+-- tree level 2
+
+    for tile in tiles do
+      Reduce(2, 4, [my.partitionFragment0LeftChildLevel2][tile], [my.partitionFragment0RightChildLevel2][tile])
+    end
+    for tile in tiles do
+      Reduce(2, 4, [my.partitionFragment1LeftChildLevel2][tile], [my.partitionFragment1RightChildLevel2][tile])
+    end
+    for tile in tiles do
+      Reduce(2, 4, [my.partitionFragment2LeftChildLevel2][tile], [my.partitionFragment2RightChildLevel2][tile])
+    end
+    for tile in tiles do
+      Reduce(2, 4, [my.partitionFragment3LeftChildLevel2][tile], [my.partitionFragment3RightChildLevel2][tile])
+    end
+
     -- save result to disk
     for tile in tiles do
       SaveImage(tile, [my.timeStep],
 -- CODEGEN: partitionFragmentXByDepth_argList
+        [my.partitionFragment0ByDepth][tile],
+        [my.partitionFragment1ByDepth][tile],
+        [my.partitionFragment2ByDepth][tile],
+        [my.partitionFragment3ByDepth][tile]
       )
     end
     [my.timeStep] = [my.timeStep] + 1

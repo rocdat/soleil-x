@@ -1036,14 +1036,6 @@ void cxx_render(legion_runtime_t runtime_,
                 legion_physical_region_t *particles,
                 legion_field_id_t *particles_fields,
                 // CODEGEN: legion_physical_region_t_imageFragmentXComma
-                   legion_physical_region_t *imageFragment0,
-                   legion_field_id_t *imageFragment0_fields,
-                   legion_physical_region_t *imageFragment1,
-                   legion_field_id_t *imageFragment1_fields,
-                   legion_physical_region_t *imageFragment2,
-                   legion_field_id_t *imageFragment2_fields,
-                   legion_physical_region_t *imageFragment3,
-                   legion_field_id_t *imageFragment3_fields,
                 int xnum,
                 int ynum,
                 int znum,
@@ -1054,18 +1046,6 @@ void cxx_render(legion_runtime_t runtime_,
 #ifndef STANDALONE
   
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
-  legion_physical_region_t* imageFragment[] = {
-    imageFragment0,
-    imageFragment1,
-    imageFragment2,
-    imageFragment3
-  };
-  legion_field_id_t* imageFragment_fields[] = {
-    imageFragment0_fields,
-    imageFragment1_fields,
-    imageFragment2_fields,
-    imageFragment3_fields
-  };
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   
@@ -1365,29 +1345,9 @@ void cxx_saveImage(legion_runtime_t runtime_,
                    int height,
                    int timeStepNumber,
 // CODEGEN: legion_physical_region_t_imageFragmentX
-                   legion_physical_region_t *imageFragment0,
-                   legion_field_id_t *imageFragment0_fields,
-                   legion_physical_region_t *imageFragment1,
-                   legion_field_id_t *imageFragment1_fields,
-                   legion_physical_region_t *imageFragment2,
-                   legion_field_id_t *imageFragment2_fields,
-                   legion_physical_region_t *imageFragment3,
-                   legion_field_id_t *imageFragment3_fields
 )
 {
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
-  legion_physical_region_t* imageFragment[] = {
-    imageFragment0,
-    imageFragment1,
-    imageFragment2,
-    imageFragment3
-  };
-  legion_field_id_t* imageFragment_fields[] = {
-    imageFragment0_fields,
-    imageFragment1_fields,
-    imageFragment2_fields,
-    imageFragment3_fields
-  };
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   

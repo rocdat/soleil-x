@@ -58,5 +58,9 @@ echo === run the simulation ===
 echo ${COMMAND}
 echo ${COMMAND} | /bin/bash
 
+echo === execution complete, saving slurm log ===
+
+cp slurm-${SLURM_JOBID}.out ${RUNDIR}
+
 popd
 

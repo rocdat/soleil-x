@@ -42,7 +42,7 @@ echo start ${START}
 cd $SOLEIL_PATH/src 
 # git checkout soleil_viz 
 EXEC=soleil_${NUM_FRAGMENTS}_${NUM_TREE_LEVELS}.exec
-rm testcase.lua
+rm -f testcase.lua
 cat ${TESTCASE} | sed -e "s:max_iter =.*:max_iter = ${MAX_ITER},:" > testcase.lua
 
 GEN="viz.rg viz.h viz.cc soleil-x.t"

@@ -3373,8 +3373,6 @@ if radiation_options.radiationType ~= RadiationType.OFF then
 end
 IO.WriteOutput()
 Visualize.Initialize()
-Visualize.Render()
-Visualize.Reduce()
 
 -- Main iteration loop
 
@@ -3382,11 +3380,11 @@ M.WHILE(-- M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
               M.LT(TimeIntegrator.timeStep:get(), time_options.max_iter)-- )
 ,
         true)
+  Visualize.Render()
+  Visualize.Reduce()
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
   M.PRINT("completed one stime step")
-  Visualize.Render()
-  Visualize.Reduce()
 
   if not regentlib.config['flow-spmd'] then
     M.IF(M.EQ(TimeIntegrator.timeStep:get() % time_options.consoleFrequency, 0))

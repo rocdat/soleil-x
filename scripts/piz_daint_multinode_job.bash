@@ -52,7 +52,7 @@ srun -n NODES \
         -level legion_prof=2,5 \
         -lg:prof_logfile soleil_prof_%.log \
         -hl:prof 4 \
-        | tee JOB_ID "
+        | tee JOB_ID.log "
 
 echo === run the simulation ===
 echo ${COMMAND}

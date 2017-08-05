@@ -30,7 +30,7 @@ echo === run lscpu on all nodes ===
 srun -n NODES lscpu
 
 echo === copy this script to run dir ===
-cp SCRIPT ${RUNDIR}/
+cp $SOLEIL_PATH/src/piz_daint_jobs/JOB_ID/JOB_ID_piz_daint.bash ${RUNDIR}/
 
 COMMAND=" \
 srun -n NODES \

@@ -22,15 +22,15 @@ export LEGION_FREEZE_ON_ERROR=1
 RUNDIR=/scratch/snx3000/aheirich/runX/JOB_ID
 
 rm -rf ${RUNDIR}
-mkdir ${RUNDIR}
+mkdir -p ${RUNDIR}
 pushd ${RUNDIR}
-mkdir -p out
+mkdir out
 
 echo === run lscpu on all nodes ===
 srun -n NODES lscpu
 
 echo === copy this script to run dir ===
-cp SCRIPT ${RUNDIR}
+cp SCRIPT ${RUNDIR}/
 
 COMMAND=" \
 srun -n NODES \
@@ -58,12 +58,11 @@ echo === run the simulation ===
 echo ${COMMAND}
 echo ${COMMAND} | /bin/bash
 
-echo === execution complete, saving slurm log ===
-
-cp slurm-${SLURM_JOBID}.out ${RUNDIR}
-
 echo === elapsed time ===
 sacct -j ${SLURM_JOBID} -o elapsed
+
+echo === execution complete, saving slurm log ===
+cp slurm-${SLURM_JOBID}.out ${RUNDIR}/
 
 popd
 

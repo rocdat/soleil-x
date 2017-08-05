@@ -62,7 +62,7 @@ echo === elapsed time ===
 sacct -j ${SLURM_JOBID} -o elapsed
 
 echo === execution complete, saving slurm log ===
-cp slurm-${SLURM_JOBID}.out ${RUNDIR}/
+cp $SOLEIL_PATH/src/piz_daint_jobs/JOB_ID/slurm-${SLURM_JOBID}.out ${RUNDIR}/
 
 popd
 

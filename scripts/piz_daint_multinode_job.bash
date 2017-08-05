@@ -62,5 +62,8 @@ echo === execution complete, saving slurm log ===
 
 cp slurm-${SLURM_JOBID}.out ${RUNDIR}
 
+echo === elapsed time ===
+sacct -j ${SLURM_JOBID} -o elapsed
+
 popd
 

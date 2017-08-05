@@ -22,8 +22,6 @@ using namespace Legion::Mapping;
 
 static LegionRuntime::Logger::Category log_soleil("soleil");
 
-#define NUM_RENDER_PROCS 2
-
 class SoleilMapper : public DefaultMapper
 {
 public:
@@ -109,9 +107,6 @@ private:
   typedef std::vector<CachedRegionMapping> CachedTaskMapping;
   std::map<std::pair<Color, RegionTreeID>, CachedTaskMapping> mapping_cache_render;
   std::map<Color, CachedRegionMapping> mapping_cache_particle;
-  std::map<Color, CachedTaskMapping> mapping_cache_init;
-  std::map<Color, CachedTaskMapping> mapping_cache_push;
-  std::map<Color, CachedTaskMapping> mapping_cache_pull;
 };
 
 //--------------------------------------------------------------------------
@@ -258,14 +253,6 @@ void SoleilMapper::slice_task(const MapperContext      ctx,
   return DefaultMapper::slice_task(ctx, task, input, output);
 }
 
-enum TaskKind
-{
-  TASK_INIT = 1,
-  TASK_PUSH,
-  TASK_PULL,
-  TASK_OTHERS,
-};
-
 //--------------------------------------------------------------------------
 void SoleilMapper::map_task(const MapperContext      ctx,
                             const Task&              task,
@@ -282,63 +269,7 @@ void SoleilMapper::map_task(const MapperContext      ctx,
   output.task_priority = 0;
   output.postmap_task = false;
   // Figure out our target processors
-  default_policy_select_target_processors(ctx, task, output.target_procs);
-
-  // See if we have an inner variant, if we do virtually map all the regions
-  // We don't even both caching these since they are so simple
-  if (chosen.is_inner)
-  {
-    // Check to see if we have any relaxed coherence modes in which
-    // case we can no longer do virtual mappings so we'll fall through
-    bool has_relaxed_coherence = false;
-    for (unsigned idx = 0; idx < task.regions.size(); idx++)
-    {
-      if (task.regions[idx].prop != EXCLUSIVE)
-      {
-        has_relaxed_coherence = true;
-        break;
-      }
-    }
-    if (!has_relaxed_coherence)
-    {
-      std::vector<unsigned> reduction_indexes;
-      for (unsigned idx = 0; idx < task.regions.size(); idx++)
-      {
-        // As long as this isn't a reduction-only region requirement
-        // we will do a virtual mapping, for reduction-only instances
-        // we will actually make a physical instance because the runtime
-        // doesn't allow virtual mappings for reduction-only privileges
-        if (task.regions[idx].privilege == REDUCE)
-          reduction_indexes.push_back(idx);
-        else
-          output.chosen_instances[idx].push_back(
-              PhysicalInstance::get_virtual_instance());
-      }
-      if (!reduction_indexes.empty())
-      {
-        const TaskLayoutConstraintSet &layout_constraints =
-            runtime->find_task_layout_constraints(ctx,
-                                  task.task_id, output.chosen_variant);
-        Memory target_memory = default_policy_select_target_memory(ctx,
-                                                     task.target_proc);
-        for (std::vector<unsigned>::const_iterator it =
-              reduction_indexes.begin(); it !=
-              reduction_indexes.end(); it++)
-        {
-          std::set<FieldID> copy = task.regions[*it].privilege_fields;
-          if (!soleil_create_custom_instances(ctx, task.target_proc,
-              target_memory, task.regions[*it], *it, copy,
-              layout_constraints, false/*needs constraint check*/,
-              output.chosen_instances[*it]))
-          {
-            default_report_failed_instance_creation(task, *it,
-                                        task.target_proc, target_memory);
-          }
-        }
-      }
-      return;
-    }
-  }
+  output.target_procs.push_back(task.target_proc);
 
   if (strcmp(task.get_task_name(), "Render") == 0)
   {
@@ -365,7 +296,7 @@ void SoleilMapper::map_task(const MapperContext      ctx,
       CachedTaskMapping& cache = mapping_cache_render[key];
       cache.resize(task.regions.size());
       Memory target_memory = proc_sysmems[task.target_proc];
-      for (size_t idx = 0; idx < task.regions.size(); ++idx)
+      for (size_t idx = 0; idx < 2; ++idx)
       {
         PhysicalInstance inst;
         std::vector<LogicalRegion> target_region;
@@ -389,165 +320,35 @@ void SoleilMapper::map_task(const MapperContext      ctx,
         runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
         cache[idx].push_back(inst);
       }
+      for (size_t idx = 2; idx < task.regions.size(); ++idx)
+      {
+        cache[idx] = input.valid_instances[idx];
+        assert(cache[idx].size() > 0);
+      }
 
       output.chosen_instances = cache;
     }
-
     return;
   }
 
-  if (strcmp(task.get_task_name(), "SaveImage") == 0)
+  if (task.parent_task != NULL && task.parent_task->must_epoch_task)
   {
-    Memory target_memory = proc_sysmems[task.target_proc];
-    for (size_t idx = 0; idx < task.regions.size(); ++idx)
+    for (unsigned idx = 0; idx < task.regions.size(); idx++)
     {
-      PhysicalInstance inst;
-      std::vector<LogicalRegion> target_region;
-      target_region.push_back(task.regions[idx].region);
-      LayoutConstraintSet constraints;
-      std::vector<DimensionKind> dimension_ordering(4);
-      dimension_ordering[0] = DIM_X;
-      dimension_ordering[1] = DIM_Y;
-      dimension_ordering[2] = DIM_Z;
-      dimension_ordering[3] = DIM_F;
-      constraints.add_constraint(MemoryConstraint(target_memory.kind()))
-        .add_constraint(FieldConstraint(
-              task.regions[idx].instance_fields, false, false))
-        .add_constraint(OrderingConstraint(dimension_ordering, false));
-      bool created;
-      if(!runtime->find_or_create_physical_instance(ctx, target_memory,
-            constraints, target_region, inst, created))
-      {
-        default_report_failed_instance_creation(task, idx,
-            task.target_proc, target_memory);
-      }
-      runtime->set_garbage_collection_priority(ctx, inst, GC_FIRST_PRIORITY);
-      output.chosen_instances[idx].push_back(inst);
+      const RegionRequirement &req = task.regions[idx];
+
+      // Skip any empty regions
+      if ((req.privilege == NO_ACCESS) || (req.privilege_fields.empty()))
+        continue;
+
+      assert(input.valid_instances[idx].size() == 1);
+      output.chosen_instances[idx] = input.valid_instances[idx];
     }
     return;
   }
 
-  TaskKind kind =
-    strcmp(task.get_task_name(), "InitParticlesUniform.parallelized") == 0 ?
-    TASK_INIT : (strcmp(task.get_task_name(), "pushAll") == 0 ?
-      TASK_PUSH : (strcmp(task.get_task_name(), "pullAll") == 0 ?
-        TASK_PULL : TASK_OTHERS));
-
-  if (kind != TASK_OTHERS)
-  {
-    // Check the cache for particle region
-    {
-      Color color = get_task_color(ctx, task);
-      assert(color != -1U);
-
-      assert(task.regions.size() > 0);
-      std::map<Color, CachedRegionMapping>::iterator finder =
-        mapping_cache_particle.find(color);
-      if (finder != mapping_cache_particle.end())
-      {
-        CachedRegionMapping& cache = finder->second;
-        bool ok = runtime->acquire_and_filter_instances(ctx, cache);
-        if (!ok) fprintf(stderr, "cached mapping failed\n");
-        assert(ok);
-        output.chosen_instances[0] = cache;
-      }
-      else
-      {
-        CachedRegionMapping& cache = mapping_cache_particle[color];
-        Memory target_memory = proc_sysmems[task.target_proc];
-        PhysicalInstance inst;
-        std::vector<LogicalRegion> target_region;
-        target_region.push_back(task.regions[0].region);
-        LayoutConstraintSet constraints;
-        std::vector<DimensionKind> dimension_ordering(4);
-        dimension_ordering[0] = DIM_X;
-        dimension_ordering[1] = DIM_Y;
-        dimension_ordering[2] = DIM_Z;
-        dimension_ordering[3] = DIM_F;
-        constraints.add_constraint(MemoryConstraint(target_memory.kind()))
-          .add_constraint(FieldConstraint(
-                task.regions[0].instance_fields, false, false))
-          .add_constraint(OrderingConstraint(dimension_ordering, false));
-        if(!runtime->create_physical_instance(ctx, target_memory,
-              constraints, target_region, inst))
-        {
-          default_report_failed_instance_creation(task, 0,
-              task.target_proc, target_memory);
-        }
-        runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
-        cache.push_back(inst);
-
-        output.chosen_instances[0] = cache;
-      }
-    }
-
-    // Check the cache for the rest of region requirements
-    {
-      Color color = get_task_color(ctx, task);
-      assert(color != -1U);
-
-      std::map<Color, CachedTaskMapping>& mapping_cache =
-      kind == TASK_INIT ? mapping_cache_init :
-        (kind == TASK_PUSH ? mapping_cache_push : mapping_cache_pull);
-      std::map<Color, CachedTaskMapping>::iterator finder =
-        mapping_cache.find(color);
-      if (finder != mapping_cache.end())
-      {
-        CachedTaskMapping& cache = finder->second;
-        bool ok =
-          runtime->acquire_and_filter_instances(ctx, cache);
-        if (!ok)
-          fprintf(stderr, "cached mapping failed\n");
-        assert(ok);
-        for (size_t idx = 1; idx < task.regions.size(); ++idx)
-          output.chosen_instances[idx] = cache[idx];
-      }
-      else
-      {
-        CachedTaskMapping& cache = mapping_cache[color];
-        cache.resize(task.regions.size());
-        Memory target_memory = proc_sysmems[task.target_proc];
-        for (size_t idx = 1; idx < task.regions.size(); ++idx)
-        {
-          PhysicalInstance inst;
-          std::vector<LogicalRegion> target_region;
-          target_region.push_back(task.regions[idx].region);
-          LayoutConstraintSet constraints;
-          std::vector<DimensionKind> dimension_ordering(4);
-          dimension_ordering[0] = DIM_X;
-          dimension_ordering[1] = DIM_Y;
-          dimension_ordering[2] = DIM_Z;
-          dimension_ordering[3] = DIM_F;
-          constraints.add_constraint(MemoryConstraint(target_memory.kind()))
-            .add_constraint(FieldConstraint(
-                  task.regions[idx].instance_fields, false, false))
-            .add_constraint(OrderingConstraint(dimension_ordering, false));
-          bool created;
-          if(!runtime->find_or_create_physical_instance(ctx, target_memory,
-                constraints, target_region, inst, created))
-          {
-            default_report_failed_instance_creation(task, idx,
-                task.target_proc, target_memory);
-          }
-          runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
-          cache[idx].push_back(inst);
-          output.chosen_instances[idx] = cache[idx];
-        }
-      }
-    }
-
-    return;
-  }
-
-  bool needs_field_constraint_check = false;
-
-  const TaskLayoutConstraintSet &layout_constraints =
-    runtime->find_task_layout_constraints(ctx,
-                          task.task_id, output.chosen_variant);
   // Now we need to go through and make instances for any of our
   // regions which do not have space for certain fields
-  //bool has_reductions = false;
-  //fprintf(stderr, "task %s\n", task.get_task_name());
   for (unsigned idx = 0; idx < task.regions.size(); idx++)
   {
     // Skip any empty regions
@@ -556,7 +357,7 @@ void SoleilMapper::map_task(const MapperContext      ctx,
       continue;
 
     Memory target_memory = Memory::NO_MEMORY;
-    bool is_pull_task = kind == TASK_PULL;
+    bool is_pull_task = strcmp(task.get_task_name(), "pullAll") == 0;
 
     if (task.must_epoch_task || (!task.is_index_space && !is_pull_task))
     {
@@ -585,7 +386,8 @@ void SoleilMapper::map_task(const MapperContext      ctx,
     }
     else if (is_pull_task)
     {
-      if (task.target_proc.kind() == Processor::IO_PROC || task.target_proc.kind() == Processor::LOC_PROC)
+      if (task.target_proc.kind() == Processor::IO_PROC ||
+          task.target_proc.kind() == Processor::LOC_PROC)
       {
         target_memory = proc_sysmems[task.target_proc];
         if (idx > 0)
@@ -635,27 +437,6 @@ void SoleilMapper::map_task(const MapperContext      ctx,
     }
     assert(target_memory.exists());
 
-    std::set<FieldID> missing_fields(task.regions[idx].privilege_fields);
-    // See if this is a reduction
-    if (task.regions[idx].privilege == REDUCE)
-    {
-      if (!soleil_create_custom_instances(ctx, task.target_proc,
-              target_memory, task.regions[idx], idx, missing_fields,
-              layout_constraints, needs_field_constraint_check,
-              output.chosen_instances[idx]))
-      {
-        default_report_failed_instance_creation(task, idx,
-                                    task.target_proc, target_memory);
-      }
-      continue;
-    }
-    // Did the application request a virtual mapping for this requirement?
-    if ((task.regions[idx].tag & DefaultMapper::VIRTUAL_MAP) != 0)
-    {
-      PhysicalInstance virt_inst = PhysicalInstance::get_virtual_instance();
-      output.chosen_instances[idx].push_back(virt_inst);
-      continue;
-    }
     // Otherwise make normal instances for the given region
     {
       PhysicalInstance inst;
@@ -678,10 +459,7 @@ void SoleilMapper::map_task(const MapperContext      ctx,
         default_report_failed_instance_creation(task, idx,
             task.target_proc, target_memory);
       }
-      if (strcmp(task.get_task_name(), "Reduce") == 0)
-        runtime->set_garbage_collection_priority(ctx, inst, GC_FIRST_PRIORITY);
-      else
-        runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
+      runtime->set_garbage_collection_priority(ctx, inst, GC_NEVER_PRIORITY);
       output.chosen_instances[idx].push_back(inst);
     }
   }

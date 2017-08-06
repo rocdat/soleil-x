@@ -265,8 +265,8 @@ def generateCode(keyword, numFragments, numTreeLevels):
   if(keyword == 'InitializeFragmentX'):
     for i in range(numFragments):
       print '\nexports.InitializeFragment' + str(i) + ' = rquote\n'
+      print '  var numLayers = tiles.volume'
       if(i == 0):
-        print '  var numLayers = tiles.volume'
         print '  var [my.timeStep] = 0'
         print '  var [my.indices] = ispace(int3d, int3d{ fragmentWidth, fragmentHeight, numLayers })'
       print '  var [my.imageFragment' + str(i) + '] = region([my.indices], PixelFields)'

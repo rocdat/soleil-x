@@ -108,7 +108,7 @@ local task SplitLeftRight(r : region(ispace(int3d), PixelFields),
     var rect = rect3d {
       lo = { 0, 0, i }, hi = { fragmentWidth - 1, fragmentHeight - 1, i }
     }
-    var color = int1d{ 0 }0
+    var color = int1d{ 0 }
     if i >= (iteratedNodes / 2) then
       color = int1d{ 1 }
     end

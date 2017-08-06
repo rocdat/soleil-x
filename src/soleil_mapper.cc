@@ -276,8 +276,8 @@ void SoleilMapper::map_task(const MapperContext      ctx,
     Color color = get_task_color(ctx, task);
     assert(color != -1U);
 
-    assert(task.regions.size() >= 3 && task.regions[2].handle_type == SINGULAR);
-    std::pair<Color, RegionTreeID> key(color, task.regions[2].region.get_tree_id());
+    assert(task.regions.size() >= 3 && task.regions[0].handle_type == SINGULAR);
+    std::pair<Color, RegionTreeID> key(color, task.regions[0].region.get_tree_id());
 
     std::map<std::pair<Color, RegionTreeID>, CachedTaskMapping>::iterator finder =
       mapping_cache_render.find(key);

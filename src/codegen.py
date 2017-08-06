@@ -275,7 +275,7 @@ def generateCode(keyword, numFragments, numTreeLevels):
       for j in range(numTreeLevels):
         print '  var [my.partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '] = SplitLeftRight([my.imageFragment' + str(i) + '], ' + str(i) + ', ' + str(pow2Level) + ', tiles)'
         print '  var [my.partitionFragment' + str(i) + 'LeftChildLevel' + str(j) + '] = ChildPartition([my.partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '][0], ' + str(j) + ', ' + str(pow2Level) + ', 0, tiles)'
-        print '  var [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '] = ChildPartition([my.partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '][1], ' + str(j) + ', ' + str(pow2Level) + ', ' + str(pow2Level) + ', tiles)'
+        print '  var [my.partitionFragment' + str(i) + 'RightChildLevel' + str(j) + '] = ChildPartition([my.partitionFragment' + str(i) + 'LeftRightLevel' + str(j) + '][1], ' + str(j) + ', ' + str(pow2Level) + ', numLayers / (2 * ' + str(pow2Level) + '), tiles)'
         pow2Level = pow2Level * 2
       print '\nend'
 

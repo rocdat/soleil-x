@@ -26,11 +26,9 @@ mkdir -p ${RUNDIR}
 pushd ${RUNDIR}
 mkdir out
 
-echo === run lscpu on all nodes ===
-srun -n NODES lscpu
-
 echo === copy this script to run dir ===
 cp $SOLEIL_PATH/src/piz_daint_jobs/JOB_ID/JOB_ID_piz_daint.bash ${RUNDIR}/
+#note it would be better to get the name of the current script rather than assume it is the official one
 
 COMMAND=" \
 srun -n NODES \
@@ -45,7 +43,8 @@ srun -n NODES \
         -ll:util 2 \
         -ll:dma 2 \
 	-ll:io 1 \
-        -ll:csize 60000 \
+        -ll:csize 55000 \
+	-ll:rsize 4096 \
         -level barriers=2 \
         -logfile barriers_%.log \
         -hl:sched -1 \

@@ -104,14 +104,18 @@ local task SplitLeftRight(r : region(ispace(int3d), PixelFields),
   var numNodes = tiles.volume
   var iteratedNodes = numNodes / pow2Level
 
-  for i = 0, iteratedNodes do
+  do
     var rect = rect3d {
-      lo = { 0, 0, i }, hi = { fragmentWidth - 1, fragmentHeight - 1, i }
+      lo = { 0, 0, 0 }, hi = { fragmentWidth - 1, fragmentHeight - 1, iteratedNodes / 2 - 1 }
     }
     var color = int1d{ 0 }
-    if i >= (iteratedNodes / 2) then
-      color = int1d{ 1 }
-    end
+    regentlib.c.legion_domain_point_coloring_color_domain(coloring, color, rect)
+  end
+  do
+    var rect = rect3d {
+      lo = { 0, 0, iteratedNodes / 2 }, hi = { fragmentWidth - 1, fragmentHeight - 1, iteratedNodes - 1 }
+    }
+    var color = int1d{ 1 }
     regentlib.c.legion_domain_point_coloring_color_domain(coloring, color, rect)
   end
 

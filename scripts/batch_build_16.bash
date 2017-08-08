@@ -10,12 +10,14 @@ cd $ROOT/PSAAP
 source do.bash 3
 
 cd src
-git checkout -- viz.h
+git checkout -- viz.h viz.rg viz.cc soleil-x.t
 rm -f .x1
-sed -e "s:GL/glu.h:glu.h:" < viz.h > .x1
+sed -e "s:GL/glu.h:${SOLEIL_PATH}/src/glu.h:" < viz.h > .x1
 cp .x1 viz.h
 
 
 OUTDIR=$SOLEIL_PATH/src/piz_daint_jobs
 $SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 16 4,4,2 taylor_green_vortex_1024_512_512.lua 16 5 00:10:00 ${OUTDIR}
+
+git checkout -- viz.h
 

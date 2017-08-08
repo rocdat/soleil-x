@@ -28,11 +28,7 @@ typedef float PixelField;
 #include "OpenGL/glu.h"
 #else
 #include "GL/osmesa.h"
-#ifdef LOCAL_GLU_H
-#include "glu.h"
-#else
 #include "GL/glu.h"
-#endif
 #endif
 
 

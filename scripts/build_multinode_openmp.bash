@@ -46,7 +46,7 @@ rm -f testcase.lua
 cat ${TESTCASE} | sed -e "s:max_iter =.*:max_iter = ${MAX_ITER},:" > testcase.lua
 
 GEN="viz.rg viz.h viz.cc soleil-x.t"
-#git checkout -- $GEN
+git checkout -- $GEN
 
 # generate automatic sources
 source $SOLEIL_PATH/scripts/codegen.bash ${NUM_FRAGMENTS} ${NUM_TREE_LEVELS}

@@ -324,6 +324,8 @@ void SoleilMapper::map_task(const MapperContext      ctx,
       {
         cache[idx] = input.valid_instances[idx];
         assert(cache[idx].size() > 0);
+        bool ok = runtime->acquire_instances(ctx, cache[idx]);
+        if (!ok) fprintf(stderr, "failed to acquire instances\n");
       }
 
       output.chosen_instances = cache;
@@ -343,6 +345,8 @@ void SoleilMapper::map_task(const MapperContext      ctx,
 
       assert(input.valid_instances[idx].size() == 1);
       output.chosen_instances[idx] = input.valid_instances[idx];
+      bool ok = runtime->acquire_and_filter_instances(ctx, output.chosen_instances);
+      if (!ok) fprintf(stderr, "failed to acquire instances\n");
     }
     return;
   }

@@ -82,7 +82,7 @@ protected:
   void soleil_create_copy_instance(MapperContext ctx, const Copy &copy,
                                    const RegionRequirement &req, unsigned index,
                                    std::vector<PhysicalInstance> &instances);
-  Color get_task_color(MapperContext ctx, const Task &task);
+  Color get_task_color(MapperContext ctx, const Task &task, unsigned idx = 0);
 private:
   bool use_gpu;
   bool use_omp;
@@ -150,12 +150,13 @@ SoleilMapper::SoleilMapper(MapperRuntime *rt, Machine machine, Processor local,
 }
 
 //--------------------------------------------------------------------------
-Color SoleilMapper::get_task_color(MapperContext ctx, const Task &task)
+Color SoleilMapper::get_task_color(MapperContext ctx, const Task &task,
+                                   unsigned idx)
 //--------------------------------------------------------------------------
 {
-  assert(task.regions[0].handle_type == SINGULAR);
+  //assert(task.regions[0].handle_type == SINGULAR);
 
-  const LogicalRegion& region = task.regions[0].region;
+  const LogicalRegion& region = task.regions[idx].region;
   Color color = -1U;
   if (runtime->has_parent_index_partition(ctx, region.get_index_space())) {
     IndexPartition ip =
@@ -329,6 +330,16 @@ void SoleilMapper::map_task(const MapperContext      ctx,
       }
 
       output.chosen_instances = cache;
+
+      //for (size_t idx = 0; idx < task.regions.size(); ++idx)
+      //  fprintf(stderr, "task %s color %u reg (%d,%d,%d) processor %llx instance %lx memory %llx\n",
+      //      task.get_task_name(), color,
+      //      task.regions[idx].region.get_index_space().get_id(),
+      //      task.regions[idx].region.get_field_space().get_id(),
+      //      task.regions[idx].region.get_tree_id(),
+      //      task.target_proc.id,
+      //      output.chosen_instances[idx][0].get_instance_id(),
+      //      output.chosen_instances[idx][0].get_location().id);
     }
     return;
   }
@@ -467,6 +478,36 @@ void SoleilMapper::map_task(const MapperContext      ctx,
       output.chosen_instances[idx].push_back(inst);
     }
   }
+  //if (task.must_epoch_task)
+  //{
+  //  Color color = -1U;
+  //  for (size_t idx = 0; idx < task.regions.size(); ++idx)
+  //  {
+  //    if ((task.regions[idx].privilege == NO_ACCESS) ||
+  //        (task.regions[idx].privilege_fields.empty()) ||
+  //        (task.regions[idx].is_no_access()))
+  //      continue;
+  //    color = get_task_color(ctx, task, idx);
+  //    break;
+  //  }
+  //  assert(color != -1U);
+  //  for (size_t idx = 0; idx < task.regions.size(); ++idx)
+  //  {
+  //    if ((task.regions[idx].privilege == NO_ACCESS) ||
+  //        (task.regions[idx].privilege_fields.empty()) ||
+  //        (task.regions[idx].is_no_access()))
+  //      continue;
+  //    fprintf(stderr, "task %s color %u reg %lu (%d,%d,%d) color %u processor %llx instance %lx memory %llx\n",
+  //        task.get_task_name(), color, idx,
+  //        task.regions[idx].region.get_index_space().get_id(),
+  //        task.regions[idx].region.get_field_space().get_id(),
+  //        task.regions[idx].region.get_tree_id(),
+  //        get_task_color(ctx, task, idx),
+  //        task.target_proc.id,
+  //        output.chosen_instances[idx][0].get_instance_id(),
+  //        output.chosen_instances[idx][0].get_location().id);
+  //  }
+  //}
 }
 
 //--------------------------------------------------------------------------
@@ -635,8 +676,19 @@ void SoleilMapper::map_must_epoch(const MapperContext           ctx,
   bool use_io_procs = not use_gpu && sysmem_local_io_procs.size() > 0;
   std::map<const Task*, size_t> task_indices;
   for (size_t idx = 0; idx < input.tasks.size(); ++idx) {
-    size_t node_idx = idx / num_shards_per_node;
-    size_t proc_idx = idx % num_shards_per_node;
+    Color color = -1U;
+    for (size_t i = 0; i < input.tasks[idx]->regions.size(); ++i)
+    {
+      if ((input.tasks[idx]->regions[i].privilege == NO_ACCESS) ||
+          (input.tasks[idx]->regions[i].privilege_fields.empty()) ||
+          (input.tasks[idx]->regions[i].is_no_access()))
+        continue;
+      color = get_task_color(ctx, *input.tasks[idx], i);
+      break;
+    }
+    assert(color != -1U);
+    size_t node_idx = color / num_shards_per_node;
+    size_t proc_idx = color % num_shards_per_node;
     if (use_gpu)
       output.task_processors[idx] = fbmem_local_procs[fbmems_list[node_idx]][proc_idx];
     else if (use_io_procs)
@@ -650,6 +702,7 @@ void SoleilMapper::map_must_epoch(const MapperContext           ctx,
     const MappingConstraint& constraint = input.constraints[idx];
     int owner_id = -1;
 
+    //fprintf(stderr, "Constraint %lu: \n", idx);
     for (unsigned i = 0; i < constraint.constrained_tasks.size(); ++i) {
       const RegionRequirement& req =
         constraint.constrained_tasks[i]->regions[
@@ -657,16 +710,25 @@ void SoleilMapper::map_must_epoch(const MapperContext           ctx,
       if (req.is_no_access()) continue;
       assert(owner_id == -1);
       owner_id = static_cast<int>(i);
+      //{
+      //  const Task* task = constraint.constrained_tasks[owner_id];
+      //  const RegionRequirement& req =
+      //    task->regions[constraint.requirement_indexes[owner_id]];
+      //  fprintf(stderr, "   task %lu reg (%d,%d,%d)\n",
+      //        task_indices[task],
+      //        req.region.get_index_space().get_id(),
+      //        req.region.get_field_space().get_id(),
+      //        req.region.get_tree_id());
+      //}
     }
     assert(owner_id != -1);
 
     const Task* task = constraint.constrained_tasks[owner_id];
     const RegionRequirement& req =
       task->regions[constraint.requirement_indexes[owner_id]];
-    Memory target_memory = use_gpu ? fbmems_list[task_indices[task] / num_shards_per_node]
-                                   : sysmems_list[task_indices[task] / num_shards_per_node];
+    Processor task_proc = output.task_processors[task_indices[task]];
+    Memory target_memory = use_gpu ? proc_fbmems[task_proc] : proc_sysmems[task_proc];
     if (!runtime->has_parent_logical_partition(ctx, req.region)) {
-      Processor task_proc = output.task_processors[task_indices[task]];
       if (!use_gpu) {
         std::map<Processor, Memory>::iterator finder = proc_regmems.find(task_proc);
         if (finder != proc_regmems.end()) target_memory = finder->second;
@@ -696,6 +758,8 @@ void SoleilMapper::map_must_epoch(const MapperContext           ctx,
       assert(false);
     }
     output.constraint_mappings[idx].push_back(inst);
+    //fprintf(stderr, "instance %lx memory %llx\n",
+    //    inst.get_instance_id(), target_memory.id);
   }
 }
 

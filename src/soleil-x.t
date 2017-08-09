@@ -101,7 +101,7 @@ do
   if os.getenv('SAVEOBJ') == '1' then
     mapper_so = root_dir .. "libsoleil_mapper.so"
     viz_so = root_dir .. "libviz.so"
-    link_flags = terralib.newlist({"-L" .. root_dir, "-lsoleil_mapper", "-lviz"})
+    link_flags = terralib.newlist({"-L" .. root_dir, "-lsoleil_mapper", "-lviz", "-L/usr/lib64/", "-lGLU"})
   else
     mapper_so = os.tmpname() .. ".so"
     viz_so = os.tmpname() .. ".so"
@@ -161,6 +161,7 @@ if os.getenv('SAVEOBJ') == '1' and os.getenv('CRAYPE_VERSION') then
 end
 
 link_flags:insert("-L /usr/lib/x86_64")
+link_flags:insert("-L -L/usr/lib64/")
 link_flags:insert("-lGLU")
 link_flags:insert("-lOSMesa")
 

@@ -15,7 +15,7 @@ do
   local viz_cc = root_dir .. "viz.cc"
   if os.getenv('SAVEOBJ') == '1' then
     viz_so = root_dir .. "libviz.so"
-    link_flags = terralib.newlist({"-L" .. root_dir, "-lviz"})
+    link_flags = terralib.newlist({"-L" .. root_dir, "-lviz", "-L/usr/lib64/", "-lGLU"})
   else
     viz_so = os.tmpname() .. ".so"
   end

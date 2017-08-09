@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --partition=normal
 #SBATCH --constraint=gpu
-#SBATCH --acount=d51
+#SBATCH --account=d51
 
 srun -n 1 -N 1 lscpu
 

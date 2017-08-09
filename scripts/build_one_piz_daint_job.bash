@@ -31,7 +31,7 @@ COMMAND="cat $SOLEIL_PATH/scripts/piz_daint_multinode_job.bash | \
   sed -e \"s/JOB_ID/${JOB_ID}/g\" | \
   sed -e \"s/EXEC/${EXEC}/g\" | \
   sed -e \"s:SCRIPT:${SCRIPT}:g\" \
-  sed -e \"s/SOLEIL_DIR/${SOLEIL_DIR}/g" \
+  sed -e \"s/SOLEIL_DIR/${SOLEIL_DIR}/g\" \
   > ${SCRIPT} "
 echo ${COMMAND}
 echo ${COMMAND} | /bin/bash

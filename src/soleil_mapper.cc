@@ -672,23 +672,46 @@ void SoleilMapper::map_must_epoch(const MapperContext           ctx,
   size_t num_nodes = use_gpu ? fbmems_list.size() : sysmems_list.size();
   size_t num_tasks = input.tasks.size();
   size_t num_shards_per_node =
-    num_nodes < input.tasks.size() ? (num_tasks + num_nodes - 1) / num_nodes : 1;
+    num_nodes < num_tasks ? (num_tasks + num_nodes - 1) / num_nodes : 1;
   bool use_io_procs = not use_gpu && sysmem_local_io_procs.size() > 0;
   std::map<const Task*, size_t> task_indices;
-  for (size_t idx = 0; idx < input.tasks.size(); ++idx) {
+
+  size_t num_leaf_tasks_per_node = 0;
+  for (size_t idx = 0; idx < num_tasks; ++idx) {
     Color color = -1U;
+    size_t num_leaf_tasks_per_node = 0;
+    const Task* task = input.tasks[idx];
     for (size_t i = 0; i < input.tasks[idx]->regions.size(); ++i)
     {
-      if ((input.tasks[idx]->regions[i].privilege == NO_ACCESS) ||
-          (input.tasks[idx]->regions[i].privilege_fields.empty()) ||
-          (input.tasks[idx]->regions[i].is_no_access()))
+      if ((task->regions[i].privilege == NO_ACCESS) ||
+          (task->regions[i].privilege_fields.empty()) ||
+          (task->regions[i].is_no_access()))
         continue;
-      color = get_task_color(ctx, *input.tasks[idx], i);
+      const LogicalRegion& region = task->regions[i].region;
+      IndexPartition ip =
+        runtime->get_parent_index_partition(ctx, region.get_index_space());
+      Domain domain =
+        runtime->get_index_partition_color_space(ctx, ip);
+      num_leaf_tasks_per_node = domain.get_volume() / num_tasks;
+      DomainPoint point =
+        runtime->get_logical_region_color_point(ctx, region);
+      assert(domain.dim == 3);
+      assert(point.dim == 3);
+      coord_t size_x = domain.rect_data[3] - domain.rect_data[0] + 1;
+      coord_t size_y = domain.rect_data[4] - domain.rect_data[1] + 1;
+      color = point.point_data[0] +
+              point.point_data[1] * size_x +
+              point.point_data[2] * size_x * size_y;
       break;
     }
     assert(color != -1U);
-    size_t node_idx = color / num_shards_per_node;
-    size_t proc_idx = color % num_shards_per_node;
+    assert(num_leaf_tasks_per_node != 0);
+    size_t node_idx = (color / num_leaf_tasks_per_node) / num_shards_per_node;
+    size_t proc_idx = (color / num_leaf_tasks_per_node) % num_shards_per_node;
+
+    //fprintf(stderr, "color %u node idx %lu proc idx %lu\n",
+    //    color, node_idx, proc_idx);
+
     if (use_gpu)
       output.task_processors[idx] = fbmem_local_procs[fbmems_list[node_idx]][proc_idx];
     else if (use_io_procs)

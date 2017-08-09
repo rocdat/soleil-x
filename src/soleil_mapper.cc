@@ -676,7 +676,6 @@ void SoleilMapper::map_must_epoch(const MapperContext           ctx,
   bool use_io_procs = not use_gpu && sysmem_local_io_procs.size() > 0;
   std::map<const Task*, size_t> task_indices;
 
-  size_t num_leaf_tasks_per_node = 0;
   for (size_t idx = 0; idx < num_tasks; ++idx) {
     Color color = -1U;
     size_t num_leaf_tasks_per_node = 0;

@@ -162,7 +162,7 @@ end
 
 link_flags:insert("-L /usr/lib/x86_64")
 link_flags:insert("-L -L/usr/lib64/")
-link_flags:insert("-lGLU")
+link_flags:insert("/usr/lib64/libGLU.so.1")
 link_flags:insert("-lOSMesa")
 
 

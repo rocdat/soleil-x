@@ -134,6 +134,7 @@ do
   local cmd2 = (cxx .. " " .. cxx_flags .. " -I " .. runtime_dir .. " " ..
                  " -I " .. mapper_dir .. " " .. " -I " .. legion_dir .. " " ..
                  " -lOSMesa " .. " -lGLU " ..
+                 " -I " .. root_dir .. "/include" ..
                  " -I " .. realm_dir ..
                  " " .. viz_cc ..
                  " -o " .. viz_so)

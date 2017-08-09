@@ -29,7 +29,6 @@ pushd ${RUNDIR}
 mkdir out
 
 echo === copy this script to run dir ===
-cp $SOLEIL_PATH/src/piz_daint_jobs/JOB_ID/JOB_ID_piz_daint.bash ${RUNDIR}/
 cp $0 ${RUNDIR}/
 
 COMMAND=" \
@@ -63,6 +62,9 @@ echo ${COMMAND} | /bin/bash
 
 echo === elapsed time ===
 sacct -j ${SLURM_JOBID} -o elapsed
+
+echo === compress images ===
+pushd ${RUNDIR}/out ; gzip *.ppm ; popd
 
 echo === execution complete, saving slurm log ===
 cp $SOLEIL_PATH/src/piz_daint_jobs/JOB_ID/slurm-${SLURM_JOBID}.out ${RUNDIR}/

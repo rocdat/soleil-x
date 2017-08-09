@@ -31,6 +31,7 @@ do
   end
 
   local cmd = (cxx .. " " .. cxx_flags .. " -I " .. runtime_dir .. " " ..
+                 " -I /usr/include " ..
                  " -I " .. mapper_dir .. " " .. " -I " .. legion_dir .. " " ..
                  " -I " .. realm_dir .. " " .. viz_cc .. " -o " .. viz_so)
   if os.execute(cmd) ~= 0 then
@@ -40,7 +41,7 @@ do
   terralib.linklibrary(viz_so)
   cviz = terralib.includec("viz.h", {"-I", root_dir, "-I", runtime_dir,
                             "-I", mapper_dir, "-I", legion_dir,
-                            "-I", realm_dir})
+                            "-I", realm_dir, "-I", "/usr/include"})
 end
 
 

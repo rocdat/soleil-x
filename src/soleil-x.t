@@ -101,7 +101,7 @@ do
   if os.getenv('SAVEOBJ') == '1' then
     mapper_so = root_dir .. "libsoleil_mapper.so"
     viz_so = root_dir .. "libviz.so"
-    link_flags = terralib.newlist({"-L" .. root_dir, "-lsoleil_mapper", "-lviz", "-L/usr/lib64/", "-lGLU"})
+    link_flags = terralib.newlist({"-L" .. root_dir, "-lsoleil_mapper", "-L/usr/lib64/", "-lGLU", "-lviz", "-lOSMesa"})
   else
     mapper_so = os.tmpname() .. ".so"
     viz_so = os.tmpname() .. ".so"
@@ -133,7 +133,6 @@ do
 
   local cmd2 = (cxx .. " " .. cxx_flags .. " -I " .. runtime_dir .. " " ..
                  " -I " .. mapper_dir .. " " .. " -I " .. legion_dir .. " " ..
-                 " -lOSMesa " .. " -lGLU " ..
                  " -I " .. root_dir .. "/include" ..
                  " -I " .. realm_dir ..
                  " " .. viz_cc ..

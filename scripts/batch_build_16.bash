@@ -11,6 +11,8 @@ source setup.bash
 cd PSAAP
 source do.bash 3
 
+ls -l /usr/lib64/libGLU*
+
 OUTDIR=$SOLEIL_PATH/src/piz_daint_jobs
 mkdir -p ${OUTDIR}
 cd src

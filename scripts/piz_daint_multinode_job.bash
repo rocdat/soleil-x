@@ -13,7 +13,7 @@ srun -n 1 -N 1 lscpu
 
 ROOT=/users/aheirich
 cd $ROOT/PSAAP
-source do.bash SOLEIL_DIR
+source soleil-x/scripts/do.bash SOLEIL_DIR
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export GASNET_BACKTRACE=1

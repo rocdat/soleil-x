@@ -7,11 +7,14 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
 #SBATCH --partition=normal
-#SBATCH --constraint=mc
+#SBATCH --constraint=gpu
+#SBATCH --acount=d51
+
+srun -n 1 -N 1 lscpu
 
 ROOT=/users/aheirich
 cd $ROOT/PSAAP
-source soleil-x/scripts/setup.bash
+source do.bash SOLEIL_DIR
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export GASNET_BACKTRACE=1
@@ -28,7 +31,7 @@ mkdir out
 
 echo === copy this script to run dir ===
 cp $SOLEIL_PATH/src/piz_daint_jobs/JOB_ID/JOB_ID_piz_daint.bash ${RUNDIR}/
-echo 0: $0
+cp $0 ${RUNDIR}/
 
 COMMAND=" \
 srun -n NODES \
@@ -37,13 +40,14 @@ srun -n NODES \
         --cpu_bind none \
         /lib64/ld-linux-x86-64.so.2 \
 	$SOLEIL_PATH/src/piz_daint_jobs/JOB_ID/EXEC \
-        -ll:cpu 2 \
+        -ll:cpu 1 \
         -ll:ocpu 1 \
         -ll:othr 8 \
         -ll:util 2 \
         -ll:dma 2 \
 	-ll:io 1 \
-        -ll:csize 55000 \
+        -ll:csize 50000 \
+	-ll:rsize 4096 \
         -level barriers=2 \
         -logfile barriers_%.log \
         -hl:sched -1 \

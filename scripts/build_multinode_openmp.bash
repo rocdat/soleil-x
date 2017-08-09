@@ -61,8 +61,8 @@ COMPILE_COMMAND=\
 	-fopenmp 1 \
         -fopenmp-strict 1 \
 	-fflow-spmd 1 \
-        -fflow-spmd-shardsize 2 "
-#-fflow 0 "
+        -fflow-spmd-shardsize 1 "
+
 echo $COMPILE_COMMAND
 echo $COMPILE_COMMAND | /bin/bash
 

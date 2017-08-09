@@ -5,7 +5,6 @@
 #SBATCH --nodes=NODES
 #SBATCH --ntasks-per-core=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=16
 #SBATCH --partition=normal
 #SBATCH --constraint=gpu
 #SBATCH --account=d51

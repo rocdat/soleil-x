@@ -44,7 +44,7 @@ srun -n NODES \
         -ll:util 2 \
         -ll:dma 2 \
 	-ll:io 1 \
-        -ll:csize 54000 \
+        -ll:csize 50000 \
 	-ll:rsize 8192 \
         -hl:sched -1 \
         -level legion_prof=2,5 \

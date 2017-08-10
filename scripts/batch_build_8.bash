@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=build_soleil_viz
+#SBATCH --job-name=build_8
 #SBATCH --mail-user=aheirich@stanford.edu
 #SBATCH --time=12:00:00
 #SBATCH --nodes=1

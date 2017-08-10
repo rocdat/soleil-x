@@ -1,20 +1,21 @@
 #!/bin/bash -l
-#SBATCH --job-name=build_16
+#SBATCH --job-name=build_8
 #SBATCH --mail-user=aheirich@stanford.edu
 #SBATCH --time=12:00:00
 #SBATCH --nodes=1
 #SBATCH --partition=normal
+#SBATCH --mem=120GB
 
 ROOT=/users/aheirich
 cd $ROOT
 source setup.bash
 cd PSAAP
-source soleil-x/scripts/do.bash 3
+source soleil-x/scripts/do.bash 8
 
 
 OUTDIR=$SOLEIL_PATH/src/piz_daint_jobs
 mkdir -p ${OUTDIR}
 cd src
-rm -rf piz_daint_jobs/Job_16
-$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 16 4,2,2 taylor_green_vortex_1024_512_512.lua 16 4 00:10:00 3 ${OUTDIR}
+rm -rf piz_daint_jobs/Job_512
+$SOLEIL_PATH/scripts/build_one_piz_daint_job.bash 512 8,8,8 taylor_green_vortex_2048_2048_2048.lua 20 9 00:10:00 8 ${OUTDIR}
 

@@ -44,10 +44,8 @@ srun -n NODES \
         -ll:util 2 \
         -ll:dma 2 \
 	-ll:io 1 \
-        -ll:csize 50000 \
+        -ll:csize 55000 \
 	-ll:rsize 4096 \
-        -level barriers=2 \
-        -logfile barriers_%.log \
         -hl:sched -1 \
         -level legion_prof=2,5 \
         -lg:prof_logfile soleil_prof_%.log \
@@ -55,7 +53,6 @@ srun -n NODES \
         | tee JOB_ID.log "
 
 
-#	-ll:rsize 4096 \
 echo === run the simulation ===
 echo ${COMMAND}
 echo ${COMMAND} | /bin/bash

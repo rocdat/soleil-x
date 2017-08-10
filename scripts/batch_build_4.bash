@@ -1,7 +1,6 @@
 #!/bin/bash -l
 #SBATCH --job-name=4build
 #SBATCH --mail-user=aheirich@stanford.edu
-#SBATCH --mail-type=END
 #SBATCH --time=12:00:00
 #SBATCH --nodes=1
 #SBATCH --partition=normal

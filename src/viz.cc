@@ -15,7 +15,7 @@
 
 //#define STANDALONE // debug
 
-#define _T {std::cout<<__FUNCTION__<<" "<<__FILE__<<":"<<__LINE__<<std::endl;}
+#define _T {std::cout<<getpid()<<" "<<__FUNCTION__<<" "<<__FILE__<<":"<<__LINE__<<std::endl;}
 
 #ifndef STANDALONE
 
@@ -35,6 +35,7 @@ using namespace LegionRuntime::Accessor;
 
 
 #include <iostream>
+#include <unistd.h>
 #include <fstream>
 #include <iomanip>
 #include <assert.h>
@@ -1049,6 +1050,8 @@ void cxx_render(legion_runtime_t runtime_,
   
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
   
+_T
+
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   
   FieldData* centerCoordinates = NULL;

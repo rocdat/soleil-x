@@ -943,7 +943,6 @@ static void writeRenderedPixelsToImageFragment(GLfloat* rgba,
   ByteOffset strideUserData[3];
   
   for(unsigned field = 0; field < fields.size(); ++field) {
-_T
     PhysicalRegion* image = CObjectWrapper::unwrap(imageFragment[field]);
     switch(field) {
       case 0:
@@ -1012,8 +1011,9 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
   assert(fragmentHeight > 0);
   int numFragmentsPerImage = height / fragmentHeight;
   
+std::cout << "numFragsPerImage " << numFragmentsPerImage << " heigiht " << height << " fragHeight " << fragmentHeight << std::endl;
+
   for(int i = 0; i < numFragmentsPerImage; ++i) {
-_T
     GLfloat* rgba = rgbaBuffer + i * fragmentHeight * width * 4;
     GLfloat* depth = depthBuffer + i * fragmentHeight * width;
     writeRenderedPixelsToImageFragment(rgba, depth, runtime, imageFragment[i], imageFragment_fields[i], fields, bounds);
@@ -1050,7 +1050,6 @@ void cxx_render(legion_runtime_t runtime_,
   
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
   
-_T
 
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   

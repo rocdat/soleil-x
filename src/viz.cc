@@ -1011,10 +1011,7 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
   assert(fragmentHeight > 0);
   int numFragmentsPerImage = height / fragmentHeight;
   
-std::cout << "numFragsPerImage " << numFragmentsPerImage << " heigiht " << height << " fragHeight " << fragmentHeight << std::endl;
-
   for(int i = 0; i < numFragmentsPerImage; ++i) {
-_T
     GLfloat* rgba = rgbaBuffer + i * fragmentHeight * width * 4;
     GLfloat* depth = depthBuffer + i * fragmentHeight * width;
     writeRenderedPixelsToImageFragment(rgba, depth, runtime, imageFragment[i], imageFragment_fields[i], fields, bounds);
@@ -1047,7 +1044,6 @@ void cxx_render(legion_runtime_t runtime_,
 #endif
 {
 
-_T
   
 #ifndef STANDALONE
   

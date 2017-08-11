@@ -61,7 +61,7 @@ local tiles = A.primColors()
 
 local width = 3840
 local height = 2160
-local numFragments = 2
+local numFragments = NUM_FRAGMENTS
 local fragmentWidth = width 
 local fragmentHeight = (height / numFragments)
 local zero = terralib.constant(`int3d { __ptr = regentlib.__int3d { 0, 0, 0 } })

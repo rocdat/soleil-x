@@ -52,6 +52,8 @@ git checkout -- $GEN
 source $SOLEIL_PATH/scripts/codegen.bash ${NUM_FRAGMENTS} ${NUM_TREE_LEVELS}
 for f in $GEN ; do cp tmp_src/$f $f ; done
 
+cat tmp_src/viz.rg | sed -e "s/NUM_FRAGMENTS/${NUM_FRAGMENTS}/" > viz.rg
+
 COMPILE_COMMAND=\
 "CC=gcc CXX=g++ USE_HDF=0 DEBUG=0 SAVEOBJ=1 OBJNAME=${EXEC} \
 	$LISZT_PATH/liszt-legion.sh $SOLEIL_PATH/src/soleil-x.t \

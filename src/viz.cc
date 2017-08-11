@@ -942,6 +942,7 @@ static void writeRenderedPixelsToImageFragment(GLfloat* rgba,
   ByteOffset strideUserData[3];
   
   for(unsigned field = 0; field < fields.size(); ++field) {
+_T
     PhysicalRegion* image = CObjectWrapper::unwrap(imageFragment[field]);
     switch(field) {
       case 0:
@@ -1011,6 +1012,7 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
   int numFragmentsPerImage = height / fragmentHeight;
   
   for(int i = 0; i < numFragmentsPerImage; ++i) {
+_T
     GLfloat* rgba = rgbaBuffer + i * fragmentHeight * width * 4;
     GLfloat* depth = depthBuffer + i * fragmentHeight * width;
     writeRenderedPixelsToImageFragment(rgba, depth, runtime, imageFragment[i], imageFragment_fields[i], fields, bounds);

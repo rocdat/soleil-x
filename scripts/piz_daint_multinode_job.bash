@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=TESTCASE
+#SBATCH --job-name=JOB_ID
 #SBATCH --mail-user=aheirich@stanford.edu
 #SBATCH --time=TIME_LIMIT
 #SBATCH --nodes=NODES

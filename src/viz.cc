@@ -1011,8 +1011,6 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
   assert(fragmentHeight > 0);
   int numFragmentsPerImage = height / fragmentHeight;
 
-std::cout << "height " << height << " fragHeight " << fragmentHeight << " numFrags " << numFragmentsPerImage << std::endl;
-  
   for(int i = 0; i < numFragmentsPerImage; ++i) {
     GLfloat* rgba = rgbaBuffer + i * fragmentHeight * width * 4;
     GLfloat* depth = depthBuffer + i * fragmentHeight * width;

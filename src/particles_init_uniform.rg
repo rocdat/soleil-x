@@ -59,9 +59,10 @@ where
   reads(cells.{velocity, centerCoordinates})
 do
   --var numValid = 0
-  var pBase = 0
+  var pBase : int1d = 0
+  var ppt : int1d = particlesPerTask
   for p in particles do
-    pBase = __raw(p).value
+    pBase = [int1d](p)
     break
   end
   var lo : int3d = cells.bounds.lo
@@ -76,10 +77,10 @@ do
   var ySize = hi.y - lo.y + 1
   __demand(__openmp)
   for p in particles do
-    if __raw(p).value - pBase < particlesPerTask then
+    if p - pBase < ppt then
       p.__valid = true
       --numValid = numValid + 1
-      var relIdx = __raw(p).value - pBase
+      var relIdx = p - pBase
       var c : int3d = { lo.x + relIdx % xSize,
                         lo.y + relIdx / xSize % ySize,
                         lo.z + relIdx / xSize / ySize }

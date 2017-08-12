@@ -628,7 +628,7 @@ void create_field_pointer1(PhysicalRegion region,
   assert(bounds == tempBounds);
 }
 
-
+#if 0
 static
 void create_field_pointer1(PhysicalRegion region,
                           float* &field,
@@ -643,6 +643,7 @@ void create_field_pointer1(PhysicalRegion region,
   field = acc.raw_rect_ptr<1>(bounds, tempBounds, stride);
   assert(bounds == tempBounds);
 }
+#endif
 
 
 static

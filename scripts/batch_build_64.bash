@@ -4,7 +4,6 @@
 #SBATCH --time=12:00:00
 #SBATCH --nodes=1
 #SBATCH --partition=normal
-#SBATCH --mem=120GB
 
 ROOT=/users/aheirich
 cd $ROOT

@@ -280,7 +280,7 @@ static void trackParticles(int numTracking,
   while((numParticles < EXPECTED_NUM_PARTICLES) && needMore > 0) {
     bool valid = *__valid;
     __valid += __validStride[0].offset / sizeof(*__valid);
-    bool t = *tracking;
+    bool *t = tracking;
     tracking += trackingStride[0].offset / sizeof(*tracking);
     if(valid && !*t) {
       *t = true;
@@ -609,6 +609,71 @@ void create_field_pointer(PhysicalRegion region,
   RegionAccessor<AccessorType::Generic, float> acc = region.get_field_accessor(fieldID).typeify<float>();
   Rect<3> tempBounds;
   field = acc.raw_rect_ptr<3>(bounds, tempBounds, stride);
+  assert(bounds == tempBounds);
+}
+
+
+static
+void create_field_pointer(PhysicalRegion region,
+                          FieldData* &field,
+                          int fieldID,
+                          ByteOffset stride[1],
+                          Runtime* runtime) {
+  
+  Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
+  Rect<1> bounds = indexSpaceDomain.get_rect<1>();
+  RegionAccessor<AccessorType::Generic, FieldData> acc = region.get_field_accessor(fieldID).typeify<FieldData>();
+  Rect<1> tempBounds;
+  field = acc.raw_rect_ptr<3>(bounds, tempBounds, stride);
+  assert(bounds == tempBounds);
+}
+
+
+static
+void create_field_pointer(PhysicalRegion region,
+                          float* &field,
+                          int fieldID,
+                          ByteOffset stride[1],
+                          Runtime* runtime) {
+  
+  Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
+  Rect<1> bounds = indexSpaceDomain.get_rect<1>();
+  RegionAccessor<AccessorType::Generic, float> acc = region.get_field_accessor(fieldID).typeify<float>();
+  Rect<1> tempBounds;
+  field = acc.raw_rect_ptr<3>(bounds, tempBounds, stride);
+  assert(bounds == tempBounds);
+}
+
+
+static
+void create_field_pointer(PhysicalRegion region,
+                          int* &field,
+                          int fieldID,
+                          ByteOffset stride[1],
+                          Runtime* runtime) {
+  
+  Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
+  Rect<1> bounds = indexSpaceDomain.get_rect<1>();
+  RegionAccessor<AccessorType::Generic, int> acc = region.get_field_accessor(fieldID).typeify<int>();
+  Rect<1> tempBounds;
+  field = acc.raw_rect_ptr<1>(bounds, tempBounds, stride);
+  assert(bounds == tempBounds);
+}
+
+
+
+static
+void create_field_pointer(PhysicalRegion region,
+                          bool* &field,
+                          int fieldID,
+                          ByteOffset stride[1],
+                          Runtime* runtime) {
+  
+  Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
+  Rect<1> bounds = indexSpaceDomain.get_rect<1>();
+  RegionAccessor<AccessorType::Generic, bool> acc = region.get_field_accessor(fieldID).typeify<bool>();
+  Rect<1> tempBounds;
+  field = acc.raw_rect_ptr<1>(bounds, tempBounds, stride);
   assert(bounds == tempBounds);
 }
 

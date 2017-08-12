@@ -244,16 +244,16 @@ static void drawParticles(bool* __valid,
   int numDrawn = 0;
   while(numParticles < EXPECTED_NUM_PARTICLES) {
     bool valid = *__valid;
-    __valid += __validStride.offset / sizeof(*__valid);
+    __valid += __validStride[0].offset / sizeof(*__valid);
     FieldData* p = position;
-    position += positionStride.offset / sizeof(*position);
+    position += positionStride[0].offset / sizeof(*position);
     float pos[3] = { (float)p[0], (float)p[1], (float)p[2] };
     float d = *density;
-    density += densityStride.offset / sizeof(*density);
+    density += densityStride[0].offset / sizeof(*density);
     float particleTemp = *particleTemperature;
-    particleTemperature += particleTemperatureStride.offset / sizeof(*particleTemperature);
+    particleTemperature += particleTemperatureStride[0].offset / sizeof(*particleTemperature);
     bool t = *tracking++;
-    tracking += trackingStride.offset / sizeof(*tracking);
+    tracking += trackingStride[0].offset / sizeof(*tracking);
     if(t) numTracking++;
     bool randomlySelected = random() < randomThreshold;
     if(randomlySelected) numRandom++;
@@ -279,9 +279,9 @@ static void trackParticles(int numTracking,
   int numParticles = 0;
   while((numParticles < EXPECTED_NUM_PARTICLES) && needMore > 0) {
     bool valid = *__valid;
-    __valid += __validStride.offset / sizeof(*__valid);
-    bool* t = *tracking;
-    tracking += trackingStride.offset / sizeof(*tracking);
+    __valid += __validStride[0].offset / sizeof(*__valid);
+    bool t = *tracking;
+    tracking += trackingStride[0].offset / sizeof(*tracking);
     if(valid && !*t) {
       *t = true;
       needMore--;
@@ -449,6 +449,7 @@ void render_image(int width,
 #else
 
 
+
 void render_image(int width,
                   int height,
                   FieldData* centerCoordinates,
@@ -461,9 +462,6 @@ void render_image(int width,
                   FieldData* particleTemperature,
                   bool* tracking,
                   ByteOffset __validStride[1],
-                  ByteOffset cellXStride[1],
-                  ByteOffset cellYStride[1],
-                  ByteOffset cellZStride[1],
                   ByteOffset positionStride[1],
                   ByteOffset densityStride[1],
                   ByteOffset particleTemperatureStride[1],
@@ -782,42 +780,42 @@ void accessParticleData(legion_physical_region_t *particles,
     
     switch(field) {
       case 0:
-        create_field_pointer(*particle, cellX, particle_fields[field], cellXStride, runtime);
+        create_field_pointer(*particle, cellX, particles_fields[field], cellXStride, runtime);
         assert(cellXStride[0].offset == sizeof(int));
         break;
         
       case 1:
-        create_field_pointer(*particle, cellY, particle_fields[field], cellYStride, runtime);
+        create_field_pointer(*particle, cellY, particles_fields[field], cellYStride, runtime);
         assert(cellYStride[0].offset == sizeof(int));
         break;
         
       case 2:
-        create_field_pointer(*particle, cellZ, particle_fields[field], cellZStride, runtime);
+        create_field_pointer(*particle, cellZ, particles_fields[field], cellZStride, runtime);
         assert(cellZStride[0].offset == sizeof(int));
         break;
         
       case 3:
-        create_field_pointer(*particle, position, particle_fields[field], positionStride, runtime);
+        create_field_pointer(*particle, position, particles_fields[field], positionStride, runtime);
         assert(positionStride[0].offset == 3 * sizeof(FieldData));
         break;
         
       case 4:
-        create_field_pointer(*particle, density, particle_fields[field], densityStride, runtime);
+        create_field_pointer(*particle, density, particles_fields[field], densityStride, runtime);
         assert(densityStride[0].offset == sizeof(FieldData));
         break;
         
       case 5:
-        create_field_pointer(*particle, particleTemperature, particle_fields[field], particleTemperatureStride, runtime);
+        create_field_pointer(*particle, particleTemperature, particles_fields[field], particleTemperatureStride, runtime);
         assert(particleTemperatureStride[0].offset == sizeof(FieldData));
         break;
         
       case 6:
-        create_field_pointer(*particle, tracking, particle_fields[field], trackingStride, runtime);
+        create_field_pointer(*particle, tracking, particles_fields[field], trackingStride, runtime);
         assert(trackingStride[0].offset == sizeof(bool));
         break;
         
       case 7:
-        create_field_pointer(*particle, __valid, particle_fields[field], __validStride, runtime);
+        create_field_pointer(*particle, __valid, particles_fields[field], __validStride, runtime);
         assert(__validStride[0].offset == sizeof(bool));
         break;
         

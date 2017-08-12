@@ -229,7 +229,6 @@ where
   reads(particles.{__valid, cell, position, density, particle_temperature, tracking}),
 -- CODEGEN: writes_imageFragmentX
 do
-  regentlib.c.printf("in local task Render\n")
 
   var numValid = 0
   for p in particles do
@@ -237,7 +236,6 @@ do
       numValid = numValid + 1
     end
   end
-  regentlib.c.printf("number of valid particles = %d\n", numValid)
 
   cviz.cxx_render(__runtime(),
     __physical(cells), __fields(cells),

@@ -48,7 +48,7 @@ srun -n NODES \
 	-ll:rsize 8192 \
         -hl:sched -1 \
         -level legion_prof=2,5 \
-        -lg:prof_logfile soleil_prof_%.log \
+	-logfile soleil_prof_% \
         -hl:prof 4 \
 	-hl:serializer ascii \
         | tee JOB_ID.log "

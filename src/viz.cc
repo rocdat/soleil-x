@@ -229,7 +229,7 @@ static void drawParticles(bool* __valid,
                           ByteOffset __validStride[1],
                           ByteOffset positionStride[1],
                           ByteOffset densityStride[1],
-                          ByteOFfset particleTemperatureStride[1],
+                          ByteOffset particleTemperatureStride[1],
                           ByteOffset trackingStride[1],
                           GLUquadricObj* qobj,
                           Runtime* runtime,
@@ -244,16 +244,16 @@ static void drawParticles(bool* __valid,
   int numDrawn = 0;
   while(numParticles < EXPECTED_NUM_PARTICLES) {
     bool valid = *__valid;
-    __valid += __validStride[0].offset / sizeof(*__valid);
+    __valid += __validStride.offset / sizeof(*__valid);
     FieldData* p = position;
-    position += positionStride[0].offset / sizeof(*position);
+    position += positionStride.offset / sizeof(*position);
     float pos[3] = { (float)p[0], (float)p[1], (float)p[2] };
     float d = *density;
-    density += densityStride[0].offset / sizeof(*density);
+    density += densityStride.offset / sizeof(*density);
     float particleTemp = *particleTemperature;
-    particleTemperature += particleTemperatureStride[0].offset / sizeof(*particleTemperature);
+    particleTemperature += particleTemperatureStride.offset / sizeof(*particleTemperature);
     bool t = *tracking++;
-    tracking += trackingStride[0].offset / sizeof(*tracking);
+    tracking += trackingStride.offset / sizeof(*tracking);
     if(t) numTracking++;
     bool randomlySelected = random() < randomThreshold;
     if(randomlySelected) numRandom++;
@@ -279,9 +279,9 @@ static void trackParticles(int numTracking,
   int numParticles = 0;
   while((numParticles < EXPECTED_NUM_PARTICLES) && needMore > 0) {
     bool valid = *__valid;
-    __valid += __validStride[0].offset / sizeof(*__valid);
+    __valid += __validStride.offset / sizeof(*__valid);
     bool* t = *tracking;
-    tracking += trackingStride[0].offset / sizeof(*tracking);
+    tracking += trackingStride.offset / sizeof(*tracking);
     if(valid && !*t) {
       *t = true;
       needMore--;
@@ -700,7 +700,7 @@ void writeCellsToFile(std::string filePath,
 }
 
 
-
+#if 0
 // TODO make this a template
 
 static
@@ -749,6 +749,7 @@ static
 void getBaseIndexSpaceFieldData3(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace) {
   getBaseIndexSpaceFieldData_impl(particle, fieldID, base, indexSpace, 3);
 }
+#endif
 
 
 static
@@ -827,7 +828,7 @@ void accessParticleData(legion_physical_region_t *particles,
 }
 
 
-
+#if 0
 
 static
 void writeParticlesToFile(std::string filePath,
@@ -887,7 +888,7 @@ void writeParticlesToFile(std::string filePath,
   std::cout << "wrote " << counter << " particles to " << filePath << std::endl;
 }
 
-
+#endif
 
 
 static
@@ -1112,7 +1113,7 @@ void cxx_render(legion_runtime_t runtime_,
                      density, densityStride, particleTemperature, particleTemperatureStride,
                      tracking, trackingStride, runtime);
                      
-  
+#if 0
   if(writeFiles) {
     //TODO modify this to use 1D structured IS
     std::string particlesFileName = dataFileName("./out/particles", timeStepNumber, bounds);
@@ -1120,6 +1121,7 @@ void cxx_render(legion_runtime_t runtime_,
                          cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
                          particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS, runtime);
   }
+#endif
   
 #endif
   

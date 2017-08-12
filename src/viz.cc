@@ -624,7 +624,7 @@ void create_field_pointer1(PhysicalRegion region,
   Rect<1> bounds = indexSpaceDomain.get_rect<1>();
   RegionAccessor<AccessorType::Generic, FieldData> acc = region.get_field_accessor(fieldID).typeify<FieldData>();
   Rect<1> tempBounds;
-  field = acc.raw_rect_ptr<3>(bounds, tempBounds, stride);
+  field = acc.raw_rect_ptr<1>(bounds, tempBounds, stride);
   assert(bounds == tempBounds);
 }
 
@@ -640,7 +640,7 @@ void create_field_pointer1(PhysicalRegion region,
   Rect<1> bounds = indexSpaceDomain.get_rect<1>();
   RegionAccessor<AccessorType::Generic, float> acc = region.get_field_accessor(fieldID).typeify<float>();
   Rect<1> tempBounds;
-  field = acc.raw_rect_ptr<3>(bounds, tempBounds, stride);
+  field = acc.raw_rect_ptr<1>(bounds, tempBounds, stride);
   assert(bounds == tempBounds);
 }
 

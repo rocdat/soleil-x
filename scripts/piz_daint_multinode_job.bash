@@ -38,18 +38,19 @@ srun -n NODES \
         --cpu_bind none \
         /lib64/ld-linux-x86-64.so.2 \
 	$SOLEIL_PATH/src/piz_daint_jobs/JOB_ID/EXEC \
-        -ll:cpu 1 \
+        -ll:cpu 2 \
         -ll:ocpu 1 \
         -ll:othr 8 \
         -ll:util 2 \
         -ll:dma 2 \
 	-ll:io 1 \
-        -ll:csize 50000 \
+        -ll:csize 40000 \
 	-ll:rsize 8192 \
         -hl:sched -1 \
         -level legion_prof=2,5 \
         -lg:prof_logfile soleil_prof_%.log \
         -hl:prof 4 \
+	-hl:serializer ascii \
         | tee JOB_ID.log "
 
 

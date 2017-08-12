@@ -614,7 +614,7 @@ void create_field_pointer(PhysicalRegion region,
 
 
 static
-void create_field_pointer(PhysicalRegion region,
+void create_field_pointer1(PhysicalRegion region,
                           FieldData* &field,
                           int fieldID,
                           ByteOffset stride[1],
@@ -630,7 +630,7 @@ void create_field_pointer(PhysicalRegion region,
 
 
 static
-void create_field_pointer(PhysicalRegion region,
+void create_field_pointer1(PhysicalRegion region,
                           float* &field,
                           int fieldID,
                           ByteOffset stride[1],
@@ -646,7 +646,7 @@ void create_field_pointer(PhysicalRegion region,
 
 
 static
-void create_field_pointer(PhysicalRegion region,
+void create_field_pointer1(PhysicalRegion region,
                           int* &field,
                           int fieldID,
                           ByteOffset stride[1],
@@ -663,7 +663,7 @@ void create_field_pointer(PhysicalRegion region,
 
 
 static
-void create_field_pointer(PhysicalRegion region,
+void create_field_pointer1(PhysicalRegion region,
                           bool* &field,
                           int fieldID,
                           ByteOffset stride[1],
@@ -845,42 +845,42 @@ void accessParticleData(legion_physical_region_t *particles,
     
     switch(field) {
       case 0:
-        create_field_pointer(*particle, cellX, particles_fields[field], cellXStride, runtime);
+        create_field_pointer1(*particle, cellX, particles_fields[field], cellXStride, runtime);
         assert(cellXStride[0].offset == sizeof(int));
         break;
         
       case 1:
-        create_field_pointer(*particle, cellY, particles_fields[field], cellYStride, runtime);
+        create_field_pointer1(*particle, cellY, particles_fields[field], cellYStride, runtime);
         assert(cellYStride[0].offset == sizeof(int));
         break;
         
       case 2:
-        create_field_pointer(*particle, cellZ, particles_fields[field], cellZStride, runtime);
+        create_field_pointer1(*particle, cellZ, particles_fields[field], cellZStride, runtime);
         assert(cellZStride[0].offset == sizeof(int));
         break;
         
       case 3:
-        create_field_pointer(*particle, position, particles_fields[field], positionStride, runtime);
+        create_field_pointer1(*particle, position, particles_fields[field], positionStride, runtime);
         assert(positionStride[0].offset == 3 * sizeof(FieldData));
         break;
         
       case 4:
-        create_field_pointer(*particle, density, particles_fields[field], densityStride, runtime);
+        create_field_pointer1(*particle, density, particles_fields[field], densityStride, runtime);
         assert(densityStride[0].offset == sizeof(FieldData));
         break;
         
       case 5:
-        create_field_pointer(*particle, particleTemperature, particles_fields[field], particleTemperatureStride, runtime);
+        create_field_pointer1(*particle, particleTemperature, particles_fields[field], particleTemperatureStride, runtime);
         assert(particleTemperatureStride[0].offset == sizeof(FieldData));
         break;
         
       case 6:
-        create_field_pointer(*particle, tracking, particles_fields[field], trackingStride, runtime);
+        create_field_pointer1(*particle, tracking, particles_fields[field], trackingStride, runtime);
         assert(trackingStride[0].offset == sizeof(bool));
         break;
         
       case 7:
-        create_field_pointer(*particle, __valid, particles_fields[field], __validStride, runtime);
+        create_field_pointer1(*particle, __valid, particles_fields[field], __validStride, runtime);
         assert(__validStride[0].offset == sizeof(bool));
         break;
         

@@ -48,7 +48,7 @@ using namespace LegionRuntime::Accessor;
 // change this for each testcase to give the total num particles
 #define EXPECTED_NUM_PARTICLES 1375000 // this is for the 512x512x256 taylor testcase
 
-const int numVisibleParticlesPerNode = 1024;
+const int numVisibleParticlesPerNode = 512;
 static const bool writeFiles = false;//write out text files with data
 
 
@@ -221,24 +221,19 @@ static void drawParticle(GLUquadricObj* qobj, float* position, float density, fl
 #ifndef STANDALONE
 
 
-static void drawParticles(bool* __validBase,
-                          IndexSpace __validIS,
-                          FieldData* positionBase,
-                          IndexSpace positionIS,
-                          FieldData* densityBase,
-                          IndexSpace densityIS,
-                          FieldData* particleTemperatureBase,
-                          IndexSpace particleTemperatureIS,
-                          bool* trackingBase,
-                          IndexSpace trackingIS,
+static void drawParticles(bool* __valid,
+                          FieldData* position,
+                          FieldData* density,
+                          FieldData* particleTemperature,
+                          bool* tracking,
+                          ByteOffset __validStride[1],
+                          ByteOffset positionStride[1],
+                          ByteOffset densityStride[1],
+                          ByteOffset particleTemperatureStride[1],
+                          ByteOffset trackingStride[1],
                           GLUquadricObj* qobj,
                           Runtime* runtime,
                           int &numTracking) {
-  IndexIterator __validIterator(runtime, __validIS);
-  IndexIterator positionIterator(runtime, positionIS);
-  IndexIterator densityIterator(runtime, densityIS);
-  IndexIterator particleTemperatureIterator(runtime, particleTemperatureIS);
-  IndexIterator trackingIterator(runtime, trackingIS);
   srandom(0);
   const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
   const long randomThreshold = RAND_MAX_ * numVisibleParticlesPerNode / EXPECTED_NUM_PARTICLES;
@@ -247,19 +242,23 @@ static void drawParticles(bool* __validBase,
   int numParticles = 0;
   int numRandom = 0;
   int numDrawn = 0;
-  while(__validIterator.has_next()) {
-    bool valid = *NEXT(__valid);
-    valid = true;//debug
-    FieldData* p = NEXT3(position);
+  while(numParticles < EXPECTED_NUM_PARTICLES) {
+    bool valid = *__valid;
+    __valid += __validStride[0].offset / sizeof(*__valid);
+    FieldData* p = position;
+    position += positionStride[0].offset / sizeof(*position);
     float pos[3] = { (float)p[0], (float)p[1], (float)p[2] };
-    float density = *NEXT(density);
-    float particleTemperature = *NEXT(particleTemperature);
-    bool tracking = *NEXT(tracking);
-    if(tracking) numTracking++;
+    float d = *density;
+    density += densityStride[0].offset / sizeof(*density);
+    float particleTemp = *particleTemperature;
+    particleTemperature += particleTemperatureStride[0].offset / sizeof(*particleTemperature);
+    bool t = *tracking++;
+    tracking += trackingStride[0].offset / sizeof(*tracking);
+    if(t) numTracking++;
     bool randomlySelected = random() < randomThreshold;
     if(randomlySelected) numRandom++;
-    if(valid && (tracking || randomlySelected)) {
-      drawParticle(qobj, pos, density, particleTemperature);
+    if(valid && (t || randomlySelected)) {
+      drawParticle(qobj, pos, d, particleTemp);
       numDrawn++;
     }
     numParticles++;
@@ -270,24 +269,24 @@ static void drawParticles(bool* __validBase,
 
 static void trackParticles(int numTracking,
                            const int numVisibleParticlesPerNode,
-                           bool* __validBase,
-                           IndexSpace __validIS,
-                           bool* trackingBase,
-                           IndexSpace trackingIS,
+                           bool* __valid,
+                           bool* tracking,
+                           ByteOffset __validStride[1],
+                           ByteOffset trackingStride[1],
                            Runtime* runtime) {
   
-  IndexIterator __validIterator(runtime, __validIS);
-  IndexIterator trackingIterator(runtime, trackingIS);
-  
   int needMore = numVisibleParticlesPerNode - numTracking;
-  while(__validIterator.has_next() && needMore > 0) {
-    bool valid = *NEXT(__valid);
-    valid = true;//debug
-    bool* tracking = NEXT(tracking);
-    if(valid && !*tracking) {
-      *tracking = true;
+  int numParticles = 0;
+  while((numParticles < EXPECTED_NUM_PARTICLES) && needMore > 0) {
+    bool valid = *__valid;
+    __valid += __validStride[0].offset / sizeof(*__valid);
+    bool *t = tracking;
+    tracking += trackingStride[0].offset / sizeof(*tracking);
+    if(valid && !*t) {
+      *t = true;
       needMore--;
     }
+    numParticles++;
   }
 }
 
@@ -450,22 +449,23 @@ void render_image(int width,
 #else
 
 
+
 void render_image(int width,
                   int height,
                   FieldData* centerCoordinates,
                   FieldData* velocity,
                   FieldData* temperature,
                   int totalCells,
-                  bool* __validBase,
-                  IndexSpace __validIS,
-                  FieldData* positionBase,
-                  IndexSpace positionIS,
-                  FieldData* densityBase,
-                  IndexSpace densityIS,
-                  FieldData* particleTemperatureBase,
-                  IndexSpace particleTemperatureIS,
-                  bool* trackingBase,
-                  IndexSpace trackingIS,
+                  bool* __valid,
+                  FieldData* position,
+                  FieldData* density,
+                  FieldData* particleTemperature,
+                  bool* tracking,
+                  ByteOffset __validStride[1],
+                  ByteOffset positionStride[1],
+                  ByteOffset densityStride[1],
+                  ByteOffset particleTemperatureStride[1],
+                  ByteOffset trackingStride[1],
                   GLfloat** rgbaBuffer,
                   GLfloat** depthBuffer,
                   OSMesaContext mesaCtx,
@@ -548,13 +548,12 @@ void render_image(int width,
 #ifndef STANDALONE
   
   int numTracking;
-  drawParticles(__validBase, __validIS, positionBase, positionIS, densityBase, densityIS,
-                particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS,
+  drawParticles(__valid, position, density, particleTemperature, tracking,
+                __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
                 qobj, runtime, numTracking);
   
   if(numTracking < numVisibleParticlesPerNode) {
-    trackParticles(numTracking, numVisibleParticlesPerNode, __validBase, __validIS,
-                   trackingBase, trackingIS, runtime);
+    trackParticles(numTracking, numVisibleParticlesPerNode, __valid, tracking, __validStride, trackingStride, runtime);
   }
   
 #else
@@ -610,6 +609,72 @@ void create_field_pointer(PhysicalRegion region,
   RegionAccessor<AccessorType::Generic, float> acc = region.get_field_accessor(fieldID).typeify<float>();
   Rect<3> tempBounds;
   field = acc.raw_rect_ptr<3>(bounds, tempBounds, stride);
+  assert(bounds == tempBounds);
+}
+
+
+static
+void create_field_pointer1(PhysicalRegion region,
+                          FieldData* &field,
+                          int fieldID,
+                          ByteOffset stride[1],
+                          Runtime* runtime) {
+  
+  Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
+  Rect<1> bounds = indexSpaceDomain.get_rect<1>();
+  RegionAccessor<AccessorType::Generic, FieldData> acc = region.get_field_accessor(fieldID).typeify<FieldData>();
+  Rect<1> tempBounds;
+  field = acc.raw_rect_ptr<1>(bounds, tempBounds, stride);
+  assert(bounds == tempBounds);
+}
+
+#if 0
+static
+void create_field_pointer1(PhysicalRegion region,
+                          float* &field,
+                          int fieldID,
+                          ByteOffset stride[1],
+                          Runtime* runtime) {
+  
+  Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
+  Rect<1> bounds = indexSpaceDomain.get_rect<1>();
+  RegionAccessor<AccessorType::Generic, float> acc = region.get_field_accessor(fieldID).typeify<float>();
+  Rect<1> tempBounds;
+  field = acc.raw_rect_ptr<1>(bounds, tempBounds, stride);
+  assert(bounds == tempBounds);
+}
+#endif
+
+
+static
+void create_field_pointer1(PhysicalRegion region,
+                          int* &field,
+                          int fieldID,
+                          ByteOffset stride[1],
+                          Runtime* runtime) {
+  
+  Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
+  Rect<1> bounds = indexSpaceDomain.get_rect<1>();
+  RegionAccessor<AccessorType::Generic, int> acc = region.get_field_accessor(fieldID).typeify<int>();
+  Rect<1> tempBounds;
+  field = acc.raw_rect_ptr<1>(bounds, tempBounds, stride);
+  assert(bounds == tempBounds);
+}
+
+
+
+static
+void create_field_pointer1(PhysicalRegion region,
+                          bool* &field,
+                          int fieldID,
+                          ByteOffset stride[1],
+                          Runtime* runtime) {
+  
+  Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
+  Rect<1> bounds = indexSpaceDomain.get_rect<1>();
+  RegionAccessor<AccessorType::Generic, bool> acc = region.get_field_accessor(fieldID).typeify<bool>();
+  Rect<1> tempBounds;
+  field = acc.raw_rect_ptr<1>(bounds, tempBounds, stride);
   assert(bounds == tempBounds);
 }
 
@@ -699,7 +764,7 @@ void writeCellsToFile(std::string filePath,
 }
 
 
-
+#if 0
 // TODO make this a template
 
 static
@@ -748,27 +813,28 @@ static
 void getBaseIndexSpaceFieldData3(PhysicalRegion* particle, int fieldID, FieldData* &base, IndexSpace &indexSpace) {
   getBaseIndexSpaceFieldData_impl(particle, fieldID, base, indexSpace, 3);
 }
+#endif
 
 
 static
 void accessParticleData(legion_physical_region_t *particles,
                         legion_field_id_t *particles_fields,
                         bool* &__valid,
-                        IndexSpace &__validIS,
+                        ByteOffset __validStride[1],
                         int* &cellX,
-                        IndexSpace &cellXIS,
+                        ByteOffset cellXStride[1],
                         int* &cellY,
-                        IndexSpace &cellYIS,
+                        ByteOffset cellYStride[1],
                         int* &cellZ,
-                        IndexSpace &cellZIS,
+                        ByteOffset cellZStride[1],
                         FieldData* &position,
-                        IndexSpace &positionIS,
+                        ByteOffset positionStride[1],
                         FieldData* &density,
-                        IndexSpace &densityIS,
+                        ByteOffset densityStride[1],
                         FieldData* &particleTemperature,
-                        IndexSpace &particleTemperatureIS,
+                        ByteOffset particleTemperatureStride[1],
                         bool* &tracking,
-                        IndexSpace &trackingIS,
+                        ByteOffset trackingStride[1],
                         Runtime* runtime) {
   
   PhysicalRegion* particle = CObjectWrapper::unwrap(particles[0]);
@@ -780,35 +846,43 @@ void accessParticleData(legion_physical_region_t *particles,
     
     switch(field) {
       case 0:
-        getBaseIndexSpaceInt(particle, particles_fields[field], cellX, cellXIS);
+        create_field_pointer1(*particle, cellX, particles_fields[field], cellXStride, runtime);
+        assert(cellXStride[0].offset == sizeof(int));
         break;
         
       case 1:
-        getBaseIndexSpaceInt(particle, particles_fields[field], cellY, cellYIS);
+        create_field_pointer1(*particle, cellY, particles_fields[field], cellYStride, runtime);
+        assert(cellYStride[0].offset == sizeof(int));
         break;
         
       case 2:
-        getBaseIndexSpaceInt(particle, particles_fields[field], cellZ, cellZIS);
+        create_field_pointer1(*particle, cellZ, particles_fields[field], cellZStride, runtime);
+        assert(cellZStride[0].offset == sizeof(int));
         break;
         
       case 3:
-        getBaseIndexSpaceFieldData3(particle, particles_fields[field], position, positionIS);
+        create_field_pointer1(*particle, position, particles_fields[field], positionStride, runtime);
+        assert(positionStride[0].offset == 3 * sizeof(FieldData));
         break;
         
       case 4:
-        getBaseIndexSpaceFieldData(particle, particles_fields[field], density, densityIS);
+        create_field_pointer1(*particle, density, particles_fields[field], densityStride, runtime);
+        assert(densityStride[0].offset == sizeof(FieldData));
         break;
         
       case 5:
-        getBaseIndexSpaceFieldData(particle, particles_fields[field], particleTemperature, particleTemperatureIS);
+        create_field_pointer1(*particle, particleTemperature, particles_fields[field], particleTemperatureStride, runtime);
+        assert(particleTemperatureStride[0].offset == sizeof(FieldData));
         break;
         
       case 6:
-        getBaseIndexSpaceBool(particle, particles_fields[field], tracking, trackingIS);
+        create_field_pointer1(*particle, tracking, particles_fields[field], trackingStride, runtime);
+        assert(trackingStride[0].offset == sizeof(bool));
         break;
         
       case 7:
-        getBaseIndexSpaceBool(particle, particles_fields[field], __valid, __validIS);
+        create_field_pointer1(*particle, __valid, particles_fields[field], __validStride, runtime);
+        assert(__validStride[0].offset == sizeof(bool));
         break;
         
       default:
@@ -818,7 +892,7 @@ void accessParticleData(legion_physical_region_t *particles,
 }
 
 
-
+#if 0
 
 static
 void writeParticlesToFile(std::string filePath,
@@ -878,7 +952,7 @@ void writeParticlesToFile(std::string filePath,
   std::cout << "wrote " << counter << " particles to " << filePath << std::endl;
 }
 
-
+#endif
 
 
 static
@@ -1079,34 +1153,39 @@ void cxx_render(legion_runtime_t runtime_,
   int numCells[3] = { (xHi - xLo + 1), (yHi - yLo + 1), (zHi - zLo + 1) };
   totalCells = numCells[0] * numCells[1] * numCells[2];
   
-  bool* __validBase = NULL;
-  IndexSpace __validIS;
-  int* cellXBase = NULL;
-  IndexSpace cellXIS;
-  int* cellYBase = NULL;
-  IndexSpace cellYIS;
-  int* cellZBase = NULL;
-  IndexSpace cellZIS;
-  FieldData* positionBase = NULL;
-  IndexSpace positionIS;
-  FieldData* densityBase = NULL;
-  IndexSpace densityIS;
-  FieldData* particleTemperatureBase = NULL;
-  IndexSpace particleTemperatureIS;
-  bool* trackingBase;
-  IndexSpace trackingIS;
+  bool* __valid = NULL;
+  int* cellX = NULL;
+  int* cellY = NULL;
+  int* cellZ = NULL;
+  FieldData* position = NULL;
+  FieldData* density = NULL;
+  FieldData* particleTemperature = NULL;
+  bool* tracking = NULL;
   
-  accessParticleData(particles, particles_fields, __validBase, __validIS, cellXBase, cellXIS, cellYBase, cellYIS,
-                     cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
-                     particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS,
-                     runtime);
+  ByteOffset __validStride[1];
+  ByteOffset cellXStride[1];
+  ByteOffset cellYStride[1];
+  ByteOffset cellZStride[1];
+  ByteOffset positionStride[1];
+  ByteOffset densityStride[1];
+  ByteOffset particleTemperatureStride[1];
+  ByteOffset trackingStride[1];
+
   
+  accessParticleData(particles, particles_fields, __valid, __validStride, cellX, cellXStride,
+                     cellY, cellYStride, cellZ, cellZStride, position, positionStride,
+                     density, densityStride, particleTemperature, particleTemperatureStride,
+                     tracking, trackingStride, runtime);
+                     
+#if 0
   if(writeFiles) {
+    //TODO modify this to use 1D structured IS
     std::string particlesFileName = dataFileName("./out/particles", timeStepNumber, bounds);
     writeParticlesToFile(particlesFileName, __validBase, __validIS, cellXBase, cellXIS, cellYBase, cellYIS,
                          cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
                          particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS, runtime);
   }
+#endif
   
 #endif
   
@@ -1138,11 +1217,8 @@ void cxx_render(legion_runtime_t runtime_,
 #else
   
   render_image(width, height, centerCoordinates, velocity, temperature, totalCells,
-               __validBase, __validIS,
-               positionBase, positionIS,
-               densityBase, densityIS,
-               particleTemperatureBase, particleTemperatureIS,
-               trackingBase, trackingIS,
+               __valid, position, density, particleTemperature, tracking,
+               __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, numCells);
   
   if(writeFiles) {

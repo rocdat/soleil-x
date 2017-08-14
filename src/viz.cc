@@ -609,8 +609,6 @@ void render_image(int width,
                 __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
                 qobj, runtime);
   
-  }
-  
 #else
   
   drawParticles(particleFilePath, qobj);

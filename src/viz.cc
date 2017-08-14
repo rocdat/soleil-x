@@ -962,7 +962,7 @@ void writeParticlesToFile(std::string filePath,
                           ByteOffset __validStride[1],
                           ByteOffset cellXStride[1],
                           ByteOffset cellYStride[1],
-                          ByteOffset cellZString[1],
+                          ByteOffset cellZStride[1],
                           ByteOffset positionStride[1],
                           ByteOffset densityStride[1],
                           ByteOffset particleTemperatureStride[1],
@@ -1194,7 +1194,7 @@ void cxx_render(legion_runtime_t runtime_,
   accessCellData(cells, cells_fields, velocity, centerCoordinates, temperature,
                  strideCenter, strideVelocity, strideTemperature, bounds, runtime);
   
-  if(writeFiles) {
+  if(writeFiles && timeStepNumber >= 8) {
     std::string cellsFileName = dataFileName("./out/cells", timeStepNumber, bounds);
     writeCellsToFile(cellsFileName, bounds, velocity, centerCoordinates,
                      temperature, strideCenter, strideVelocity, strideTemperature);
@@ -1274,7 +1274,7 @@ void cxx_render(legion_runtime_t runtime_,
                __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, numCells);
   
-  if(writeFiles) {
+  if(writeFiles && timeStepNumber >= 8) {
     write_ppm(imageFileName("./out/image", ".ppm", timeStepNumber, bounds).c_str(), rgbaBuffer, width, height);
     std::string depthFileName = imageFileName("./out/depth", ".zzz", timeStepNumber, bounds);
     FILE* depthFile = fopen(depthFileName.c_str(), "w");

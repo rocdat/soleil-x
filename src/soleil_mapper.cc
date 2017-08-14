@@ -201,7 +201,21 @@ Processor SoleilMapper::default_policy_select_initial_processor(
       switch (info.proc_kind)
       {
         case Processor::LOC_PROC:
-          return loc_procs_list[color % loc_procs_list.size()];
+          {
+            Memory sysmem = sysmems_list[color % sysmems_list.size()];
+            std::vector<Processor>& local_procs = sysmem_local_procs[sysmem];
+            if (strcmp(task.get_task_name(), "Render") == 0 ||
+                strcmp(task.get_task_name(), "Reduce") == 0 ||
+                strcmp(task.get_task_name(), "SaveImage") == 0)
+            {
+              return local_procs[color % local_procs.size()];
+            }
+            else
+            {
+              return local_procs[(color + 1) % local_procs.size()];
+            }
+            break;
+          }
         case Processor::TOC_PROC:
           return toc_procs_list[color % toc_procs_list.size()];
         case Processor::OMP_PROC:

@@ -263,7 +263,7 @@ static void drawParticles(bool* __valid,
     }
     numParticles++;
   }
-  std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
+  //std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
 }
 
 
@@ -335,7 +335,7 @@ static void drawParticles(std::string particleFilePath,
     numParticles++;
   }
   particleFile.close();
-  std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
+  //std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
   
 }
 
@@ -424,7 +424,7 @@ static void drawAveragedCells(FieldData* centerCoordinates, FieldData* velocity,
   glEnd();
   
   totalVelocityMagnitude /= totalMeanCells;
-  std::cout << "mean velocity magnitude " << totalVelocityMagnitude << std::endl;
+  //std::cout << "mean velocity magnitude " << totalVelocityMagnitude << std::endl;
   
 }
 

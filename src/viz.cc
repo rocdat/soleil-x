@@ -232,13 +232,12 @@ static void drawParticles(bool* __valid,
                           ByteOffset particleTemperatureStride[1],
                           ByteOffset trackingStride[1],
                           GLUquadricObj* qobj,
-                          Runtime* runtime,
-                          int &numTracking) {
+                          Runtime* runtime) {
   
   FieldData minCenter[3] = { FLT_MAX };
   FieldData maxCenter[3] = { 0 };
   
-  numTracking = 0;
+  int numTracking = 0;
   int numParticles = 0;
   int numDrawn = 0;
   while(numParticles < EXPECTED_NUM_PARTICLES) {
@@ -608,7 +607,7 @@ void render_image(int width,
   trackParticles(numVisibleParticlesPerNode, __valid, tracking, __validStride, trackingStride, runtime);
   drawParticles(__valid, position, density, particleTemperature, tracking,
                 __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
-                qobj, runtime, numTracking);
+                qobj, runtime);
   
   }
   

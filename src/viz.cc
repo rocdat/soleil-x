@@ -176,7 +176,7 @@ static void scaledTemperatureToColor(GLfloat temperature,
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
-  GLfloat scale = 5.0e-2;
+  GLfloat scale = 1.0e-1;
   GLfloat base[] = {
     (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
   };
@@ -212,7 +212,7 @@ static void drawParticle(GLUquadricObj* qobj, float* position, float density, fl
   
   glPushMatrix();
   glTranslatef(position[0], position[1], position[2] + verticalOffset);
-  const GLfloat densityScale = 1.0e-5;
+  const GLfloat densityScale = 5.0e-6;
   gluSphere(qobj, density * densityScale, 7, 7);
   glPopMatrix();
 }
@@ -234,16 +234,12 @@ static void drawParticles(bool* __valid,
                           GLUquadricObj* qobj,
                           Runtime* runtime,
                           int &numTracking) {
-  srandom(0);
-  const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
-  const long randomThreshold = RAND_MAX_ * numVisibleParticlesPerNode / EXPECTED_NUM_PARTICLES;
   
   FieldData minCenter[3] = { FLT_MAX };
   FieldData maxCenter[3] = { 0 };
   
   numTracking = 0;
   int numParticles = 0;
-  int numRandom = 0;
   int numDrawn = 0;
   while(numParticles < EXPECTED_NUM_PARTICLES) {
     bool valid = *__valid;
@@ -255,15 +251,13 @@ static void drawParticles(bool* __valid,
     density += densityStride[0].offset / sizeof(*density);
     float particleTemp = *particleTemperature;
     particleTemperature += particleTemperatureStride[0].offset / sizeof(*particleTemperature);
-    bool t = *tracking++;
-    tracking += trackingStride[0].offset / sizeof(*tracking);
-    if(t) numTracking++;
-    bool randomlySelected = random() < randomThreshold;
-    if(randomlySelected) numRandom++;
-    if(valid && (t || randomlySelected)) {
+    bool t = *tracking;
+    if(valid && t) {
       drawParticle(qobj, pos, d, particleTemp);
       numDrawn++;
+      numTracking++;
     }
+    tracking += trackingStride[0].offset / sizeof(*tracking);
     for(unsigned i = 0; i < 3; ++i) {
       if(pos[i] > maxCenter[i]) {
         maxCenter[i] = pos[i];
@@ -274,30 +268,42 @@ static void drawParticles(bool* __valid,
     }
     numParticles++;
   }
-  //  std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
+  //  std::cout << "particles " << numParticles << " tracking " << numTracking << " drawn " << numDrawn << std::endl;
   //  std::cout << "particle position min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2];
   //  std::cout << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::cout;
 }
 
 
-static void trackParticles(int numTracking,
-                           const int numVisibleParticlesPerNode,
+static void trackParticles(const int numVisibleParticlesPerNode,
                            bool* __valid,
                            bool* tracking,
                            ByteOffset __validStride[1],
                            ByteOffset trackingStride[1],
                            Runtime* runtime) {
   
+  int numTracking = 0;
+  bool* trackingPtr = tracking;
+  for(unsigned particle = 0; particle < EXPECTED_NUM_PARTICLES; ++particle) {
+    numTracking += *trackingPtr;
+    trackingPtr += trackingStride[0].offset / sizeof(*tracking);
+  }
+  
   int needMore = numVisibleParticlesPerNode - numTracking;
+  const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
+  const long randomThreshold = RAND_MAX_ * needMore / EXPECTED_NUM_PARTICLES;
   int numParticles = 0;
-  while((numParticles < EXPECTED_NUM_PARTICLES) && needMore > 0) {
+  
+  for(unsigned particle = 0; particle < EXPECTED_NUM_PARTICLES && needMore > 0; ++particle) {
     bool valid = *__valid;
     __valid += __validStride[0].offset / sizeof(*__valid);
     bool *t = tracking;
     tracking += trackingStride[0].offset / sizeof(*tracking);
     if(valid && !*t) {
-      *t = true;
-      needMore--;
+      bool randomlySelected = random() < randomThreshold;
+      if(randomlySelected) {
+        *t = true;
+        needMore--;
+      }
     }
     numParticles++;
   }
@@ -394,7 +400,7 @@ static void setCamera() {
 
 static void drawAveragedCells(FieldData* centerCoordinates, FieldData* velocity, FieldData* temperature, int numCells[3], GLUquadricObj *qobj) {
   // set the parameters for averaging here
-  const unsigned zFactor = 8;//average over xFactor*yFactor*zFactor cells
+  const unsigned zFactor = 32;//average over xFactor*yFactor*zFactor cells
   const unsigned xFactor = 32;
   const unsigned yFactor = 32;
   const unsigned numMeanCells[] = {numCells[0] / xFactor, numCells[1] / yFactor, numCells[2] / zFactor };
@@ -403,7 +409,7 @@ static void drawAveragedCells(FieldData* centerCoordinates, FieldData* velocity,
   FieldData maxCenter[3] = { 0 };
   FieldData minMean[3] = { FLT_MAX };
   FieldData maxMean[3] = { 0 };
-
+  
   const unsigned totalMeanCells = numMeanCells[0] * numMeanCells[1] * numMeanCells[2];
   float totalVelocityMagnitude = 0;
   
@@ -599,13 +605,11 @@ void render_image(int width,
   
 #ifndef STANDALONE
   
-  int numTracking;
+  trackParticles(numVisibleParticlesPerNode, __valid, tracking, __validStride, trackingStride, runtime);
   drawParticles(__valid, position, density, particleTemperature, tracking,
                 __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
                 qobj, runtime, numTracking);
   
-  if(numTracking < numVisibleParticlesPerNode) {
-    trackParticles(numTracking, numVisibleParticlesPerNode, __valid, tracking, __validStride, trackingStride, runtime);
   }
   
 #else

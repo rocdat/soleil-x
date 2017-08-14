@@ -49,7 +49,7 @@ using namespace LegionRuntime::Accessor;
 #define EXPECTED_NUM_PARTICLES 1375000 // this is for the 512x512x256 taylor testcase
 
 const int numVisibleParticlesPerNode = 512;
-static const bool writeFiles = false;//write out text files with data
+static const bool writeFiles = true;//write out text files with data
 
 
 #ifdef STANDALONE
@@ -1138,7 +1138,7 @@ void cxx_render(legion_runtime_t runtime_,
   accessCellData(cells, cells_fields, velocity, centerCoordinates, temperature,
                  strideCenter, strideVelocity, strideTemperature, bounds, runtime);
   
-  if(writeFiles) {
+  if(writeFiles && timeStepNumber >= 8) {
     std::string cellsFileName = dataFileName("./out/cells", timeStepNumber, bounds);
     writeCellsToFile(cellsFileName, bounds, velocity, centerCoordinates,
                      temperature, strideCenter, strideVelocity, strideTemperature);
@@ -1218,7 +1218,7 @@ void cxx_render(legion_runtime_t runtime_,
                __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, numCells);
   
-  if(writeFiles) {
+  if(writeFiles && timeStepNumber >= 8) {
     write_ppm(imageFileName("./out/image", ".ppm", timeStepNumber, bounds).c_str(), rgbaBuffer, width, height);
     std::string depthFileName = imageFileName("./out/depth", ".zzz", timeStepNumber, bounds);
     FILE* depthFile = fopen(depthFileName.c_str(), "w");

@@ -49,7 +49,7 @@ using namespace LegionRuntime::Accessor;
 #define EXPECTED_NUM_PARTICLES 1375000 // this is for the 512x512x256 taylor testcase
 
 const int numVisibleParticlesPerNode = 512;
-static const bool writeFiles = true;//write out text files with data
+static const bool writeFiles = false;//write out text files with data
 
 
 #ifdef STANDALONE
@@ -906,7 +906,7 @@ void writeParticlesToFile(std::string filePath,
                           ByteOffset __validStride[1],
                           ByteOffset cellXStride[1],
                           ByteOffset cellYStride[1],
-                          ByteOffset cellZString[1],
+                          ByteOffset cellZStride[1],
                           ByteOffset positionStride[1],
                           ByteOffset densityStride[1],
                           ByteOffset particleTemperatureStride[1],

@@ -892,67 +892,67 @@ void accessParticleData(legion_physical_region_t *particles,
 }
 
 
-#if 0
 
 static
 void writeParticlesToFile(std::string filePath,
-                          bool* __validBase,
-                          IndexSpace __validIS,
-                          int* cellXBase,
-                          IndexSpace cellXIS,
-                          int* cellYBase,
-                          IndexSpace cellYIS,
-                          int* cellZBase,
-                          IndexSpace cellZIS,
-                          FieldData* positionBase,
-                          IndexSpace positionIS,
-                          FieldData* densityBase,
-                          IndexSpace densityIS,
-                          FieldData* particleTemperatureBase,
-                          IndexSpace particleTemperatureIS,
-                          bool* trackingBase,
-                          IndexSpace trackingIS,
+                          bool* __valid,
+                          int* cellX,
+                          int* cellY,
+                          int* cellZ,
+                          FieldData* position,
+                          FieldData* density,
+                          FieldData* particleTemperature,
+                          bool* tracking,
+                          ByteOffset __validStride[1],
+                          ByteOffset cellXStride[1],
+                          ByteOffset cellYStride[1],
+                          ByteOffset cellZString[1],
+                          ByteOffset positionStride[1],
+                          ByteOffset densityStride[1],
+                          ByteOffset particleTemperatureStride[1],
+                          ByteOffset trackingStride[1],
                           Runtime* runtime) {
   
   std::ofstream outputFile;
   outputFile.open(filePath.c_str());
   int counter = 0;
+  int numParticles = 0;
   
-  IndexIterator __validIterator(runtime, __validIS);
-  IndexIterator cellXIterator(runtime, cellXIS);
-  IndexIterator cellYIterator(runtime, cellYIS);
-  IndexIterator cellZIterator(runtime, cellZIS);
-  IndexIterator positionIterator(runtime, positionIS);
-  IndexIterator densityIterator(runtime, densityIS);
-  IndexIterator particleTemperatureIterator(runtime, particleTemperatureIS);
-  IndexIterator trackingIterator(runtime, trackingIS);
-  
-  while(__validIterator.has_next()) {
-    bool valid = *NEXT(__valid);
-    int cellX = *NEXT(cellX);
-    int cellY = *NEXT(cellY);
-    int cellZ = *NEXT(cellZ);
-    FieldData* p = NEXT3(position);
-    FieldData density = *NEXT(density);
-    FieldData particleTemperature = *NEXT(particleTemperature);
-    bool tracking = *NEXT(tracking);
+  while(numParticles < EXPECTED_NUM_PARTICLES) {
+    bool valid = *__valid;
+    __valid += __validStride[0].offset / sizeof(*__valid);
+    int cX = *cellX;
+    cellX += cellXStride[0].offset / sizeof(*cellX);
+    int cY = *cellY;
+    cellY += cellYStride[0].offset / sizeof(*cellY);
+    int cZ = *cellZ;
+    cellZ += cellZStride[0].offset / sizeof(*cellZ);
+    FieldData* p = position;
+    position += positionStride[0].offset / sizeof(*position);
+    FieldData d = *density;
+    density += densityStride[0].offset / sizeof(*density);
+    FieldData pt = *particleTemperature;
+    particleTemperature += particleTemperatureStride[0].offset / sizeof(*particleTemperature);
+    bool t = *tracking;
+    tracking += trackingStride[0].offset / sizeof(*tracking);
     if(valid) {
       outputFile << std::setprecision(10)
-      << "(" << cellX << "," << cellY << "," << cellZ << ") "
+      << "(" << cX << "," << cY << "," << cZ << ") "
       << p[0] << " " << p[1] << " " << p[2] << "  "
-      << density << " "
-      << particleTemperature << " "
-      << tracking
+      << d << " "
+      << pt << " "
+      << t
       << std::endl;
       counter++;
     }
+    numParticles++;
   }
   
   outputFile.close();
   std::cout << "wrote " << counter << " particles to " << filePath << std::endl;
 }
 
-#endif
+
 
 
 static
@@ -1177,15 +1177,12 @@ void cxx_render(legion_runtime_t runtime_,
                      density, densityStride, particleTemperature, particleTemperatureStride,
                      tracking, trackingStride, runtime);
                      
-#if 0
-  if(writeFiles) {
-    //TODO modify this to use 1D structured IS
+  if(writeFiles && timeStepNumber >= 8) {
     std::string particlesFileName = dataFileName("./out/particles", timeStepNumber, bounds);
-    writeParticlesToFile(particlesFileName, __validBase, __validIS, cellXBase, cellXIS, cellYBase, cellYIS,
-                         cellZBase, cellZIS, positionBase, positionIS, densityBase, densityIS,
-                         particleTemperatureBase, particleTemperatureIS, trackingBase, trackingIS, runtime);
+    writeParticlesToFile(particlesFileName, __valid, cellX, cellY, cellZ, position, density, particleTemperature, tracking,
+                         __validStride, cellXStride, cellYStride, cellZStride, positionStride,
+                         densityStride, particleTemperatureStride, trackingStride, runtime);
   }
-#endif
   
 #endif
   

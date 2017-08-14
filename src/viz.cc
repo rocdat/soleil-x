@@ -33,7 +33,7 @@ using namespace LegionRuntime::Accessor;
 
 #endif
 
-
+#include <cfloat>
 #include <iostream>
 #include <unistd.h>
 #include <fstream>
@@ -46,9 +46,9 @@ using namespace LegionRuntime::Accessor;
 
 // search for the word "testcase" to find all of the testcase dependent changes
 // change this for each testcase to give the total num particles
-#define EXPECTED_NUM_PARTICLES 1375000 // this is for the 512x512x256 taylor testcase
+#define EXPECTED_NUM_PARTICLES 4000000 // this is for the 512x512x256 taylor testcase
 
-const int numVisibleParticlesPerNode = 512;
+const int numVisibleParticlesPerNode = 256;
 static const bool writeFiles = false;//write out text files with data
 
 
@@ -176,7 +176,7 @@ static void scaledTemperatureToColor(GLfloat temperature,
 static void drawVelocityVector(FieldData* centerCoordinate,
                                FieldData* velocity,
                                FieldData* temperature) {
-  GLfloat scale = 5.0e+13;
+  GLfloat scale = 5.0e-2;
   GLfloat base[] = {
     (GLfloat)centerCoordinate[0], (GLfloat)centerCoordinate[1], (GLfloat)centerCoordinate[2]
   };
@@ -212,7 +212,7 @@ static void drawParticle(GLUquadricObj* qobj, float* position, float density, fl
   
   glPushMatrix();
   glTranslatef(position[0], position[1], position[2] + verticalOffset);
-  const GLfloat densityScale = 0.001f;
+  const GLfloat densityScale = 1.0e-5;
   gluSphere(qobj, density * densityScale, 7, 7);
   glPopMatrix();
 }
@@ -238,6 +238,9 @@ static void drawParticles(bool* __valid,
   const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
   const long randomThreshold = RAND_MAX_ * numVisibleParticlesPerNode / EXPECTED_NUM_PARTICLES;
   
+  FieldData minCenter[3] = { FLT_MAX };
+  FieldData maxCenter[3] = { 0 };
+  
   numTracking = 0;
   int numParticles = 0;
   int numRandom = 0;
@@ -261,9 +264,19 @@ static void drawParticles(bool* __valid,
       drawParticle(qobj, pos, d, particleTemp);
       numDrawn++;
     }
+    for(unsigned i = 0; i < 3; ++i) {
+      if(pos[i] > maxCenter[i]) {
+        maxCenter[i] = pos[i];
+      }
+      if(pos[i] < minCenter[i]) {
+        minCenter[i] = pos[i];
+      }
+    }
     numParticles++;
   }
-  //std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
+  //  std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
+  //  std::cout << "particle position min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2];
+  //  std::cout << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::cout;
 }
 
 
@@ -304,6 +317,8 @@ static void drawParticles(std::string particleFilePath,
   int numParticles = 0;
   int numRandom = 0;
   int numTracking = 0;
+  FieldData minCenter[3] = { FLT_MAX };
+  FieldData maxCenter[3] = { 0 };
   
   char buffer[256];
   
@@ -324,7 +339,6 @@ static void drawParticles(std::string particleFilePath,
     
     bool tracking = (numTracking < numVisibleParticlesPerNode);
     if(tracking) numTracking++;
-    tracking = false;//debug
     bool randomlySelected = random() < randomThreshold;
     if(randomlySelected) numRandom++;
     if(tracking || randomlySelected) {
@@ -332,10 +346,21 @@ static void drawParticles(std::string particleFilePath,
       drawParticle(qobj, pos, density, particleTemperature);
       numDrawn++;
     }
+    for(unsigned i = 0; i < 3; ++i) {
+      if(position[i] > maxCenter[i]) {
+        maxCenter[i] = position[i];
+      }
+      if(position[i] < minCenter[i]) {
+        minCenter[i] = position[i];
+      }
+    }
+    
     numParticles++;
   }
   particleFile.close();
-  //std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
+  std::cout << "particles " << numParticles << " tracking " << numTracking << " random " << numRandom << " drawn " << numDrawn << std::endl;
+  std::cout << "particle position min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2];
+  std::cout << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
   
 }
 
@@ -355,29 +380,35 @@ static void setCamera() {
   glPushMatrix();
   glLoadIdentity();
   // change this for each testcase to hold the data
-  glOrtho(-3000, 3000, -1500, 1500, -5000, 5000);
+  glOrtho(-6, 6, -6, 6, -20, 20);
   //gluPerspective(120, 3840 / 2160, 0, 4000);
   
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
   // possbly change the at point for each testcase
-//  gluLookAt(/*eye*/-111, 7, 1000, /*at*/1600, 1600, 777, /*up*/0.0, 0.0, 1.0);
-  gluLookAt(/*eye*/-111, 237, 1000, /*at*/1603, 1605, 777, /*up*/0.0, 0.0, 1.0);
+  gluLookAt(/*eye*/-1, -0.5, 4.00, /*at*/3, 3.45, 3, /*up*/0.0, 0.0, 1.0);
 }
 
 
 
 static void drawAveragedCells(FieldData* centerCoordinates, FieldData* velocity, FieldData* temperature, int numCells[3], GLUquadricObj *qobj) {
+  // set the parameters for averaging here
   const unsigned zFactor = 8;//average over xFactor*yFactor*zFactor cells
   const unsigned xFactor = 32;
   const unsigned yFactor = 32;
   const unsigned numMeanCells[] = {numCells[0] / xFactor, numCells[1] / yFactor, numCells[2] / zFactor };
+  
+  FieldData minCenter[3] = { FLT_MAX };
+  FieldData maxCenter[3] = { 0 };
+  FieldData minMean[3] = { FLT_MAX };
+  FieldData maxMean[3] = { 0 };
+
   const unsigned totalMeanCells = numMeanCells[0] * numMeanCells[1] * numMeanCells[2];
   float totalVelocityMagnitude = 0;
   
   glBegin(GL_LINES);
-
+  
   for(unsigned meanZ = 0; meanZ < numMeanCells[2]; ++meanZ) {
     for(unsigned meanY = 0; meanY < numMeanCells[1]; ++meanY) {
       for(unsigned meanX = 0; meanX < numMeanCells[0]; ++meanX) {
@@ -401,6 +432,12 @@ static void drawAveragedCells(FieldData* centerCoordinates, FieldData* velocity,
               for(unsigned i = 0; i < 3; ++i) {
                 meanCenterCoordinates[i] += cellCenterCoordinates[i];
                 meanVelocity[i] += cellVelocity[i];
+                if(cellCenterCoordinates[i] > maxCenter[i]) {
+                  maxCenter[i] = cellCenterCoordinates[i];
+                }
+                if(cellCenterCoordinates[i] < minCenter[i]) {
+                  minCenter[i] = cellCenterCoordinates[i];
+                }
               }
               meanTemperature += cellTemperature[0];
             }
@@ -412,6 +449,14 @@ static void drawAveragedCells(FieldData* centerCoordinates, FieldData* velocity,
           meanVelocity[i] /= (xFactor * yFactor * zFactor);
         }
         meanTemperature /= (xFactor * yFactor * zFactor);
+        for(unsigned i = 0; i < 3; ++i) {
+          if(meanCenterCoordinates[i] > maxMean[i]) {
+            maxMean[i] = meanCenterCoordinates[i];
+          }
+          if(meanCenterCoordinates[i] < minMean[i]) {
+            minMean[i] = meanCenterCoordinates[i];
+          }
+        }
         
         drawVelocityVector(meanCenterCoordinates, meanVelocity, &meanTemperature);
         float magnitudeSquared = meanVelocity[0] * meanVelocity[0] + meanVelocity[1] * meanVelocity[1] + meanVelocity[2] * meanVelocity[2];
@@ -424,7 +469,12 @@ static void drawAveragedCells(FieldData* centerCoordinates, FieldData* velocity,
   glEnd();
   
   totalVelocityMagnitude /= totalMeanCells;
-  //std::cout << "mean velocity magnitude " << totalVelocityMagnitude << std::endl;
+  
+  std::cout << "mean velocity magnitude " << totalVelocityMagnitude;
+  std::cout << " cell center min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2]
+  << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
+  std::cout << " cell mean center min " << minMean[0] << "," << minMean[1] << "," << minMean[2]
+  << " max mean " << maxMean[0] << "," << maxMean[1] << "," << maxMean[2] << std::endl;
   
 }
 
@@ -491,7 +541,8 @@ void render_image(int width,
   GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
   GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
   GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-  GLfloat light_position[] = { -500.0, -500.0, 500.0, 1.0 };
+  GLfloat light_position[] = { -15.0, 15.0, 50.0, 1.0 };
+  
   //  GLfloat red_mat[]   = { 1.0, 0.2, 0.2, 1.0 };
   //  GLfloat green_mat[] = { 0.2, 1.0, 0.2, 0.5 };
   //  GLfloat blue_mat[]  = { 0.2, 0.2, 1.0, 1.0 };
@@ -504,6 +555,7 @@ void render_image(int width,
   glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
   glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+  glClearColor((GLclampf)0.8, (GLclampf)0.8, (GLclampf)1.0, (GLclampf)1.0);
   
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
@@ -516,7 +568,7 @@ void render_image(int width,
   // draw cells
   
   float totalVelocityMagnitude = 0;
-  glLineWidth(4);
+  glLineWidth(6);
   
   bool is1D = (numCells[1] == 1 && numCells[2] == 1);
   if(is1D) {
@@ -535,7 +587,7 @@ void render_image(int width,
     
     float meanVelocityMagnitude = totalVelocityMagnitude / totalCells;
     std::cout << "mean velocity magnitude " << meanVelocityMagnitude << std::endl;
-
+    
   } else {
     
     drawAveragedCells(centerCoordinates, velocity, temperature, numCells, qobj);
@@ -615,10 +667,10 @@ void create_field_pointer(PhysicalRegion region,
 
 static
 void create_field_pointer1(PhysicalRegion region,
-                          FieldData* &field,
-                          int fieldID,
-                          ByteOffset stride[1],
-                          Runtime* runtime) {
+                           FieldData* &field,
+                           int fieldID,
+                           ByteOffset stride[1],
+                           Runtime* runtime) {
   
   Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
   Rect<1> bounds = indexSpaceDomain.get_rect<1>();
@@ -631,10 +683,10 @@ void create_field_pointer1(PhysicalRegion region,
 #if 0
 static
 void create_field_pointer1(PhysicalRegion region,
-                          float* &field,
-                          int fieldID,
-                          ByteOffset stride[1],
-                          Runtime* runtime) {
+                           float* &field,
+                           int fieldID,
+                           ByteOffset stride[1],
+                           Runtime* runtime) {
   
   Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
   Rect<1> bounds = indexSpaceDomain.get_rect<1>();
@@ -648,10 +700,10 @@ void create_field_pointer1(PhysicalRegion region,
 
 static
 void create_field_pointer1(PhysicalRegion region,
-                          int* &field,
-                          int fieldID,
-                          ByteOffset stride[1],
-                          Runtime* runtime) {
+                           int* &field,
+                           int fieldID,
+                           ByteOffset stride[1],
+                           Runtime* runtime) {
   
   Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
   Rect<1> bounds = indexSpaceDomain.get_rect<1>();
@@ -665,10 +717,10 @@ void create_field_pointer1(PhysicalRegion region,
 
 static
 void create_field_pointer1(PhysicalRegion region,
-                          bool* &field,
-                          int fieldID,
-                          ByteOffset stride[1],
-                          Runtime* runtime) {
+                           bool* &field,
+                           int fieldID,
+                           ByteOffset stride[1],
+                           Runtime* runtime) {
   
   Domain indexSpaceDomain = runtime->get_index_space_domain(region.get_logical_region().get_index_space());
   Rect<1> bounds = indexSpaceDomain.get_rect<1>();
@@ -1084,7 +1136,7 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
   int fragmentHeight = (int)(bounds.hi.x[1] - bounds.lo.x[1]) + 1;
   assert(fragmentHeight > 0);
   int numFragmentsPerImage = height / fragmentHeight;
-
+  
   for(int i = 0; i < numFragmentsPerImage; ++i) {
     GLfloat* rgba = rgbaBuffer + i * fragmentHeight * width * 4;
     GLfloat* depth = depthBuffer + i * fragmentHeight * width;
@@ -1117,13 +1169,13 @@ void cxx_render(legion_runtime_t runtime_,
                 int timeStepNumber)
 #endif
 {
-
+  
   
 #ifndef STANDALONE
   
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
   
-
+  
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   
   FieldData* centerCoordinates = NULL;
@@ -1170,13 +1222,13 @@ void cxx_render(legion_runtime_t runtime_,
   ByteOffset densityStride[1];
   ByteOffset particleTemperatureStride[1];
   ByteOffset trackingStride[1];
-
+  
   
   accessParticleData(particles, particles_fields, __valid, __validStride, cellX, cellXStride,
                      cellY, cellYStride, cellZ, cellZStride, position, positionStride,
                      density, densityStride, particleTemperature, particleTemperatureStride,
                      tracking, trackingStride, runtime);
-                     
+  
   if(writeFiles && timeStepNumber >= 8) {
     std::string particlesFileName = dataFileName("./out/particles", timeStepNumber, bounds);
     writeParticlesToFile(particlesFileName, __valid, cellX, cellY, cellZ, position, density, particleTemperature, tracking,
@@ -1565,7 +1617,7 @@ void readCellData(std::string filePath,
       while (getline(inputFile, inputLine)) {
         unsigned serialID;
         unsigned x, y, z;
-        sscanf(inputLine.c_str(), "%d (%d,%d,%d) %lf %lf %lf %lf %lf %lf %lf",
+        sscanf(inputLine.c_str(), "%d %d %d %d  %lf %lf %lf %lf %lf %lf %lf",
                &serialID, &x, &y, &z,
                cc, cc + 1, cc + 2,
                v, v + 1, v + 2,

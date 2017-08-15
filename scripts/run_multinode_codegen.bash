@@ -32,5 +32,6 @@ LEGION_BACKTRACE=1 LEGION_FREEZE_ON_ERROR=1 GASNET_BACKTRACE=1 LD_LIBRARY_PATH=.
 		-ll:util 1 \
 		-ll:dma 2 \
 		-ll:csize 50000 \
+		-ll:io 1 \
 		-lg:prof 4 \
 		-lg:prof_logfile soleil_prof_log

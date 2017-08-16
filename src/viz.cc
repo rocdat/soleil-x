@@ -46,7 +46,9 @@ using namespace LegionRuntime::Accessor;
 
 // search for the word "testcase" to find all of the testcase dependent changes
 // change this for each testcase to give the total num particles
-#define EXPECTED_NUM_PARTICLES 4000000 // this is for the 512x512x256 taylor testcase
+#define EXPECTED_NUM_PARTICLES 1000000 // this is for the 512x512x256 taylor testcase
+#define NUM_NODES 4 // only valid for sapling or four node piz daint!
+#define EXPECTED_PARTICLES_PER_NODE (EXPECTED_NUM_PARTICLES / NUM_NODES)
 
 const int numVisibleParticlesPerNode = 256;
 
@@ -246,7 +248,7 @@ static void drawParticles(bool* __valid,
   int numTracking = 0;
   int numParticles = 0;
   int numDrawn = 0;
-  while(numParticles < EXPECTED_NUM_PARTICLES) {
+  while(numParticles < EXPECTED_PARTICLES_PER_NODE) {
     bool valid = *__valid;
     __valid += __validStride[0].offset / sizeof(*__valid);
     FieldData* p = position;
@@ -257,12 +259,12 @@ static void drawParticles(bool* __valid,
     float particleTemp = *particleTemperature;
     particleTemperature += particleTemperatureStride[0].offset / sizeof(*particleTemperature);
     bool t = *tracking;
+    tracking += trackingStride[0].offset / sizeof(*tracking);
     if(valid && t) {
       drawParticle(qobj, pos, d, particleTemp);
       numDrawn++;
       numTracking++;
     }
-    tracking += trackingStride[0].offset / sizeof(*tracking);
     for(unsigned i = 0; i < 3; ++i) {
       if(pos[i] > maxCenter[i]) {
         maxCenter[i] = pos[i];
@@ -279,8 +281,7 @@ static void drawParticles(bool* __valid,
 }
 
 
-static void trackParticles(const int numVisibleParticlesPerNode,
-                           bool* __valid,
+static void trackParticles(bool* __valid,
                            bool* tracking,
                            ByteOffset __validStride[1],
                            ByteOffset trackingStride[1],
@@ -288,17 +289,17 @@ static void trackParticles(const int numVisibleParticlesPerNode,
   
   int numTracking = 0;
   bool* trackingPtr = tracking;
-  for(unsigned particle = 0; particle < EXPECTED_NUM_PARTICLES; ++particle) {
+  for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
     numTracking += *trackingPtr;
     trackingPtr += trackingStride[0].offset / sizeof(*tracking);
   }
   
   int needMore = numVisibleParticlesPerNode - numTracking;
   const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
-  const long randomThreshold = RAND_MAX_ * needMore / EXPECTED_NUM_PARTICLES;
+  const long randomThreshold = RAND_MAX_ * needMore / EXPECTED_PARTICLES_PER_NODE;
   int numParticles = 0;
   
-  for(unsigned particle = 0; particle < EXPECTED_NUM_PARTICLES && needMore > 0; ++particle) {
+  for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE && needMore > 0; ++particle) {
     bool valid = *__valid;
     __valid += __validStride[0].offset / sizeof(*__valid);
     bool *t = tracking;
@@ -335,7 +336,7 @@ static void drawParticles(std::string particleFilePath,
   
   srandom(0);
   const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
-  const long randomThreshold = RAND_MAX_ * numVisibleParticlesPerNode / EXPECTED_NUM_PARTICLES;
+  const long randomThreshold = RAND_MAX_ * numVisibleParticlesPerNode / EXPECTED_PARTICLES_PER_NODE;
   
   while(particleFile.getline(buffer, sizeof(buffer))) {
     int cellX, cellY, cellZ;
@@ -610,7 +611,9 @@ void render_image(int width,
   
 #ifndef STANDALONE
   
-  trackParticles(numVisibleParticlesPerNode, __valid, tracking, __validStride, trackingStride, runtime);
+  
+  
+  trackParticles(__valid, tracking, __validStride, trackingStride, runtime);
   drawParticles(__valid, position, density, particleTemperature, tracking,
                 __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
                 qobj, runtime);
@@ -977,7 +980,7 @@ void writeParticlesToFile(std::string filePath,
   int counter = 0;
   int numParticles = 0;
   
-  while(numParticles < EXPECTED_NUM_PARTICLES) {
+  while(numParticles < EXPECTED_PARTICLES_PER_NODE) {
     bool valid = *__valid;
     __valid += __validStride[0].offset / sizeof(*__valid);
     int cX = *cellX;

@@ -1197,7 +1197,7 @@ void cxx_render(legion_runtime_t runtime_,
   accessCellData(cells, cells_fields, velocity, centerCoordinates, temperature,
                  strideCenter, strideVelocity, strideTemperature, bounds, runtime);
   
-  if(writeFiles(timeStepNumber))
+  if(writeFiles(timeStepNumber)) {
     std::string cellsFileName = dataFileName("./out/cells", timeStepNumber, bounds);
     writeCellsToFile(cellsFileName, bounds, velocity, centerCoordinates,
                      temperature, strideCenter, strideVelocity, strideTemperature);

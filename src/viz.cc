@@ -15,6 +15,8 @@
 
 //#define STANDALONE // debug
 
+#define OSMESA
+
 #define _T {std::cout<<getpid()<<" "<<__FUNCTION__<<" "<<__FILE__<<":"<<__LINE__<<std::endl;}
 
 #ifndef STANDALONE
@@ -30,6 +32,34 @@ using namespace LegionRuntime::Accessor;
 #define NEXT(FIELD) (FIELD##Base + FIELD##Iterator.next().value)
 #define NEXT3(FIELD) (FIELD##Base + FIELD##Iterator.next().value * 3)
 
+
+#endif
+
+const int width = 3840;
+const int height = 2160;
+
+#ifndef OSMESA
+// hardware accelerated OpenGL
+#include <EGL/egl.h>
+
+static const EGLint configAttribs[] = {
+  EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+  EGL_BLUE_SIZE, 8,
+  EGL_GREEN_SIZE, 8,
+  EGL_RED_SIZE, 8,
+  EGL_DEPTH_SIZE, 24,
+  EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+  EGL_NONE
+};
+
+static const int pbufferWidth = width;
+static const int pbufferHeight = height;
+
+static const EGLint pbufferAttribs[] = {
+  EGL_WIDTH, pbufferWidth,
+  EGL_HEIGHT, pbufferHeight,
+  EGL_NONE,
+};
 
 #endif
 
@@ -286,59 +316,6 @@ static void drawParticles(bool* __valid,
 }
 
 
-#if 0
-
-static void trackParticles(bool* __valid,
-                           bool* tracking,
-                           ByteOffset __validStride[1],
-                           ByteOffset trackingStride[1],
-                           Runtime* runtime) {
-  
-  std::cout << getpid() << " " << "currently tracking: " << tracking << " ";
-  
-  int numTracking = 0;
-  bool* trackingPtr = tracking;
-  bool* __validPtr = __valid;
-  
-  for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
-    bool valid = *__validPtr;
-    __validPtr += __validStride[0].offset / sizeof(*__validPtr);
-    if(*trackingPtr && valid) {
-      numTracking += *trackingPtr && valid;
-
-      std::cout << particle << " ";
-    }
-    trackingPtr += trackingStride[0].offset / sizeof(*trackingPtr);
-  }
-  int needMore = numVisibleParticlesPerNode - numTracking;
-  
-  std::cout << "\n" << getpid() << " " << "currently tracking " << numTracking << " needMore? " << needMore << std::endl;
-  
-  const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
-  const long randomThreshold = RAND_MAX_ * needMore / EXPECTED_PARTICLES_PER_NODE;
-  int numParticles = 0;
-  
-  for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE && needMore > 0; ++particle) {
-    bool valid = *__valid;
-    __valid += __validStride[0].offset / sizeof(*__valid);
-    bool *t = tracking;
-    tracking += trackingStride[0].offset / sizeof(*tracking);
-    if(valid && !*t) {
-      bool randomlySelected = random() < randomThreshold;
-      if(randomlySelected) {
-        *t = true;
-        needMore--;
-        std::cout << particle << " ";
-      }
-    }
-    numParticles++;
-  }
- 
-  std::cout << "\n" << getpid() << " ";
-  std::cout << "after tracking more, needMore? " << needMore << std::endl;
-}
-
-#endif
 
 
 #else
@@ -418,7 +395,7 @@ static void setCamera() {
   glLoadIdentity();
   // change this for each testcase to hold the data
   glOrtho(-6, 6, -6, 6, -20, 20);
-  //gluPerspective(120, 3840 / 2160, 0, 4000);
+  //gluPerspective(120, width / height, 0, 4000);
   
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
@@ -555,25 +532,11 @@ void render_image(int width,
                   ByteOffset trackingStride[1],
                   GLfloat** rgbaBuffer,
                   GLfloat** depthBuffer,
-                  OSMesaContext mesaCtx,
                   Runtime* runtime,
                   int numCells[3])
 #endif
 {
   
-  /* Allocate the image buffer */
-  const int fieldsPerPixel = 4;
-  *rgbaBuffer = (GLfloat *) malloc(width * height * fieldsPerPixel * sizeof(GLfloat));
-  if (!*rgbaBuffer) {
-    printf("Alloc image buffer failed!\n");
-    return;
-  }
-  
-  /* Bind the buffer to the context and make it current */
-  if (!OSMesaMakeCurrent(mesaCtx, *rgbaBuffer, GL_FLOAT, width, height)) {
-    printf("OSMesaMakeCurrent failed!\n");
-    return;
-  }
   
   GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
   GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -638,9 +601,6 @@ void render_image(int width,
   
   
   
-#if 0
-  trackParticles(__valid, tracking, __validStride, trackingStride, runtime);
-#endif
 
   drawParticles(__valid, position, density, particleTemperature, tracking,
                 __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
@@ -661,8 +621,14 @@ void render_image(int width,
   
   gluDeleteQuadric(qobj);
   
-  int size = width * height * sizeof(GLfloat);
-  *depthBuffer = (GLfloat*)calloc(1, size);
+#ifndef OSMESA
+  int rgbaSize = width * height * 4 * sizeof(GLfloat);
+  *rgbaBuffer = (GLfloat*)calloc(1, rgbaSize);
+  glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, *rgbaBuffer);
+#endif
+  
+  int depthSize = width * height * sizeof(GLfloat);
+  *depthBuffer = (GLfloat*)calloc(1, depthSize);
   glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, *depthBuffer);
   
 }
@@ -1187,6 +1153,85 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
 #endif
 
 
+#ifdef OSMESA
+
+
+
+static void createGraphicsContext(OSMesaContext &mesaCtx,
+                                  GLfloat* &rgbaBuffer) {
+  
+  // non-accelerated OpenGL
+  /* Create an RGBA-mode context */
+#if OSMESA_MAJOR_VERSION * 100 + OSMESA_MINOR_VERSION >= 305
+  /* specify Z, stencil, accum sizes */
+  mesaCtx = OSMesaCreateContextExt(GL_RGBA, 32, 0, 0, NULL);
+#else
+  mesaCtx = OSMesaCreateContext(GL_RGBA, NULL);
+#endif
+  if (!mesaCtx) {
+    printf("OSMesaCreateContext failed!\n");
+    return;
+  }
+  /* Allocate the image buffer */
+  const int fieldsPerPixel = 4;
+  rgbaBuffer = (GLfloat *) malloc(width * height * fieldsPerPixel * sizeof(GLfloat));
+  if (!rgbaBuffer) {
+    printf("Alloc image buffer failed!\n");
+    return;
+  }
+
+  /* Bind the buffer to the context and make it current */
+  if (!OSMesaMakeCurrent(mesaCtx, rgbaBuffer, GL_FLOAT, width, height)) {
+    printf("OSMesaMakeCurrent failed!\n");
+    return;
+  }
+}
+
+static void destroyGraphicsContext(OSMesaContext mesaCtx) {
+  /* destroy the context */
+  OSMesaDestroyContext(mesaCtx);
+}
+
+
+#else
+
+
+
+static void createGraphicsContext(EGLContext &eglCtx, EGLDisplay &eglDpy) {
+  
+  // hardware accelerated OpenGL
+  // https://devblogs.nvidia.com/parallelforall/egl-eye-opengl-visualization-without-x-server/
+  eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  EGLint major, minor;
+  eglInitialize(eglDpy, &major, &minor);
+  
+  // 2. Select an appropriate configuration
+  EGLint numConfigs;
+  EGLConfig eglCfg;
+  eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
+  
+  // 3. Create a surface
+  EGLSurface eglSurf = eglCreatePbufferSurface(eglDpy, eglCfg,
+                                               pbufferAttribs);
+  
+  // 4. Bind the API
+  eglBindAPI(EGL_OPENGL_API);
+  
+  // 5. Create a context and make it current
+  eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT,
+                                       NULL);
+  eglMakeCurrent(eglDpy, eglSurf, eglSurf, eglCtx);
+  
+}
+
+static void destroyGraphicsContext(EGLDisplay eglDpy) {
+  eglTerminate(eglDpy);
+
+}
+
+
+#endif
+
 
 
 #ifdef STANDALONE
@@ -1276,28 +1321,24 @@ void cxx_render(legion_runtime_t runtime_,
   
 #endif
   
-  
-  /* Create an RGBA-mode context */
-#if OSMESA_MAJOR_VERSION * 100 + OSMESA_MINOR_VERSION >= 305
-  /* specify Z, stencil, accum sizes */
-  OSMesaContext mesaCtx = OSMesaCreateContextExt(GL_RGBA, 32, 0, 0, NULL);
-#else
-  OSMesaContext mesaCtx = OSMesaCreateContext(GL_RGBA, NULL);
-#endif
-  if (!mesaCtx) {
-    printf("OSMesaCreateContext failed!\n");
-    return;
-  }
-  
   GLfloat* rgbaBuffer = NULL;
   GLfloat* depthBuffer = NULL;
-  const int width = 3840;
-  const int height = 2160;
+
+  
+#ifdef OSMESA
+  OSMesaContext mesaCtx;
+  createGraphicsContext(mesaCtx, rgbaBuffer);
+#else
+  EGLContext eglCtx;
+  EGLDisplay eglDpy;
+  createGraphicsContext(eglCtx, eglDpy);
+#endif
+  
   
 #ifdef STANDALONE
   
   render_image(width, height, centerCoordinates, velocity, temperature, totalCells, particleFilePath,
-               &rgbaBuffer, &depthBuffer, mesaCtx, numCells);
+               &rgbaBuffer, &depthBuffer, numCells);
   write_ppm(outputFileName.c_str(), rgbaBuffer, width, height);
   std::string depthFileName = outputFileName + ".depth.ppm";
   
@@ -1330,8 +1371,11 @@ void cxx_render(legion_runtime_t runtime_,
   free(rgbaBuffer);
   free(depthBuffer);
   
-  /* destroy the context */
-  OSMesaDestroyContext(mesaCtx);
+#ifdef OSMESA
+  destroyGraphicsContext(mesaCtx);
+#else
+  destroyGraphicsContext(eglDpy);
+#endif
   
 }
 

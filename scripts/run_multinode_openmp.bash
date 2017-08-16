@@ -18,6 +18,8 @@ then
   NUM_TREE_LEVELS=2
 fi
 
+
+COMMAND=" \
 mpirun \
     -bind-to none \
     -npernode 1 \
@@ -34,7 +36,12 @@ mpirun \
     -ll:dma 2 \
     -ll:csize 40000 \
     -lg:prof 4 \
-    -lg:prof_logfile soleil_prof_log
+    -lg:prof_logfile soleil_prof_log \
+    "
+
+echo $COMMAND
+echo $COMMAND | /bin/bash
+
 
     # -lg:spy \
     # -logfile spy_%.log \

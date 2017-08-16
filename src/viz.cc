@@ -303,7 +303,7 @@ static void trackParticles(bool* __valid,
   for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
     bool valid = *__validPtr;
     __validPtr += __validStride[0].offset / sizeof(*__validPtr);
-    numTracking += *trackingPtr ? 1 : 0;
+    numTracking += *trackingPtr && valid;
     trackingPtr += trackingStride[0].offset / sizeof(*trackingPtr);
     
     std::cout << particle << " ";

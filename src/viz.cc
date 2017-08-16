@@ -249,7 +249,7 @@ static void drawParticles(bool* __valid,
   int numParticles = 0;
   int numDrawn = 0;
   
-  std::cout << "drawing " << tracking << " ";
+  std::cout << getpid() << " " << "drawing " << tracking << " ";
   
   for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
     bool valid = *__valid;
@@ -282,9 +282,9 @@ static void drawParticles(bool* __valid,
   }
   
   std::cout << std::endl;
-  std::cout << "particles " << numParticles << " tracking " << numTracking << " drawn " << numDrawn << std::endl;
-  std::cout << "particle position min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2];
-  std::cout << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
+  std::cout << getpid() << " " << "particles " << numParticles << " tracking " << numTracking << " drawn " << numDrawn << std::endl;
+  std::cout << getpid() << " " << "particle position min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2];
+  std::cout << getpid() << " " << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
 }
 
 
@@ -294,7 +294,7 @@ static void trackParticles(bool* __valid,
                            ByteOffset trackingStride[1],
                            Runtime* runtime) {
   
-  std::cout << "currently tracking: " << tracking << " ";
+  std::cout << getpid() << " " << "currently tracking: " << tracking << " ";
   
   int numTracking = 0;
   bool* trackingPtr = tracking;
@@ -312,7 +312,7 @@ static void trackParticles(bool* __valid,
   }
   int needMore = numVisibleParticlesPerNode - numTracking;
   
-  std::cout << "\ncurrently tracking " << numTracking << " needMore? " << needMore << std::endl;
+  std::cout << "\n" << getpid() << " " << "currently tracking " << numTracking << " needMore? " << needMore << std::endl;
   
   const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
   const long randomThreshold = RAND_MAX_ * needMore / EXPECTED_PARTICLES_PER_NODE;
@@ -333,7 +333,9 @@ static void trackParticles(bool* __valid,
     }
     numParticles++;
   }
-  std::cout << "\nafter tracking more, needMore? " << needMore << std::endl;
+ 
+  std::cout << "\n" << getpid() << " ";
+  std::cout << "after tracking more, needMore? " << needMore << std::endl;
 }
 
 

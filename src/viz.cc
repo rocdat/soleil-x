@@ -249,7 +249,7 @@ static void drawParticles(bool* __valid,
   int numParticles = 0;
   int numDrawn = 0;
   
-  std::cout << "drawing ";
+  std::cout << "drawing " << tracking << " ";
   
   for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
     bool valid = *__valid;
@@ -294,15 +294,23 @@ static void trackParticles(bool* __valid,
                            ByteOffset trackingStride[1],
                            Runtime* runtime) {
   
+  std::cout << "currently tracking: " << tracking << " ";
+  
   int numTracking = 0;
   bool* trackingPtr = tracking;
+  bool* __validPtr = __valid;
+  
   for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
+    bool valid = *__validPtr;
+    __validPtr += __validStride[0].offset / sizeof(*__validPtr);
     numTracking += *trackingPtr ? 1 : 0;
-    trackingPtr += trackingStride[0].offset / sizeof(*tracking);
+    trackingPtr += trackingStride[0].offset / sizeof(*trackingPtr);
+    
+    std::cout << particle << " ";
   }
   int needMore = numVisibleParticlesPerNode - numTracking;
   
-  std::cout << "currently tracking " << numTracking << " needMore? " << needMore << std::endl;
+  std::cout << "\ncurrently tracking " << numTracking << " needMore? " << needMore << std::endl;
   
   const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
   const long randomThreshold = RAND_MAX_ * needMore / EXPECTED_PARTICLES_PER_NODE;

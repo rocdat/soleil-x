@@ -202,7 +202,9 @@ Processor SoleilMapper::default_policy_select_initial_processor(
       {
         case Processor::LOC_PROC:
           {
-            Memory sysmem = sysmems_list[color % sysmems_list.size()];
+            size_t cpus_per_sysmem =
+              std::max(1, loc_procs_list.size() / sysmems_list.size());
+            Memory sysmem = sysmems_list[(color / cpus_per_sysmem) % sysmems_list.size()];
             std::vector<Processor>& local_procs = sysmem_local_procs[sysmem];
             if (strcmp(task.get_task_name(), "Render") == 0 ||
                 strcmp(task.get_task_name(), "Reduce") == 0 ||
@@ -492,7 +494,7 @@ void SoleilMapper::map_task(const MapperContext      ctx,
       output.chosen_instances[idx].push_back(inst);
     }
   }
-  //if (task.must_epoch_task)
+  //if (task.must_epoch_task || strcmp(task.get_task_name(), "Reduce") == 0)
   //{
   //  Color color = -1U;
   //  for (size_t idx = 0; idx < task.regions.size(); ++idx)

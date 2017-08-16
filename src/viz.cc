@@ -588,7 +588,7 @@ void render_image(int width,
   
   GLUquadricObj *qobj = gluNewQuadric();
   
-  glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+//  glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
   glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
   glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
   glLightfv(GL_LIGHT0, GL_POSITION, light_position);

@@ -254,7 +254,6 @@ static void drawParticles(bool* __valid,
   srandom(0);//same every frame
 
   for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
-    bool valid = *__valid;
     __valid += __validStride[0].offset / sizeof(*__valid);
     FieldData* p = position;
     position += positionStride[0].offset / sizeof(*position);

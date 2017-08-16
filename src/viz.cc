@@ -248,7 +248,10 @@ static void drawParticles(bool* __valid,
   int numTracking = 0;
   int numParticles = 0;
   int numDrawn = 0;
-  while(numParticles < EXPECTED_PARTICLES_PER_NODE) {
+  
+  std::cout << "drawing ";
+  
+  for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
     bool valid = *__valid;
     __valid += __validStride[0].offset / sizeof(*__valid);
     FieldData* p = position;
@@ -264,6 +267,8 @@ static void drawParticles(bool* __valid,
       drawParticle(qobj, pos, d, particleTemp);
       numDrawn++;
       numTracking++;
+      
+      std::cout << particle << " ";
     }
     for(unsigned i = 0; i < 3; ++i) {
       if(pos[i] > maxCenter[i]) {
@@ -275,9 +280,11 @@ static void drawParticles(bool* __valid,
     }
     numParticles++;
   }
+  
+  std::cout << std::endl;
   std::cout << "particles " << numParticles << " tracking " << numTracking << " drawn " << numDrawn << std::endl;
   std::cout << "particle position min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2];
-  std::cout << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::cout;
+  std::cout << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
 }
 
 
@@ -290,11 +297,13 @@ static void trackParticles(bool* __valid,
   int numTracking = 0;
   bool* trackingPtr = tracking;
   for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
-    numTracking += *trackingPtr;
+    numTracking += *trackingPtr ? 1 : 0;
     trackingPtr += trackingStride[0].offset / sizeof(*tracking);
   }
-  
   int needMore = numVisibleParticlesPerNode - numTracking;
+  
+  std::cout << "currently tracking " << numTracking << " needMore? " << needMore << std::endl;
+  
   const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
   const long randomThreshold = RAND_MAX_ * needMore / EXPECTED_PARTICLES_PER_NODE;
   int numParticles = 0;
@@ -309,10 +318,12 @@ static void trackParticles(bool* __valid,
       if(randomlySelected) {
         *t = true;
         needMore--;
+        std::cout << particle << " ";
       }
     }
     numParticles++;
   }
+  std::cout << "\nafter tracking more, needMore? " << needMore << std::endl;
 }
 
 

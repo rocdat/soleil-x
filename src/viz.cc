@@ -49,7 +49,13 @@ using namespace LegionRuntime::Accessor;
 #define EXPECTED_NUM_PARTICLES 4000000 // this is for the 512x512x256 taylor testcase
 
 const int numVisibleParticlesPerNode = 256;
-static const bool writeFiles = false;//write out text files with data
+
+
+static bool writeFiles(int timeStep) {
+  //return true;
+  //return false;
+  return timeStep % 100 == 0;
+}
 
 
 #ifdef STANDALONE
@@ -1191,7 +1197,7 @@ void cxx_render(legion_runtime_t runtime_,
   accessCellData(cells, cells_fields, velocity, centerCoordinates, temperature,
                  strideCenter, strideVelocity, strideTemperature, bounds, runtime);
   
-  if(writeFiles && timeStepNumber >= 8) {
+  if(writeFiles(timeStepNumber))
     std::string cellsFileName = dataFileName("./out/cells", timeStepNumber, bounds);
     writeCellsToFile(cellsFileName, bounds, velocity, centerCoordinates,
                      temperature, strideCenter, strideVelocity, strideTemperature);
@@ -1230,7 +1236,7 @@ void cxx_render(legion_runtime_t runtime_,
                      density, densityStride, particleTemperature, particleTemperatureStride,
                      tracking, trackingStride, runtime);
   
-  if(writeFiles && timeStepNumber >= 8) {
+  if(writeFiles(timeStepNumber)) {
     std::string particlesFileName = dataFileName("./out/particles", timeStepNumber, bounds);
     writeParticlesToFile(particlesFileName, __valid, cellX, cellY, cellZ, position, density, particleTemperature, tracking,
                          __validStride, cellXStride, cellYStride, cellZStride, positionStride,
@@ -1271,7 +1277,7 @@ void cxx_render(legion_runtime_t runtime_,
                __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
                &rgbaBuffer, &depthBuffer, mesaCtx, runtime, numCells);
   
-  if(writeFiles && timeStepNumber >= 8) {
+  if(writeFiles(timeStepNumber)) {
     write_ppm(imageFileName("./out/image", ".ppm", timeStepNumber, bounds).c_str(), rgbaBuffer, width, height);
     std::string depthFileName = imageFileName("./out/depth", ".zzz", timeStepNumber, bounds);
     FILE* depthFile = fopen(depthFileName.c_str(), "w");

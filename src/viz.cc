@@ -249,8 +249,10 @@ static void drawParticles(bool* __valid,
   int numParticles = 0;
   int numDrawn = 0;
   
-  std::cout << getpid() << " " << "drawing " << tracking << " ";
-  
+  const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
+  const long randomThreshold = RAND_MAX_ * numVisibleParticlesPerNode / EXPECTED_PARTICLES_PER_NODE;
+  srandom(0);//same every frame
+
   for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
     bool valid = *__valid;
     __valid += __validStride[0].offset / sizeof(*__valid);
@@ -261,14 +263,11 @@ static void drawParticles(bool* __valid,
     density += densityStride[0].offset / sizeof(*density);
     float particleTemp = *particleTemperature;
     particleTemperature += particleTemperatureStride[0].offset / sizeof(*particleTemperature);
-    bool t = *tracking;
     tracking += trackingStride[0].offset / sizeof(*tracking);
-    if(valid && t) {
+    if(random() <= randomThreshold) {
       drawParticle(qobj, pos, d, particleTemp);
       numDrawn++;
       numTracking++;
-      
-      std::cout << particle << " ";
     }
     for(unsigned i = 0; i < 3; ++i) {
       if(pos[i] > maxCenter[i]) {
@@ -281,12 +280,14 @@ static void drawParticles(bool* __valid,
     numParticles++;
   }
   
-  std::cout << std::endl;
-  std::cout << getpid() << " " << "particles " << numParticles << " tracking " << numTracking << " drawn " << numDrawn << std::endl;
-  std::cout << getpid() << " " << "particle position min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2];
-  std::cout << getpid() << " " << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
+  //std::cout << std::endl;
+  //std::cout << getpid() << " " << "particles " << numParticles << " tracking " << numTracking << " drawn " << numDrawn << std::endl;
+  //std::cout << getpid() << " " << "particle position min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2];
+  //std::cout << getpid() << " " << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
 }
 
+
+#if 0
 
 static void trackParticles(bool* __valid,
                            bool* tracking,
@@ -337,6 +338,8 @@ static void trackParticles(bool* __valid,
   std::cout << "\n" << getpid() << " ";
   std::cout << "after tracking more, needMore? " << needMore << std::endl;
 }
+
+#endif
 
 
 #else
@@ -636,7 +639,10 @@ void render_image(int width,
   
   
   
+#if 0
   trackParticles(__valid, tracking, __validStride, trackingStride, runtime);
+#endif
+
   drawParticles(__valid, position, density, particleTemperature, tracking,
                 __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
                 qobj, runtime);

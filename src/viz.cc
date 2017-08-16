@@ -506,7 +506,6 @@ void render_image(int width,
                   std::string particleFilePath,
                   GLfloat** rgbaBuffer,
                   GLfloat** depthBuffer,
-                  OSMesaContext mesaCtx,
                   int numCells[3])
 
 
@@ -538,7 +537,7 @@ void render_image(int width,
 {
   
   
-  GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
+  //GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 };
   GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
   GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
   GLfloat light_position[] = { -15.0, 15.0, 50.0, 1.0 };
@@ -1347,7 +1346,7 @@ void cxx_render(legion_runtime_t runtime_,
   render_image(width, height, centerCoordinates, velocity, temperature, totalCells,
                __valid, position, density, particleTemperature, tracking,
                __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
-               &rgbaBuffer, &depthBuffer, mesaCtx, runtime, numCells);
+               &rgbaBuffer, &depthBuffer, runtime, numCells);
   
   if(writeFiles(timeStepNumber)) {
     write_ppm(imageFileName("./out/image", ".ppm", timeStepNumber, bounds).c_str(), rgbaBuffer, width, height);

@@ -65,6 +65,11 @@ do
     pBase = [int1d](p)
     break
   end
+  var num_cells = cells.ispace.volume
+  var ratio : double = 1.0
+  if num_cells > [int64](ppt) then
+    ratio = [double](num_cells) / ppt
+  end
   var lo : int3d = cells.bounds.lo
   lo.x = max(lo.x, xBoundaryWidth)
   lo.y = max(lo.y, yBoundaryWidth)
@@ -80,7 +85,7 @@ do
     if p - pBase < ppt then
       p.__valid = true
       --numValid = numValid + 1
-      var relIdx = p - pBase
+      var relIdx = [int64]((p - pBase) * ratio)
       var c : int3d = { lo.x + relIdx % xSize,
                         lo.y + relIdx / xSize % ySize,
                         lo.z + relIdx / xSize / ySize }
@@ -91,6 +96,8 @@ do
       p.particle_temperature = initialTemperature
       p.diameter = diameter_mean
       p.tracking = false
+      regentlib.c.printf("particle %d coord (%d,%d,%d) center(%f,%f,%f)\n",
+          p, c.x, c.y, c.z, p.position[0], p.position[1], p.position[2])
     end
   end
   --regentlib.c.printf("initialized %d valid particles\n", numValid)

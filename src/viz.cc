@@ -303,10 +303,12 @@ static void trackParticles(bool* __valid,
   for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
     bool valid = *__validPtr;
     __validPtr += __validStride[0].offset / sizeof(*__validPtr);
-    numTracking += *trackingPtr && valid;
+    if(*trackingPtr && valid) {
+      numTracking += *trackingPtr && valid;
+
+      std::cout << particle << " ";
+    }
     trackingPtr += trackingStride[0].offset / sizeof(*trackingPtr);
-    
-    std::cout << particle << " ";
   }
   int needMore = numVisibleParticlesPerNode - numTracking;
   

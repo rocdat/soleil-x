@@ -273,9 +273,9 @@ static void drawParticles(bool* __valid,
     }
     numParticles++;
   }
-  //  std::cout << "particles " << numParticles << " tracking " << numTracking << " drawn " << numDrawn << std::endl;
-  //  std::cout << "particle position min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2];
-  //  std::cout << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::cout;
+  std::cout << "particles " << numParticles << " tracking " << numTracking << " drawn " << numDrawn << std::endl;
+  std::cout << "particle position min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2];
+  std::cout << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::cout;
 }
 
 
@@ -566,7 +566,7 @@ void render_image(int width,
   glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
   glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-  glClearColor((GLclampf)0.8, (GLclampf)0.8, (GLclampf)1.0, (GLclampf)1.0);
+  glClearColor((GLclampf)0.9, (GLclampf)0.9, (GLclampf)1.0, (GLclampf)1.0);
   
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);

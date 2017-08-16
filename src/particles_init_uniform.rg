@@ -96,8 +96,8 @@ do
       p.particle_temperature = initialTemperature
       p.diameter = diameter_mean
       p.tracking = false
-      regentlib.c.printf("particle %d coord (%d,%d,%d) center(%f,%f,%f)\n",
-          p, c.x, c.y, c.z, p.position[0], p.position[1], p.position[2])
+      -- regentlib.c.printf("particle %d coord (%d,%d,%d) center(%f,%f,%f)\n",
+          -- p, c.x, c.y, c.z, p.position[0], p.position[1], p.position[2])
     end
   end
   --regentlib.c.printf("initialized %d valid particles\n", numValid)

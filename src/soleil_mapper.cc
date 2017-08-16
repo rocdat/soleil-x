@@ -203,7 +203,7 @@ Processor SoleilMapper::default_policy_select_initial_processor(
         case Processor::LOC_PROC:
           {
             size_t cpus_per_sysmem =
-              std::max(1, loc_procs_list.size() / sysmems_list.size());
+              std::max((size_t)1, loc_procs_list.size() / sysmems_list.size());
             Memory sysmem = sysmems_list[(color / cpus_per_sysmem) % sysmems_list.size()];
             std::vector<Processor>& local_procs = sysmem_local_procs[sysmem];
             if (strcmp(task.get_task_name(), "Render") == 0 ||

@@ -15,7 +15,7 @@
 
 //#define STANDALONE // debug
 
-#define OSMESA
+//#define OSMESA
 
 #define _T {std::cout<<getpid()<<" "<<__FUNCTION__<<" "<<__FILE__<<":"<<__LINE__<<std::endl;}
 

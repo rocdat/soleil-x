@@ -185,7 +185,25 @@ Processor SoleilMapper::default_policy_select_initial_processor(
   if (!task.regions.empty()) {
     if (task.regions[0].handle_type == SINGULAR &&
         task.regions[0].privilege != NO_ACCESS) {
-      Color color = get_task_color(ctx, task);
+
+      const LogicalRegion& region = task.regions[0].region;
+      Color color = -1U;
+      Domain domain;
+      if (runtime->has_parent_index_partition(ctx, region.get_index_space())) {
+        IndexPartition ip =
+          runtime->get_parent_index_partition(ctx, region.get_index_space());
+        domain =
+          runtime->get_index_partition_color_space(ctx, ip);
+        DomainPoint point =
+          runtime->get_logical_region_color_point(ctx, region);
+        assert(domain.dim == 3);
+        assert(point.dim == 3);
+        coord_t size_x = domain.rect_data[3] - domain.rect_data[0] + 1;
+        coord_t size_y = domain.rect_data[4] - domain.rect_data[1] + 1;
+        color = point.point_data[0] +
+                point.point_data[1] * size_x +
+                point.point_data[2] * size_x * size_y;
+      }
       assert(color != -1U);
 
       // Special cases (which don't follow the default prioritization
@@ -202,9 +220,10 @@ Processor SoleilMapper::default_policy_select_initial_processor(
       {
         case Processor::LOC_PROC:
           {
-            size_t cpus_per_sysmem =
-              std::max((size_t)1, loc_procs_list.size() / sysmems_list.size());
-            Memory sysmem = sysmems_list[(color / cpus_per_sysmem) % sysmems_list.size()];
+            size_t colors_per_sysmem =
+              std::max((size_t)1, domain.get_volume() / sysmems_list.size());
+            Memory sysmem =
+              sysmems_list[(color / colors_per_sysmem) % sysmems_list.size()];
             std::vector<Processor>& local_procs = sysmem_local_procs[sysmem];
             if (strcmp(task.get_task_name(), "Render") == 0 ||
                 strcmp(task.get_task_name(), "Reduce") == 0 ||

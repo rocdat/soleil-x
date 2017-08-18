@@ -15,7 +15,7 @@
 
 //#define STANDALONE // debug
 
-//#define OSMESA
+#define USE_SOFTWARE_OPENGL
 
 #define _T {std::cout<<getpid()<<" "<<__FUNCTION__<<" "<<__FILE__<<":"<<__LINE__<<std::endl;}
 
@@ -38,7 +38,7 @@ using namespace LegionRuntime::Accessor;
 const int width = 3840;
 const int height = 2160;
 
-#ifndef OSMESA
+#ifndef USE_SOFTWARE_RENDERING
 // hardware accelerated OpenGL
 #include <EGL/egl.h>
 
@@ -85,8 +85,8 @@ const int numVisibleParticlesPerNode = 256;
 
 static bool writeFiles(int timeStep) {
   //return true;
-  //return false;
-  return timeStep % 100 == 0;
+  return false;
+  //return timeStep % 100 == 0;
 }
 
 
@@ -620,7 +620,7 @@ void render_image(int width,
   
   gluDeleteQuadric(qobj);
   
-#ifndef OSMESA
+#ifndef USE_SOFTWARE_RENDERING
   int rgbaSize = width * height * 4 * sizeof(GLfloat);
   *rgbaBuffer = (GLfloat*)calloc(1, rgbaSize);
   glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, *rgbaBuffer);
@@ -1152,7 +1152,7 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
 #endif
 
 
-#ifdef OSMESA
+#ifdef USE_SOFTWARE_RENDERING
 
 
 
@@ -1324,7 +1324,7 @@ void cxx_render(legion_runtime_t runtime_,
   GLfloat* depthBuffer = NULL;
 
   
-#ifdef OSMESA
+#ifdef USE_SOFTWARE_RENDERING
   OSMesaContext mesaCtx;
   createGraphicsContext(mesaCtx, rgbaBuffer);
 #else
@@ -1370,7 +1370,7 @@ void cxx_render(legion_runtime_t runtime_,
   free(rgbaBuffer);
   free(depthBuffer);
   
-#ifdef OSMESA
+#ifdef USE_SOFTWARE_RENDERING
   destroyGraphicsContext(mesaCtx);
 #else
   destroyGraphicsContext(eglDpy);
@@ -1453,6 +1453,159 @@ inline void compositePixelsLess(GLfloat *r0,
   }
   
 }
+
+
+static void extractPixelsToRGBZBuffer(int numPixels,
+                                      GLfloat *r0,
+                                      ByteOffset strideR0[3],
+                                      GLfloat *g0,
+                                      ByteOffset strideG0[3],
+                                      GLfloat *b0,
+                                      ByteOffset strideB0[3],
+                                      GLfloat *z0,
+                                      ByteOffset strideZ0[3],
+                                      GLfloat* RGBZ) {
+  // could we speed this up by doing a block move of rgba and then overwriting a with z?
+  
+  for(int i = 0; i < numPixels; ++i) {
+    *RGBZ++ = *r0;
+    r0 += strideR0[0].offset / sizeof(*r0);
+    *RGBZ++ = *g0;
+    g0 += strideG0[0].offset / sizeof(*g0);
+    *RGBZ++ = *b0;
+    b0 += strideB0[0].offset / sizeof(*b0);
+    *RGBZ++ = *z0;
+    z0 += strideZ0[0].offset / sizeof(*z0);
+  }
+}
+
+
+
+static void compositeGPU(GLfloat* RGBZ) {
+  
+  char* vertexShaderSource =
+  "attribute vec2 vertexIn; \n
+  varying vec2 textureCoord; \n
+  void main() { \n
+    textureCoord = vertexIn.xy; \n
+    gl_Position = vec4(vertexIn.xy,0.0,1.0); \n
+  }";
+  
+  char* fragmentShaderSource =
+  "varying vec2 textureCoord; \n
+  uniform sampler2D texture0; \n
+  uniform sampler2D texture1; \n
+  void main() { \n
+    vec4 color0 = texture2D(texture0, textureCoord); \n
+    vec4 color1 = texture2D(texture1, textureCoord); \n
+    if(color0.w < color1.w) { \n
+      gl_FragColor = color0; \n
+    } else { \n
+      gl_FragColor = color1; \n
+    } \n
+  }";
+  
+  GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+  glCompileShader(vertexShader);
+
+  GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+  glCompileShader(fragmentShader);
+  
+  GLuint shaderProgram = glCreateProgram();
+  glAttachShader(shaderProgram, vertexShader);
+  glAttachShader(shaderProgram, fragmentShader);
+  
+  glLinkProgram(shaderProgram);
+  glUseProgram(shaderProgram);
+
+  GLfloat quadVertices[] = {
+    -1.0f, -1.0f, 0.0f,
+    1.0f, -1.0f, 0.0f,
+    1.0f, 1.0f, 0.0f,
+    1.0f, -1.0f, 0.0f,
+    1.0f, 1.0f, 0.0f,
+    -1.0f, 1.0f, 0.0f,
+  };
+
+  GLuint vbo;
+  glGenBuffers(1, &vbo); // Generate 1 buffer
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+  GLuint vao;
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
+  
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glFinish();
+
+}
+
+
+
+inline void compositePixelsGPU(GLfloat *r0,
+                                ByteOffset strideR0[3],
+                                GLfloat *g0,
+                                ByteOffset strideG0[3],
+                                GLfloat *b0,
+                                ByteOffset strideB0[3],
+                                GLfloat *a0,
+                                ByteOffset strideA0[3],
+                                GLfloat *z0,
+                                ByteOffset strideZ0[3],
+                                GLfloat *userData0,
+                                ByteOffset strideUserData0[3],
+                                GLfloat *r1,
+                                ByteOffset strideR1[3],
+                                GLfloat *g1,
+                                ByteOffset strideG1[3],
+                                GLfloat *b1,
+                                ByteOffset strideB1[3],
+                                GLfloat *a1,
+                                ByteOffset strideA1[3],
+                                GLfloat *z1,
+                                ByteOffset strideZ1[3],
+                                GLfloat *userData1,
+                                ByteOffset strideUserData1[3],
+                                GLfloat *rOut,
+                                ByteOffset strideROut[3],
+                                GLfloat *gOut,
+                                ByteOffset strideGOut[3],
+                                GLfloat *bOut,
+                                ByteOffset strideBOut[3],
+                                GLfloat *aOut,
+                                ByteOffset strideAOut[3],
+                                GLfloat *zOut,
+                                ByteOffset strideZOut[3],
+                                GLfloat *userDataOut,
+                                ByteOffset strideUserDataOut[3],
+                                int numPixels){
+  // 1. extract pixels into RGBZ buffers
+  GLfloat *RGBZ0 = (GLfloat*)calloc(width * height, sizeof(GLfloat));
+  extractPixelsToRGBZBuffer(numPixels, r0, strideR0, g0, strideG0, b0, strideB0, z0, strideZ0, RGBZ0);
+  GLfloat *RGBZ1 = (GLfloat*)calloc(width * height, sizeof(GLfloat));
+  extractPixelsToRGBZBuffer(numPixels, r1, strideR1, g1, strideG1, b1, strideB1, z1, strideZ1, RGBZ1);
+  
+  // 2. upload both buffers to GPU
+  unsigned int textures[2];
+  glGenTextures(2, textures);
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, RGBZ0);
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, RGBZ1);
+  
+  // 3. composite the result
+  compositeGPU(RGBZ0);
+  // 4. read back the result
+  
+  free(RGBZ0);
+  free(RGBZ1);
+}
+
 
 
 void cxx_reduce(legion_runtime_t runtime_,
@@ -1539,10 +1692,22 @@ void cxx_reduce(legion_runtime_t runtime_,
     }
   }
   
+#ifdef USE_SOFTWARE_RENDERING
+  
   compositePixelsLess(leftR, leftStrideR, leftG, leftStrideG, leftB, leftStrideB, leftA, leftStrideA, leftZ, leftStrideZ, leftUserData, leftStrideUserData,
                       rightR, rightStrideR, rightG, rightStrideG, rightB, rightStrideB, rightA, rightStrideA, rightZ, rightStrideZ, rightUserData, rightStrideUserData,
                       leftR, leftStrideR, leftG, leftStrideG, leftB, leftStrideB, leftA, leftStrideA, leftZ, leftStrideZ, leftUserData, leftStrideUserData,
                       (int)leftBounds.volume());
+  
+#else
+  
+  compositePixelsGPU(leftR, leftStrideR, leftG, leftStrideG, leftB, leftStrideB, leftA, leftStrideA, leftZ, leftStrideZ, leftUserData, leftStrideUserData,
+                     rightR, rightStrideR, rightG, rightStrideG, rightB, rightStrideB, rightA, rightStrideA, rightZ, rightStrideZ, rightUserData, rightStrideUserData,
+                     leftR, leftStrideR, leftG, leftStrideG, leftB, leftStrideB, leftA, leftStrideA, leftZ, leftStrideZ, leftUserData, leftStrideUserData,
+                     (int)leftBounds.volume());
+  
+#endif
+  
 }
 
 

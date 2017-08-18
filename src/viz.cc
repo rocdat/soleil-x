@@ -1484,26 +1484,26 @@ static void extractPixelsToRGBZBuffer(int numPixels,
 static void compositeGPU(GLfloat* RGBZ) {
   
   char* vertexShaderSource =
-  "attribute vec2 vertexIn; \n
-  varying vec2 textureCoord; \n
-  void main() { \n
-    textureCoord = vertexIn.xy; \n
-    gl_Position = vec4(vertexIn.xy,0.0,1.0); \n
-  }";
+  "attribute vec2 vertexIn; \n"
+  "varying vec2 textureCoord; \n"
+  "void main() { \n"
+    "textureCoord = vertexIn.xy; \n"
+    "gl_Position = vec4(vertexIn.xy,0.0,1.0); \n"
+  "}";
   
   char* fragmentShaderSource =
-  "varying vec2 textureCoord; \n
-  uniform sampler2D texture0; \n
-  uniform sampler2D texture1; \n
-  void main() { \n
-    vec4 color0 = texture2D(texture0, textureCoord); \n
-    vec4 color1 = texture2D(texture1, textureCoord); \n
-    if(color0.w < color1.w) { \n
-      gl_FragColor = color0; \n
-    } else { \n
-      gl_FragColor = color1; \n
-    } \n
-  }";
+  "varying vec2 textureCoord; \n"
+  "uniform sampler2D texture0; \n"
+  "uniform sampler2D texture1; \n"
+  "void main() { \n"
+    "vec4 color0 = texture2D(texture0, textureCoord); \n"
+    "vec4 color1 = texture2D(texture1, textureCoord); \n"
+    "if(color0.w < color1.w) { \n"
+      "gl_FragColor = color0; \n"
+    "} else { \n"
+      "gl_FragColor = color1; \n"
+    "} \n"
+  "}";
   
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);

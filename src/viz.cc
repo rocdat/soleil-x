@@ -90,7 +90,6 @@ static bool writeFiles(int timeStep) {
 }
 
 
-#ifdef STANDALONE
 
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
@@ -103,6 +102,8 @@ static bool writeFiles(int timeStep) {
 #endif
 #include "GL/glu.h"
 #endif
+
+#ifdef STANDALONE
 
 typedef double FieldData;
 
@@ -1487,7 +1488,7 @@ static void extractPixelsToRGBZBuffer(int numPixels,
 
 static void compositeGPU(GLfloat* RGBZ) {
   
-  char* vertexShaderSource =
+  char* vertexShaderSource = (char*)
   "attribute vec2 vertexIn; \n"
   "varying vec2 textureCoord; \n"
   "void main() { \n"
@@ -1495,7 +1496,7 @@ static void compositeGPU(GLfloat* RGBZ) {
     "gl_Position = vec4(vertexIn.xy,0.0,1.0); \n"
   "}";
   
-  char* fragmentShaderSource =
+  char* fragmentShaderSource = (char*)
   "varying vec2 textureCoord; \n"
   "uniform sampler2D texture0; \n"
   "uniform sampler2D texture1; \n"

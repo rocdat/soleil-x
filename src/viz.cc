@@ -85,8 +85,8 @@ const int numVisibleParticlesPerNode = 256;
 
 static bool writeFiles(int timeStep) {
   //return true;
-  //return false;
-  return timeStep % 100 == 0;
+  return false;
+  //return timeStep % 100 == 0;
 }
 
 

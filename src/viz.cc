@@ -38,7 +38,7 @@ using namespace LegionRuntime::Accessor;
 const int width = 3840;
 const int height = 2160;
 
-#ifndef USE_SOFTWARE_RENDERING
+#ifndef USE_SOFTWARE_OPENGL
 // hardware accelerated OpenGL
 #include <EGL/egl.h>
 
@@ -96,7 +96,11 @@ static bool writeFiles(int timeStep) {
 #include <OpenGL/gl.h>
 #include "OpenGL/glu.h"
 #else
+#ifdef USE_SOFTWARE_OPENGL
 #include "GL/osmesa.h"
+#else
+#include "GL/gl.h"
+#endif
 #include "GL/glu.h"
 #endif
 
@@ -620,7 +624,7 @@ void render_image(int width,
   
   gluDeleteQuadric(qobj);
   
-#ifndef USE_SOFTWARE_RENDERING
+#ifndef USE_SOFTWARE_OPENGL
   int rgbaSize = width * height * 4 * sizeof(GLfloat);
   *rgbaBuffer = (GLfloat*)calloc(1, rgbaSize);
   glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, *rgbaBuffer);
@@ -1152,7 +1156,7 @@ writeRenderedPixelsToImageFragments(GLfloat* rgbaBuffer,
 #endif
 
 
-#ifdef USE_SOFTWARE_RENDERING
+#ifdef USE_SOFTWARE_OPENGL
 
 
 
@@ -1324,7 +1328,7 @@ void cxx_render(legion_runtime_t runtime_,
   GLfloat* depthBuffer = NULL;
 
   
-#ifdef USE_SOFTWARE_RENDERING
+#ifdef USE_SOFTWARE_OPENGL
   OSMesaContext mesaCtx;
   createGraphicsContext(mesaCtx, rgbaBuffer);
 #else
@@ -1370,7 +1374,7 @@ void cxx_render(legion_runtime_t runtime_,
   free(rgbaBuffer);
   free(depthBuffer);
   
-#ifdef USE_SOFTWARE_RENDERING
+#ifdef USE_SOFTWARE_OPENGL
   destroyGraphicsContext(mesaCtx);
 #else
   destroyGraphicsContext(eglDpy);
@@ -1692,7 +1696,7 @@ void cxx_reduce(legion_runtime_t runtime_,
     }
   }
   
-#ifdef USE_SOFTWARE_RENDERING
+#ifdef USE_SOFTWARE_OPENGL
   
   compositePixelsLess(leftR, leftStrideR, leftG, leftStrideG, leftB, leftStrideB, leftA, leftStrideA, leftZ, leftStrideZ, leftUserData, leftStrideUserData,
                       rightR, rightStrideR, rightG, rightStrideG, rightB, rightStrideB, rightA, rightStrideA, rightZ, rightStrideZ, rightUserData, rightStrideUserData,

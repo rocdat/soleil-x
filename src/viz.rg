@@ -51,6 +51,7 @@ end
 
 link_flags:insert("-L ${EBROOTVTK}/lib")
 link_flags:insert("-L /usr/lib")
+link_flags:insert("-L /usr/lib64")
 
 link_flags:insert("-lGLU")
 link_flags:insert("-lGL")

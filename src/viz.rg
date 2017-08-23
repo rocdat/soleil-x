@@ -23,13 +23,14 @@ do
                                   "-L ${EBROOTVTK}/lib",
                                   "-L /usr/lib64",
                                   "-lviz",
-                                  "-lGLU",
                                   "-lEGL",
+                                  "-lGLU",
                                   "-lvtkglew-7.1"
                                   })
   else
     viz_so = os.tmpname() .. ".so"
   end
+
   local cxx = os.getenv('CXX') or 'c++'
 
   local cxx_flags = "-O2 -Wall -Werror -ftree-vectorize"

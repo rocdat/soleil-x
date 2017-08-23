@@ -46,15 +46,14 @@ do
   terralib.linklibrary(viz_so)
   cviz = terralib.includec("viz.h", {"-I", root_dir, "-I", runtime_dir,
                             "-I", mapper_dir, "-I", legion_dir,
-                            "-I", realm_dir, "-I", "${EBROOTVTK}/include/vtk-7.1" })
+                            "-I", realm_dir, 
+                            "-I", "${EBROOTVTK}/include/vtk-7.1" })
 end
 
 link_flags:insert("-L ${EBROOTVTK}/lib")
-link_flags:insert("-L /usr/lib")
 link_flags:insert("-L /usr/lib64")
 
 link_flags:insert("-lGLU")
-link_flags:insert("-lGL")
 link_flags:insert("-lvtkglew-7.1")
 link_flags:insert("-lEGL")
 

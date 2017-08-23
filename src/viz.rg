@@ -47,6 +47,14 @@ do
 
   if SAVE_VIZ_ONLY then os.exit(0) end
 
+  link_flags:insert("-L ${EBROOTVTK}/lib")
+  link_flags:insert("-L /usr/lib64")
+
+  link_flags:insert("-lGLU")
+  link_flags:insert("-lvtkglew-7.1")
+  link_flags:insert("-lEGL")
+  link_flags:insert("-lvtkglew-7.1")
+
   terralib.linklibrary(viz_so)
   cviz = terralib.includec("viz.h", 
                             {"-I", root_dir, 
@@ -57,13 +65,6 @@ do
                             "-I", glew_dir })
 end
 
-link_flags:insert("-L ${EBROOTVTK}/lib")
-link_flags:insert("-L /usr/lib64")
-
-link_flags:insert("-lGLU")
-link_flags:insert("-lvtkglew-7.1")
-link_flags:insert("-lEGL")
-link_flags:insert("-lvtkglew-7.1")
 
 
 -------------------------------------------------------------------------------

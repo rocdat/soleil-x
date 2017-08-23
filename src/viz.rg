@@ -16,15 +16,17 @@ do
   local realm_dir = runtime_dir .. "realm/"
   local glew_dir = "${EBROOTVTK}/include/vtk-7.1/"
   local viz_cc = root_dir .. "viz.cc"
+
   if os.getenv('SAVEOBJ') == '1' then
     viz_so = root_dir .. "libviz.so"
     link_flags = terralib.newlist({"-L" .. root_dir, 
                                   "-L ${EBROOTVTK}/lib",
                                   "-L /usr/lib64",
+                                  "-lviz",
                                   "-lGLU",
                                   "-lEGL",
-                                  "-lvtkglew-7.1",
-                                  "-lviz"})
+                                  "-lvtkglew-7.1"
+                                  })
   else
     viz_so = os.tmpname() .. ".so"
   end
@@ -39,11 +41,12 @@ do
     cxx_flags = cxx_flags .. " -shared -fPIC"
   end
 
-  local cmd = (cxx .. " " .. cxx_flags .. " -I " .. runtime_dir .. " " ..
+  local cmd = (cxx .. " " .. cxx_flags .. 
+                 " -I " .. runtime_dir .. 
                  " -I " .. glew_dir ..
-                 " -I " .. mapper_dir .. " " .. 
-                 " -I " .. legion_dir .. " " ..
-                 " -I " .. realm_dir .. " " .. 
+                 " -I " .. mapper_dir .. 
+                 " -I " .. legion_dir .. 
+                 " -I " .. realm_dir .. 
                  viz_cc .. " -o " .. viz_so)
 
   if os.execute(cmd) ~= 0 then

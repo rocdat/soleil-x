@@ -1,7 +1,7 @@
 #!/bin/bash
 module unload PrgEnv-cray
 module load PrgEnv-gnu
-module load daint-mc
+module load daint-gpu
 unset LG_RT_DIR
 
 cd ${LEGION_PATH}/language

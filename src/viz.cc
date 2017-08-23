@@ -1535,6 +1535,32 @@ static void compositeGPU(GLfloat* RGBZ) {
 }
 
 
+inline void copyRGBZBufferToPixels(GLfloat* RGBZ0,
+                                   GLfloat* Z,
+                                   int numPixels,
+                                   GLfloat* r0,
+                                   ByteOffset strideR0[3],
+                                   GLfloat* g0,
+                                   ByteOffset strideG0[3],
+                                   GLfloat* b0,
+                                   ByteOffset strideB0[3],
+                                   GLfloat* z0,
+                                   ByteOffset strideZ0[3]) {
+  
+  for(int i = 0; i < numPixels; ++i) {
+    *r0 = *RGBZ0++;
+    r0 += strideR0[0].offset / sizeof(*r0);
+    *g0 = *RGBZ0++;
+    g0 += strideG0[0].offset / sizeof(*g0);
+    *b0 = *RGBZ0++;
+    b0 += strideB0[0].offset / sizeof(*b0);
+    RGBZ0++;
+    *z0 = *Z++;
+    z0 += strideZ0[0].offset / sizeof(*z0);
+  }
+}
+
+
 
 inline void compositePixelsGPU(GLfloat *r0,
                                 ByteOffset strideR0[3],
@@ -1574,9 +1600,9 @@ inline void compositePixelsGPU(GLfloat *r0,
                                 ByteOffset strideUserDataOut[3],
                                 int numPixels){
   // 1. extract pixels into RGBZ buffers
-  GLfloat *RGBZ0 = (GLfloat*)calloc(width * height, sizeof(GLfloat));
+  GLfloat *RGBZ0 = (GLfloat*)calloc(width * height, sizeof(GLfloat) * 4);
   extractPixelsToRGBZBuffer(numPixels, r0, strideR0, g0, strideG0, b0, strideB0, z0, strideZ0, RGBZ0);
-  GLfloat *RGBZ1 = (GLfloat*)calloc(width * height, sizeof(GLfloat));
+  GLfloat *RGBZ1 = (GLfloat*)calloc(width * height, sizeof(GLfloat) * 4);
   extractPixelsToRGBZBuffer(numPixels, r1, strideR1, g1, strideG1, b1, strideB1, z1, strideZ1, RGBZ1);
   
   // 2. upload both buffers to GPU
@@ -1591,7 +1617,12 @@ inline void compositePixelsGPU(GLfloat *r0,
   
   // 3. composite the result
   compositeGPU(RGBZ0);
+  
   // 4. read back the result
+  glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, RGBZ0);
+  GLfloat *Z = (GLfloat*)calloc(width * height, sizeof(GLfloat));
+  glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, Z);
+  copyRGBZBufferToPixels(RGBZ0, Z, numPixels, r0, strideR0, g0, strideG0, b0, strideB0, z0, strideZ0);
   
   free(RGBZ0);
   free(RGBZ1);

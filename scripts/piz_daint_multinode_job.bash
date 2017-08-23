@@ -12,6 +12,7 @@
 srun -n 1 -N 1 lscpu
 
 ROOT=/users/aheirich
+source $ROOT/setup.bash
 cd $ROOT/PSAAP
 source soleil-x/scripts/do.bash SOLEIL_DIR
 

@@ -15,7 +15,7 @@
 
 //#define STANDALONE // debug
 
-#define USE_SOFTWARE_OPENGL
+//#define USE_SOFTWARE_OPENGL
 
 #define _T {std::cout<<getpid()<<" "<<__FUNCTION__<<" "<<__FILE__<<":"<<__LINE__<<std::endl;}
 
@@ -28,9 +28,6 @@
 using namespace LegionRuntime::Arrays;
 using namespace Legion;
 using namespace LegionRuntime::Accessor;
-
-#define NEXT(FIELD) (FIELD##Base + FIELD##Iterator.next().value)
-#define NEXT3(FIELD) (FIELD##Base + FIELD##Iterator.next().value * 3)
 
 
 #endif

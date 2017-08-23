@@ -20,12 +20,7 @@ do
   if os.getenv('SAVEOBJ') == '1' then
     viz_so = root_dir .. "libviz.so"
     link_flags = terralib.newlist({"-L" .. root_dir, 
-                                  "-L ${EBROOTVTK}/lib",
-                                  "-L /usr/lib64",
-                                  "-lviz",
-                                  "-lEGL",
-                                  "-lGLU",
-                                  "-lvtkglew-7.1"
+                                  "-lviz"
                                   })
   else
     viz_so = os.tmpname() .. ".so"
@@ -49,6 +44,8 @@ do
                  " -I " .. legion_dir .. 
                  " -I " .. realm_dir .. 
                  " " .. viz_cc .. " -o " .. viz_so)
+
+  os.execute("ls -l ${EBROOTVTK}/include/vtk-7.1/vtk_glew.*")
 
   if os.execute(cmd) ~= 0 then
     print("Error: failed to compile " .. viz_cc)

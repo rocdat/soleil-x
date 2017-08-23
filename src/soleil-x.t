@@ -98,7 +98,14 @@ do
   local mapper_cc = root_dir .. "soleil_mapper.cc"
   if os.getenv('SAVEOBJ') == '1' then
     mapper_so = root_dir .. "libsoleil_mapper.so"
-    link_flags = terralib.newlist({"-L" .. root_dir, "-lsoleil_mapper" })
+    link_flags = terralib.newlist({"-L" .. root_dir, 
+                                  "-L ${EBROOTVTK}/lib",
+                                  "-L /usr/lib64",
+                                  "-lviz",
+                                  "-lEGL",
+                                  "-lGLU",
+                                  "-lvtkglew-7.1"
+                                  "-lsoleil_mapper" })
   else
     mapper_so = os.tmpname() .. ".so"
   end

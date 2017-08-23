@@ -57,7 +57,6 @@ do
 
   if SAVE_VIZ_ONLY then os.exit(0) end
 
-  terralib.linklibrary(viz_so)
   cviz = terralib.includec("viz.h", 
                             {"-I", root_dir, 
                             "-I", runtime_dir,

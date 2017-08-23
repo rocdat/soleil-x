@@ -27,9 +27,16 @@ typedef float PixelField;
 #include <OpenGL/gl.h>
 #include "OpenGL/glu.h"
 #else
+#ifdef USE_SOFTWARE_OPENGL
 #include "GL/osmesa.h"
+#else
+#include "vtk_glew.h"
+
+#endif
 #include "GL/glu.h"
 #endif
+
+
 
 
 #ifdef __cplusplus

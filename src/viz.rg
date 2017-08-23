@@ -41,7 +41,7 @@ do
     assert(false)
   end
 
-  if SAVE_MAPPER_ONLY then os.exit(0) end
+  if SAVE_VIZ_ONLY then os.exit(0) end
 
   terralib.linklibrary(viz_so)
   cviz = terralib.includec("viz.h", {"-I", root_dir, "-I", runtime_dir,

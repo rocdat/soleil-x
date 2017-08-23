@@ -91,17 +91,6 @@ static bool writeFiles(int timeStep) {
 
 
 
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#include "OpenGL/glu.h"
-#else
-#ifdef USE_SOFTWARE_OPENGL
-#include "GL/osmesa.h"
-#else
-#include "GL/gl.h"
-#endif
-#include "GL/glu.h"
-#endif
 
 #ifdef STANDALONE
 

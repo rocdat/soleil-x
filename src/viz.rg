@@ -14,7 +14,7 @@ do
   local legion_dir = runtime_dir .. "legion/"
   local mapper_dir = runtime_dir .. "mappers/"
   local realm_dir = runtime_dir .. "realm/"
-  local glew_dir = os.getenv("EBROOTVTK) .. "/include/vtk-7.1/"
+  local glew_dir = os.getenv("EBROOTVTK") .. "/include/vtk-7.1/"
   local viz_cc = root_dir .. "viz.cc"
 
   if os.getenv('SAVEOBJ') == '1' then

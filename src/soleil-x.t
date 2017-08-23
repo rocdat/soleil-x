@@ -104,7 +104,7 @@ do
                                   "-lviz",
                                   "-lEGL",
                                   "-lGLU",
-                                  "-lvtkglew-7.1"
+                                  "-lvtkglew-7.1",
                                   "-lsoleil_mapper" })
   else
     mapper_so = os.tmpname() .. ".so"

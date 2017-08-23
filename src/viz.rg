@@ -63,6 +63,7 @@ link_flags:insert("-L /usr/lib64")
 link_flags:insert("-lGLU")
 link_flags:insert("-lvtkglew-7.1")
 link_flags:insert("-lEGL")
+link_flags:insert("-lvtkglew-7.1")
 
 
 -------------------------------------------------------------------------------

@@ -47,7 +47,7 @@ do
                  " -I " .. mapper_dir .. 
                  " -I " .. legion_dir .. 
                  " -I " .. realm_dir .. 
-                 viz_cc .. " -o " .. viz_so)
+                 " " .. viz_cc .. " -o " .. viz_so)
 
   if os.execute(cmd) ~= 0 then
     print("Error: failed to compile " .. viz_cc)

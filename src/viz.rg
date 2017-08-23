@@ -18,7 +18,13 @@ do
   local viz_cc = root_dir .. "viz.cc"
   if os.getenv('SAVEOBJ') == '1' then
     viz_so = root_dir .. "libviz.so"
-    link_flags = terralib.newlist({"-L" .. root_dir, "-lviz"})
+    link_flags = terralib.newlist({"-L" .. root_dir, 
+                                  "-L ${EBROOTVTK}/lib",
+                                  "-L /usr/lib64",
+                                  "-lGLU",
+                                  "-lEGL",
+                                  "-lvtkglew-7.1",
+                                  "-lviz"})
   else
     viz_so = os.tmpname() .. ".so"
   end
@@ -46,14 +52,6 @@ do
   end
 
   if SAVE_VIZ_ONLY then os.exit(0) end
-
-  link_flags:insert("-L ${EBROOTVTK}/lib")
-  link_flags:insert("-L /usr/lib64")
-
-  link_flags:insert("-lGLU")
-  link_flags:insert("-lvtkglew-7.1")
-  link_flags:insert("-lEGL")
-  link_flags:insert("-lvtkglew-7.1")
 
   terralib.linklibrary(viz_so)
   cviz = terralib.includec("viz.h", 

@@ -14,6 +14,7 @@ do
   local legion_dir = runtime_dir .. "legion/"
   local mapper_dir = runtime_dir .. "mappers/"
   local realm_dir = runtime_dir .. "realm/"
+  local glew_dir = "${EBROOTVTK}/include/vtk-7.1/"
   local viz_cc = root_dir .. "viz.cc"
   if os.getenv('SAVEOBJ') == '1' then
     viz_so = root_dir .. "libviz.so"
@@ -33,9 +34,12 @@ do
   end
 
   local cmd = (cxx .. " " .. cxx_flags .. " -I " .. runtime_dir .. " " ..
-                 " -I " .. "${EBROOTVTK}/include/vtk-7.1" ..
-                 " -I " .. mapper_dir .. " " .. " -I " .. legion_dir .. " " ..
-                 " -I " .. realm_dir .. " " .. viz_cc .. " -o " .. viz_so)
+                 " -I " .. glew_dir ..
+                 " -I " .. mapper_dir .. " " .. 
+                 " -I " .. legion_dir .. " " ..
+                 " -I " .. realm_dir .. " " .. 
+                 viz_cc .. " -o " .. viz_so)
+
   if os.execute(cmd) ~= 0 then
     print("Error: failed to compile " .. viz_cc)
     assert(false)
@@ -44,10 +48,13 @@ do
   if SAVE_VIZ_ONLY then os.exit(0) end
 
   terralib.linklibrary(viz_so)
-  cviz = terralib.includec("viz.h", {"-I", root_dir, "-I", runtime_dir,
-                            "-I", mapper_dir, "-I", legion_dir,
+  cviz = terralib.includec("viz.h", 
+                            {"-I", root_dir, 
+                            "-I", runtime_dir,
+                            "-I", mapper_dir, 
+                            "-I", legion_dir,
                             "-I", realm_dir, 
-                            "-I", "${EBROOTVTK}/include/vtk-7.1" })
+                            "-I", glew_dir })
 end
 
 link_flags:insert("-L ${EBROOTVTK}/lib")

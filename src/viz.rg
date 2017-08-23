@@ -3,6 +3,8 @@ import 'regent'
 
 local A = require 'admiral'
 
+local SAVE_VIZ_ONLY = os.getenv('SAVE_VIZ_ONLY') == '1'
+
 local cviz
 local link_flags
 do
@@ -31,18 +33,24 @@ do
   end
 
   local cmd = (cxx .. " " .. cxx_flags .. " -I " .. runtime_dir .. " " ..
-                 " -I " .. root_dir .. "/include " ..
+                 " -I " .. "${EBROOTVTK}/include/vtk-7.1" ..
                  " -I " .. mapper_dir .. " " .. " -I " .. legion_dir .. " " ..
                  " -I " .. realm_dir .. " " .. viz_cc .. " -o " .. viz_so)
   if os.execute(cmd) ~= 0 then
     print("Error: failed to compile " .. viz_cc)
     assert(false)
   end
+
+  if SAVE_MAPPER_ONLY then os.exit(0) end
+
   terralib.linklibrary(viz_so)
   cviz = terralib.includec("viz.h", {"-I", root_dir, "-I", runtime_dir,
                             "-I", mapper_dir, "-I", legion_dir,
-                            "-I", realm_dir, "-I", root_dir .. "/include"})
+                            "-I", realm_dir, "-I", "${EBROOTVTK}/include/vtk-7.1" })
 end
+
+link_flags:insert("-lGLU")
+link_flags:insert("-L ${EBROOTVTK}/lib")
 
 
 -------------------------------------------------------------------------------

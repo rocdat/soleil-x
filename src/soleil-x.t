@@ -86,7 +86,6 @@ local rand_float = L.rand
 -----------------------------------------------------------------------------
 
 local SAVE_MAPPER_ONLY = os.getenv('SAVE_MAPPER_ONLY') == '1'
-local SAVE_VIZ_ONLY = os.getenv('SAVE_VIZ_ONLY') == '1'
 local cmapper
 local link_flags
 do
@@ -97,14 +96,11 @@ do
   local mapper_dir = runtime_dir .. "mappers/"
   local realm_dir = runtime_dir .. "realm/"
   local mapper_cc = root_dir .. "soleil_mapper.cc"
-  local viz_cc = root_dir .. "viz.cc"
   if os.getenv('SAVEOBJ') == '1' then
     mapper_so = root_dir .. "libsoleil_mapper.so"
-    viz_so = root_dir .. "libviz.so"
-    link_flags = terralib.newlist({"-L" .. root_dir, "-lsoleil_mapper", "-lviz"})
+    link_flags = terralib.newlist({"-L" .. root_dir, "-lsoleil_mapper" })
   else
     mapper_so = os.tmpname() .. ".so"
-    viz_so = os.tmpname() .. ".so"
   end
 
   local cxx = os.getenv('CXX') or 'c++'
@@ -125,24 +121,13 @@ do
     print("Error: failed to compile " .. mapper_cc)
     assert(false)
   end
+
   if SAVE_MAPPER_ONLY then os.exit(0) end
+
   terralib.linklibrary(mapper_so)
   cmapper = terralib.includec("soleil_mapper.h", {"-I", root_dir, "-I", runtime_dir,
                                                   "-I", mapper_dir, "-I", legion_dir,
                                                   "-I", realm_dir})
-
-  local cmd2 = (cxx .. " " .. cxx_flags .. " -I " .. runtime_dir .. " " ..
-                 " -I " .. mapper_dir .. " " .. " -I " .. legion_dir .. " " ..
-                 " -I " .. root_dir .. "/include" ..
-                 " -I " .. realm_dir ..
-                 " " .. viz_cc ..
-                 " -o " .. viz_so)
-  if os.execute(cmd2) ~= 0 then
-    print("Error: failed to compile " .. viz_cc)
-    assert(false)
-  end
-  if SAVE_VIZ_ONLY then os.exit(0) end
-  terralib.linklibrary(viz_so)
 
 end
 
@@ -160,10 +145,6 @@ if os.getenv('SAVEOBJ') == '1' and os.getenv('CRAYPE_VERSION') then
   link_flags = new_flags
 end
 
-link_flags:insert("-L /usr/lib/x86_64")
-link_flags:insert("-L -L/usr/lib64/")
-link_flags:insert("-lGLU")
-link_flags:insert("-lOSMesa")
 
 
 -----------------------------------------------------------------------------

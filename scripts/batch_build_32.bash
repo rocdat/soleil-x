@@ -9,7 +9,7 @@ ROOT=/users/aheirich
 cd $ROOT
 source setup.bash
 cd PSAAP
-source soleil-x/scripts/do.bash 4
+source soleil-m/scripts/do.bash 4
 
 
 OUTDIR=$SOLEIL_PATH/src/piz_daint_jobs

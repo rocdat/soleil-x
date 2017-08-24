@@ -1599,6 +1599,16 @@ inline void compositePixelsGPU(GLfloat *r0,
                                 GLfloat *userDataOut,
                                 ByteOffset strideUserDataOut[3],
                                 int numPixels){
+  // 0. create context
+  EGLContext eglCtx;
+  EGLDisplay eglDpy;
+  createGraphicsContext(eglCtx, eglDpy);
+  GLenum err = glewInit();
+  if (err != GLEW_OK)
+    exit(1); // or handle the error in a nicer way
+  if (!GLEW_VERSION_2_1)  // check that the machine supports the 2.1 API.
+    exit(1); // or handle the error in a nicer way
+
   // 1. extract pixels into RGBZ buffers
   GLfloat *RGBZ0 = (GLfloat*)calloc(width * height, sizeof(GLfloat) * 4);
   extractPixelsToRGBZBuffer(numPixels, r0, strideR0, g0, strideG0, b0, strideB0, z0, strideZ0, RGBZ0);
@@ -1624,6 +1634,9 @@ inline void compositePixelsGPU(GLfloat *r0,
   glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, Z);
   copyRGBZBufferToPixels(RGBZ0, Z, numPixels, r0, strideR0, g0, strideG0, b0, strideB0, z0, strideZ0);
   
+  // 5. destroy context
+  destroyGraphicsContext(eglDpy);
+
   free(RGBZ0);
   free(RGBZ1);
 }

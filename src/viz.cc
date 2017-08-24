@@ -1727,7 +1727,7 @@ void cxx_reduce(legion_runtime_t runtime_,
     }
   }
   
-#ifdef USE_SOFTWARE_OPENGL
+#if 1 // measurements show software is faster than hardware opengl for this
   
   compositePixelsLess(leftR, leftStrideR, leftG, leftStrideG, leftB, leftStrideB, leftA, leftStrideA, leftZ, leftStrideZ, leftUserData, leftStrideUserData,
                       rightR, rightStrideR, rightG, rightStrideG, rightB, rightStrideB, rightA, rightStrideA, rightZ, rightStrideZ, rightUserData, rightStrideUserData,

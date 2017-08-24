@@ -99,12 +99,6 @@ do
   if os.getenv('SAVEOBJ') == '1' then
     mapper_so = root_dir .. "libsoleil_mapper.so"
     link_flags = terralib.newlist({"-L" .. root_dir, 
-                                  "-L ${EBROOTVTK}/lib",
-                                  "-L /usr/lib64",
-                                  "-lviz",
-                                  "-lEGL",
-                                  "-lGLU",
-                                  "-lvtkglew-7.1",
                                   "-lsoleil_mapper" })
   else
     mapper_so = os.tmpname() .. ".so"
@@ -821,9 +815,6 @@ elseif radiation_options.radiationType == RadiationType.OFF then
   -- do nothing
 else assert(false) end
 
-local viz = (require 'viz')(fluidGrid, particles,
-                            config.xnum, config.ynum, config.znum,
-                            fluidGrid.origin, fluidGrid.width)
 
 -----------------------------------------------------------------------------
 --[[                       LOAD DATA FOR RESTART                         ]]--
@@ -3361,15 +3352,15 @@ if radiation_options.radiationType ~= RadiationType.OFF then
   M.INLINE(radiation.InitRadiation)
 end
 IO.WriteOutput()
-Visualize.Initialize()
+-- Visualize.Initialize()
 
 -- Main iteration loop
 
 -- M.WHILE(M.AND(M.LT(TimeIntegrator.simTime:get(), time_options.final_time),
               -- M.LT(TimeIntegrator.timeStep:get(), time_options.max_iter))
 M.WHILE(M.LT(TimeIntegrator.timeStep:get(), time_options.max_iter), true)
-  Visualize.Render()
-  Visualize.Reduce()
+  -- Visualize.Render()
+  -- Visualize.Reduce()
   TimeIntegrator.CalculateDeltaTime()
   TimeIntegrator.AdvanceTimeStep()
   M.PRINT("completed one stime step")

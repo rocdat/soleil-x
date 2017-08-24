@@ -102,7 +102,6 @@ do
                                   "-L ${EBROOTVTK}/lib",
                                   "-L /opt/cray/nvidia/default/lib64",
                                   "-lviz",
-                                  "-lOpenGL",
                                   "-lEGL",
                                   "-lGLU",
                                   "-lvtkglew-7.1",

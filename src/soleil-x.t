@@ -100,8 +100,9 @@ do
     mapper_so = root_dir .. "libsoleil_mapper.so"
     link_flags = terralib.newlist({"-L" .. root_dir, 
                                   "-L ${EBROOTVTK}/lib",
-                                  "-L /usr/lib64",
+                                  "-L /opt/cray/nvidia/default/lib64",
                                   "-lviz",
+                                  "-lOpenGL",
                                   "-lEGL",
                                   "-lGLU",
                                   "-lvtkglew-7.1",

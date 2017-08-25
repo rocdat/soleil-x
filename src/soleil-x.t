@@ -724,7 +724,7 @@ if particles_options.modeParticles then
     coupling_field = 'cell',
     size = particles_options.maximum_num,
     max_skew = 1.5,
-    max_xfer_num = 8000,
+    max_xfer_num = 16000,
     xfer_stencil = {            { 0, 0, 1}, { 0, 0,-1},
                     { 0, 1, 0}, { 0, 1, 1}, { 0, 1,-1},
                     { 0,-1, 0}, { 0,-1, 1}, { 0,-1,-1},

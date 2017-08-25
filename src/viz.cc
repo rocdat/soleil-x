@@ -1227,10 +1227,11 @@ static void createGraphicsContext(EGLContext &eglCtx, EGLDisplay &eglDpy) {
   
 }
 
+#if 0
 static void destroyGraphicsContext(EGLDisplay eglDpy) {
   eglTerminate(eglDpy);
-  
 }
+#endif
 
 static void makeGraphicsContextCurrent() {
   eglMakeCurrent(__eglDpy, __eglSurf, __eglSurf, __eglCtx);
@@ -1488,6 +1489,8 @@ static void extractPixelsToRGBZBuffer(int numPixels,
 
 
 static void compositeGPU(GLfloat* RGBZ) {
+
+  static GLuint shaderProgram;
   
   if(!__eglInitialized) {
     char* vertexShaderSource = (char*)
@@ -1520,7 +1523,7 @@ static void compositeGPU(GLfloat* RGBZ) {
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
     
-    static GLuint shaderProgram = glCreateProgram();
+    shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     

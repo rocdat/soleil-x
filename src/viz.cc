@@ -273,7 +273,7 @@ static void drawParticles(bool* __valid,
   const long RAND_MAX_ = (long)(powf(2.0f, 31.0f) - 1.0f);
   const long randomThreshold = RAND_MAX_ * numVisibleParticlesPerNode / EXPECTED_PARTICLES_PER_NODE;
   srandom(0);//same every frame
-
+  
   for(unsigned particle = 0; particle < EXPECTED_PARTICLES_PER_NODE; ++particle) {
     __valid += __validStride[0].offset / sizeof(*__valid);
     FieldData* p = position;
@@ -541,7 +541,7 @@ void render_image(int width,
   
   GLUquadricObj *qobj = gluNewQuadric();
   
-//  glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+  //  glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
   glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
   glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
@@ -591,7 +591,7 @@ void render_image(int width,
   
   
   
-
+  
   drawParticles(__valid, position, density, particleTemperature, tracking,
                 __validStride, positionStride, densityStride, particleTemperatureStride, trackingStride,
                 qobj, runtime);
@@ -1169,7 +1169,7 @@ static void createGraphicsContext(OSMesaContext &mesaCtx,
     printf("Alloc image buffer failed!\n");
     return;
   }
-
+  
   /* Bind the buffer to the context and make it current */
   if (!OSMesaMakeCurrent(mesaCtx, rgbaBuffer, GL_FLOAT, width, height)) {
     printf("OSMesaMakeCurrent failed!\n");
@@ -1185,38 +1185,55 @@ static void destroyGraphicsContext(OSMesaContext mesaCtx) {
 
 #else
 
-
+static bool __eglInitialized = false;
+static EGLContext __eglCtx;
+static EGLDisplay __eglDpy;
+static EGLSurface __eglSurf;
 
 static void createGraphicsContext(EGLContext &eglCtx, EGLDisplay &eglDpy) {
   
-  // hardware accelerated OpenGL
-  // https://devblogs.nvidia.com/parallelforall/egl-eye-opengl-visualization-without-x-server/
-  eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  EGLint major, minor;
-  eglInitialize(eglDpy, &major, &minor);
-  
-  // 2. Select an appropriate configuration
-  EGLint numConfigs;
-  EGLConfig eglCfg;
-  eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
-  
-  // 3. Create a surface
-  EGLSurface eglSurf = eglCreatePbufferSurface(eglDpy, eglCfg,
-                                               pbufferAttribs);
-  
-  // 4. Bind the API
-  eglBindAPI(EGL_OPENGL_API);
-  
-  // 5. Create a context and make it current
-  eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT,
-                                       NULL);
-  eglMakeCurrent(eglDpy, eglSurf, eglSurf, eglCtx);
+  if(!__eglInitialized) {
+    // hardware accelerated OpenGL
+    // https://devblogs.nvidia.com/parallelforall/egl-eye-opengl-visualization-without-x-server/
+    eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    EGLint major, minor;
+    eglInitialize(eglDpy, &major, &minor);
+    
+    // 2. Select an appropriate configuration
+    EGLint numConfigs;
+    EGLConfig eglCfg;
+    eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
+    
+    // 3. Create a surface
+    EGLSurface eglSurf = eglCreatePbufferSurface(eglDpy, eglCfg,
+                                                 pbufferAttribs);
+    
+    // 4. Bind the API
+    eglBindAPI(EGL_OPENGL_API);
+    
+    // 5. Create a context and make it current
+    eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT,
+                              NULL);
+    eglMakeCurrent(eglDpy, eglSurf, eglSurf, eglCtx);
+    
+    __eglCtx = eglCtx;
+    __eglDpy = eglDpy;
+    __eglSurf = eglSurf;
+    __eglInitialized = true;
+  } else {
+    eglCtx = __eglCtx;
+    eglDpy = __eglDpy;
+  }
   
 }
 
 static void destroyGraphicsContext(EGLDisplay eglDpy) {
   eglTerminate(eglDpy);
+  
+}
 
+static void makeGraphicsContextCurrent() {
+  eglMakeCurrent(__eglDpy, __eglSurf, __eglSurf, __eglCtx);
 }
 
 
@@ -1313,7 +1330,7 @@ void cxx_render(legion_runtime_t runtime_,
   
   GLfloat* rgbaBuffer = NULL;
   GLfloat* depthBuffer = NULL;
-
+  
   
 #ifdef USE_SOFTWARE_OPENGL
   OSMesaContext mesaCtx;
@@ -1363,8 +1380,6 @@ void cxx_render(legion_runtime_t runtime_,
   
 #ifdef USE_SOFTWARE_OPENGL
   destroyGraphicsContext(mesaCtx);
-#else
-  destroyGraphicsContext(eglDpy);
 #endif
   
 }
@@ -1474,64 +1489,69 @@ static void extractPixelsToRGBZBuffer(int numPixels,
 
 static void compositeGPU(GLfloat* RGBZ) {
   
-  char* vertexShaderSource = (char*)
-  "attribute vec2 vertexIn; \n"
-  "varying vec2 textureCoord; \n"
-  "void main() { \n"
+  if(!__eglInitialized) {
+    char* vertexShaderSource = (char*)
+    "attribute vec2 vertexIn; \n"
+    "varying vec2 textureCoord; \n"
+    "void main() { \n"
     "textureCoord = vertexIn.xy; \n"
     "gl_Position = vec4(vertexIn.xy,0.0,1.0); \n"
-  "}";
-  
-  char* fragmentShaderSource = (char*)
-  "varying vec2 textureCoord; \n"
-  "uniform sampler2D texture0; \n"
-  "uniform sampler2D texture1; \n"
-  "void main() { \n"
+    "}";
+    
+    char* fragmentShaderSource = (char*)
+    "varying vec2 textureCoord; \n"
+    "uniform sampler2D texture0; \n"
+    "uniform sampler2D texture1; \n"
+    "void main() { \n"
     "vec4 color0 = texture2D(texture0, textureCoord); \n"
     "vec4 color1 = texture2D(texture1, textureCoord); \n"
     "if(color0.w < color1.w) { \n"
-      "gl_FragColor = color0; \n"
+    "gl_FragColor = color0; \n"
     "} else { \n"
-      "gl_FragColor = color1; \n"
+    "gl_FragColor = color1; \n"
     "} \n"
-  "}";
+    "}";
+    
+    static GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+    
+    static GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+    
+    static GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    
+    glLinkProgram(shaderProgram);
+    
+    
+    static GLfloat quadVertices[] = {
+      -1.0f, -1.0f, 0.0f,
+      1.0f, -1.0f, 0.0f,
+      1.0f, 1.0f, 0.0f,
+      1.0f, -1.0f, 0.0f,
+      1.0f, 1.0f, 0.0f,
+      -1.0f, 1.0f, 0.0f,
+    };
+    
+    static GLuint vbo;
+    glGenBuffers(1, &vbo); // Generate 1 buffer
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+    
+    static GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    
+  }
   
-  GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-  glCompileShader(vertexShader);
-
-  GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-  glCompileShader(fragmentShader);
-  
-  GLuint shaderProgram = glCreateProgram();
-  glAttachShader(shaderProgram, vertexShader);
-  glAttachShader(shaderProgram, fragmentShader);
-  
-  glLinkProgram(shaderProgram);
   glUseProgram(shaderProgram);
-
-  GLfloat quadVertices[] = {
-    -1.0f, -1.0f, 0.0f,
-    1.0f, -1.0f, 0.0f,
-    1.0f, 1.0f, 0.0f,
-    1.0f, -1.0f, 0.0f,
-    1.0f, 1.0f, 0.0f,
-    -1.0f, 1.0f, 0.0f,
-  };
-
-  GLuint vbo;
-  glGenBuffers(1, &vbo); // Generate 1 buffer
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-  GLuint vao;
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
   
   glDrawArrays(GL_TRIANGLES, 0, 6);
   glFinish();
-
+  
 }
 
 
@@ -1563,43 +1583,44 @@ inline void copyRGBZBufferToPixels(GLfloat* RGBZ0,
 
 
 inline void compositePixelsGPU(GLfloat *r0,
-                                ByteOffset strideR0[3],
-                                GLfloat *g0,
-                                ByteOffset strideG0[3],
-                                GLfloat *b0,
-                                ByteOffset strideB0[3],
-                                GLfloat *a0,
-                                ByteOffset strideA0[3],
-                                GLfloat *z0,
-                                ByteOffset strideZ0[3],
-                                GLfloat *userData0,
-                                ByteOffset strideUserData0[3],
-                                GLfloat *r1,
-                                ByteOffset strideR1[3],
-                                GLfloat *g1,
-                                ByteOffset strideG1[3],
-                                GLfloat *b1,
-                                ByteOffset strideB1[3],
-                                GLfloat *a1,
-                                ByteOffset strideA1[3],
-                                GLfloat *z1,
-                                ByteOffset strideZ1[3],
-                                GLfloat *userData1,
-                                ByteOffset strideUserData1[3],
-                                GLfloat *rOut,
-                                ByteOffset strideROut[3],
-                                GLfloat *gOut,
-                                ByteOffset strideGOut[3],
-                                GLfloat *bOut,
-                                ByteOffset strideBOut[3],
-                                GLfloat *aOut,
-                                ByteOffset strideAOut[3],
-                                GLfloat *zOut,
-                                ByteOffset strideZOut[3],
-                                GLfloat *userDataOut,
-                                ByteOffset strideUserDataOut[3],
-                                int numPixels){
+                               ByteOffset strideR0[3],
+                               GLfloat *g0,
+                               ByteOffset strideG0[3],
+                               GLfloat *b0,
+                               ByteOffset strideB0[3],
+                               GLfloat *a0,
+                               ByteOffset strideA0[3],
+                               GLfloat *z0,
+                               ByteOffset strideZ0[3],
+                               GLfloat *userData0,
+                               ByteOffset strideUserData0[3],
+                               GLfloat *r1,
+                               ByteOffset strideR1[3],
+                               GLfloat *g1,
+                               ByteOffset strideG1[3],
+                               GLfloat *b1,
+                               ByteOffset strideB1[3],
+                               GLfloat *a1,
+                               ByteOffset strideA1[3],
+                               GLfloat *z1,
+                               ByteOffset strideZ1[3],
+                               GLfloat *userData1,
+                               ByteOffset strideUserData1[3],
+                               GLfloat *rOut,
+                               ByteOffset strideROut[3],
+                               GLfloat *gOut,
+                               ByteOffset strideGOut[3],
+                               GLfloat *bOut,
+                               ByteOffset strideBOut[3],
+                               GLfloat *aOut,
+                               ByteOffset strideAOut[3],
+                               GLfloat *zOut,
+                               ByteOffset strideZOut[3],
+                               GLfloat *userDataOut,
+                               ByteOffset strideUserDataOut[3],
+                               int numPixels){
   // 0. create context
+  if(!__eglInitialized) {
   EGLContext eglCtx;
   EGLDisplay eglDpy;
   createGraphicsContext(eglCtx, eglDpy);
@@ -1608,11 +1629,16 @@ inline void compositePixelsGPU(GLfloat *r0,
     exit(1); // or handle the error in a nicer way
   if (!GLEW_VERSION_2_1)  // check that the machine supports the 2.1 API.
     exit(1); // or handle the error in a nicer way
-
+  } else {
+    makeGraphicsContextCurrent();
+  }
+  
   // 1. extract pixels into RGBZ buffers
-  GLfloat *RGBZ0 = (GLfloat*)calloc(width * height, sizeof(GLfloat) * 4);
+  static GLfloat *RGBZ0 = NULL;
+  if(RGBZ0 == NULL) RGBZ0 = (GLfloat*)calloc(width * height, sizeof(GLfloat) * 4);
   extractPixelsToRGBZBuffer(numPixels, r0, strideR0, g0, strideG0, b0, strideB0, z0, strideZ0, RGBZ0);
-  GLfloat *RGBZ1 = (GLfloat*)calloc(width * height, sizeof(GLfloat) * 4);
+  static GLfloat *RGBZ1 = NULL;
+  if(RGBZ1 == NULL) RGBZ1 = (GLfloat*)calloc(width * height, sizeof(GLfloat) * 4);
   extractPixelsToRGBZBuffer(numPixels, r1, strideR1, g1, strideG1, b1, strideB1, z1, strideZ1, RGBZ1);
   
   // 2. upload both buffers to GPU
@@ -1630,15 +1656,11 @@ inline void compositePixelsGPU(GLfloat *r0,
   
   // 4. read back the result
   glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, RGBZ0);
-  GLfloat *Z = (GLfloat*)calloc(width * height, sizeof(GLfloat));
+  GLfloat *Z = NULL;
+  if(Z == NULL) Z = (GLfloat*)calloc(width * height, sizeof(GLfloat));
   glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, Z);
   copyRGBZBufferToPixels(RGBZ0, Z, numPixels, r0, strideR0, g0, strideG0, b0, strideB0, z0, strideZ0);
   
-  // 5. destroy context
-  destroyGraphicsContext(eglDpy);
-
-  free(RGBZ0);
-  free(RGBZ1);
 }
 
 

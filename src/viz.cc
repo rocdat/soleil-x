@@ -475,11 +475,11 @@ static void drawAveragedCells(FieldData* centerCoordinates, FieldData* velocity,
   
   totalVelocityMagnitude /= totalMeanCells;
   
-  std::cout << "mean velocity magnitude " << totalVelocityMagnitude;
-  std::cout << " cell center min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2]
-  << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
-  std::cout << " cell mean center min " << minMean[0] << "," << minMean[1] << "," << minMean[2]
-  << " max mean " << maxMean[0] << "," << maxMean[1] << "," << maxMean[2] << std::endl;
+  //std::cout << "mean velocity magnitude " << totalVelocityMagnitude;
+  //std::cout << " cell center min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2]
+  //<< " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
+  //std::cout << " cell mean center min " << minMean[0] << "," << minMean[1] << "," << minMean[2]
+  //<< " max mean " << maxMean[0] << "," << maxMean[1] << "," << maxMean[2] << std::endl;
   
 }
 
@@ -1236,6 +1236,8 @@ void cxx_render(legion_runtime_t runtime_,
                 legion_physical_region_t *particles,
                 legion_field_id_t *particles_fields,
                 // CODEGEN: legion_physical_region_t_imageFragmentXComma
+                   legion_physical_region_t *imageFragment0,
+                   legion_field_id_t *imageFragment0_fields,
                 int xnum,
                 int ynum,
                 int znum,
@@ -1247,6 +1249,12 @@ void cxx_render(legion_runtime_t runtime_,
 #ifndef STANDALONE
   
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
+  legion_physical_region_t* imageFragment[] = {
+    imageFragment0
+  };
+  legion_field_id_t* imageFragment_fields[] = {
+    imageFragment0_fields
+  };
   
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
@@ -1741,9 +1749,17 @@ void cxx_saveImage(legion_runtime_t runtime_,
                    int height,
                    int timeStepNumber,
 // CODEGEN: legion_physical_region_t_imageFragmentX
+                   legion_physical_region_t *imageFragment0,
+                   legion_field_id_t *imageFragment0_fields
 )
 {
   // CODEGEN: legion_physical_region_t_imageFragment_arrays
+  legion_physical_region_t* imageFragment[] = {
+    imageFragment0
+  };
+  legion_field_id_t* imageFragment_fields[] = {
+    imageFragment0_fields
+  };
   
   Runtime *runtime = CObjectWrapper::unwrap(runtime_);
   

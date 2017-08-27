@@ -475,11 +475,11 @@ static void drawAveragedCells(FieldData* centerCoordinates, FieldData* velocity,
   
   totalVelocityMagnitude /= totalMeanCells;
   
-  std::cout << "mean velocity magnitude " << totalVelocityMagnitude;
-  std::cout << " cell center min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2]
-  << " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
-  std::cout << " cell mean center min " << minMean[0] << "," << minMean[1] << "," << minMean[2]
-  << " max mean " << maxMean[0] << "," << maxMean[1] << "," << maxMean[2] << std::endl;
+  //std::cout << "mean velocity magnitude " << totalVelocityMagnitude;
+  //std::cout << " cell center min " << minCenter[0] << "," << minCenter[1] << "," << minCenter[2]
+  //<< " max " << maxCenter[0] << "," << maxCenter[1] << "," << maxCenter[2] << std::endl;
+  //std::cout << " cell mean center min " << minMean[0] << "," << minMean[1] << "," << minMean[2]
+  //<< " max mean " << maxMean[0] << "," << maxMean[1] << "," << maxMean[2] << std::endl;
   
 }
 
